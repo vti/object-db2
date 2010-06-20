@@ -229,13 +229,23 @@ sub find {
     }
     else {
         @columns = @{$class->schema->columns};
+        Carp::croak qq/Schema has no columns/ unless @columns;
+        #use Data::Dumper;
         $sql->columns([@columns]);
-        $sql->where($params{where}) if $params{where};
+
+        #warn Dumper $sql;
+        if (my $where = $params{where}) {
+            $class->_resolve_where(where => $where, sql => $sql);
+        }
+        #warn Dumper $sql;
     }
 
+    #use Data::Dumper;
+    #warn Dumper $params{with};
     if ($params{with}) {
         $class->_resolve_with(with => $params{with}, sql => $sql);
     }
+    #warn Dumper $params{with};
 
     warn "$sql" if DEBUG;
 
@@ -252,7 +262,12 @@ sub find {
         my @result;
         foreach my $row (@$rows) {
             push @result,
-              $class->_row_to_object(dbh => $dbh, row => $row, sql => $sql);
+              $class->_row_to_object(
+                dbh  => $dbh,
+                row  => $row,
+                sql  => $sql,
+                with => $params{with}
+              );
         }
 
         return @result;
@@ -271,9 +286,10 @@ sub find {
                 return unless @row;
 
                 return $class->_row_to_object(
-                    dbh => $dbh,
-                    row => [@row],
-                    sql => $sql
+                    dbh  => $dbh,
+                    row  => [@row],
+                    sql  => $sql,
+                    with => $params{with}
                 );
             }
         );
@@ -294,7 +310,7 @@ sub find_related {
     my @where = ($to => $self->column($from));
 
     push @where, @{$rel->where} if $rel->where;
-    push @where, delete $params{where};
+    push @where, delete $params{where} if $params{where};
 
     my $found = $rel->foreign_class->find(dbh => $dbh, where => [@where], %params);
 
@@ -352,11 +368,19 @@ sub delete {
     my $self = shift;
     my %params = @_;
 
-    my $dbh = delete $params{dbh} || $self->_dbh || $self->dbh;;
+    my $dbh = delete $params{dbh} || (ref($self) && $self->_dbh) || $self->dbh;
 
-    if (!%params) {
+    if (ref($self) && !%params) {
         Carp::croak "->delete: no primary or unique keys specified"
           unless $self->_are_primary_keys_set;
+
+        my @child_rel = $self->schema->child_relationships;
+        foreach my $name (@child_rel) {
+            my $related = $self->find_related($name);
+            while (my $r = $related->next) {
+                $r->delete(dbh => $dbh);
+            }
+        }
 
         my @columns = $self->columns;
         my @keys = grep { $self->schema->is_primary_key($_) } @columns;
@@ -373,20 +397,16 @@ sub delete {
         return unless $rv && $rv eq '1';
 
         $self->is_in_db(0);
-
-        my @child_rel = $self->schema->child_relationships;
-        foreach my $name (@child_rel) {
-            my $related = $self->find_related($name);
-            while (my $r = $related->next) {
-                $r->delete(dbh => $dbh);
-            }
-        }
     }
     else {
-        my $found = $self->find(@_);
+        my $found = $self->find(dbh => $dbh, @_);
+        use Data::Dumper;
         while (my $r = $found->next) {
+        #warn Dumper $r;
             $r->delete(dbh => $dbh);
         }
+
+        return 1;
     }
 
     return $self;
@@ -419,6 +439,46 @@ sub to_hash {
     #}
 
     return $hash;
+}
+
+sub _resolve_where {
+    my $class = shift;
+    my %params = @_;
+
+    my $where = $params{where};
+    my $sql  = $params{sql};
+
+    return unless $where && @$where;
+
+    for (my $i = 0; $i < @$where; $i += 2) {
+        my $key = $where->[$i];
+        my $value = $where->[$i + 1];
+
+        if ($key =~ m/\./) {
+            my $parent = $class;
+            my $source;
+            while ($key =~ s/(\w+)\.//) {
+                my $name = $1;
+                my $rel = $parent->schema->relationship($name);
+
+                $source = $rel->to_source;
+                $sql->source($source);
+                #$sql->columns($rel->foreign_class->schema->primary_keys);
+
+                $parent = $rel->foreign_class;
+            }
+
+            $sql->where($source->{as} . '.' . $key => $value);
+        }
+        else {
+            $sql->first_source;
+            $sql->where($key => $value);
+        }
+    }
+
+    #use Data::Dumper;
+    #warn Dumper $sql;
+    #warn "$sql";
 }
 
 sub _resolve_with {
@@ -489,20 +549,21 @@ sub _row_to_object {
     my $sql = $params{sql};
     my $with = $params{with};
 
-    $with = [$with] unless ref $with eq 'ARRAY';
-
     my @columns = $sql->columns;
 
-    #die Dumper $row;
     my $self = $class->new;
     foreach my $column (@columns) {
         $self->column($column => shift @$row);
     }
+    #warn '_row v';
+    #warn Dumper $sql;
+    #warn Dumper \@columns;
+    #warn '_row ^';
 
-    my $sources = $sql->sources;
+    my $sources = [@{$sql->sources}];
     shift @$sources;
-    #die Dumper $row;
 
+    $with = [$with] unless ref $with eq 'ARRAY';
     foreach my $name (@$with) {
         next unless $name;
 
@@ -522,19 +583,16 @@ sub _row_to_object {
             #warn 'v' x 20;
             #die Dumper $object->schema;
 
+            #warn 'SAVE';
             $parent->{related}->{$name} = $object;
-
-            #$sql->source($rel->to_source);
-            #$sql->columns($rel->foreign_class->schema->columns);
 
             $parent = $rel->foreign_class;
         }
-        #my $rel = $class->schema->relationships->{$source->
-        #my @columns = $source->columns;
-        #foreach my $column (@columns) {
-            #$self->column($column => shift @$row);
-        #}
     }
+
+    #use Data::Dumper;
+    #warn Dumper $row;
+    Carp::croak qq/Not all the rows are mapped to the object/ if @$row;
 
     #die Dumper $self;
 

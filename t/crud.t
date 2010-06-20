@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 23;
 
 use lib 't/lib';
 
@@ -13,7 +13,7 @@ use Author;
 
 my $dbh = TestDB->dbh;
 
-my $author = Author->find(dbh => $dbh, id => 1);
+my $author = Author->find(dbh => $dbh, id => 999);
 ok(!$author);
 
 $author = Author->create(dbh => $dbh, name => 'foo');
@@ -53,3 +53,8 @@ ok($author->delete);
 ok(!$author->is_in_db);
 $author = Author->find(dbh => $dbh, id => $author->id);
 ok(!$author);
+
+$author = Author->create(dbh => $dbh, name => 'foo');
+ok($author);
+Author->delete(dbh => $dbh);
+ok(!Author->find(dbh => $dbh, id => $author->id));

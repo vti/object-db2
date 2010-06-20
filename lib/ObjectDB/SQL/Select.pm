@@ -52,6 +52,13 @@ sub with {
     return $self->{with};
 }
 
+sub first_source {
+    my $self = shift;
+
+    my $name = $self->{sources}->[0];
+    $self->source($name);
+}
+
 sub source {
     my $self = shift;
     my ($source) = @_;

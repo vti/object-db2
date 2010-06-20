@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 27;
 
 use lib 't/lib';
 
@@ -50,3 +50,20 @@ is($author->author_admin->column('beard'), 0, 'related object has right columns'
 ok($author->delete, 'delete object');
 ok(!Author->find(dbh => $dbh, id => $author->id), 'object not available');
 ok(!AuthorAdmin->find(dbh => $dbh, id => $author->id), 'related object not available');
+
+Author->create(dbh => $dbh, name => 'foo', author_admin => {beard => 1});
+Author->create(dbh => $dbh, name => 'bar', author_admin => {beard => 0});
+Author->create(dbh => $dbh, name => 'baz', author_admin => {beard => 1});
+
+my @authors = Author->find(dbh => $dbh, where => ['author_admin.beard' => 1]);
+is(@authors, 2);
+ok(!$authors[0]->{related}->{author_admin});
+is($authors[0]->author_admin->column('beard'), 1);
+
+@authors = Author->find(dbh => $dbh, where => ['author_admin.beard' => 0], with => 'author_admin');
+is(@authors, 1);
+ok($authors[0]->{related}->{author_admin});
+is($authors[0]->author_admin->column('beard'), 0);
+
+Author->delete(dbh => $dbh);
+ok(!AuthorAdmin->find(dbh => $dbh)->next);

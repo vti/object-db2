@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 18;
 
 use lib 't/lib';
 
@@ -41,4 +41,25 @@ is($article->author->column('name'), 'baz', 'related object has right columns');
 ok($article->delete, 'delete object');
 ok(!Article->find(dbh => $dbh, id => $article->id), 'object not available');
 ok(Author->find(dbh => $dbh, id => $author->id), 'related object available');
-$author->delete;
+Author->delete(dbh => $dbh);
+Article->delete(dbh => $dbh);
+
+$author = Author->create(dbh => $dbh, name => 'foo');
+Article->create(dbh => $dbh, title => 'foo', authors_id => $author->id);
+$author = Author->create(dbh => $dbh, name => 'bar');
+Article->create(dbh => $dbh, title => 'bar', authors_id => $author->id);
+$author = Author->create(dbh => $dbh, name => 'baz');
+Article->create(dbh => $dbh, title => 'baz', authors_id => $author->id);
+
+my @articles = Article->find(dbh => $dbh, where => ['author.name' => 'foo']);
+is(@articles, 1);
+ok(!$articles[0]->{related}->{author});
+is($articles[0]->author->column('name'), 'foo');
+
+@articles = Article->find(dbh => $dbh, where => ['author.name' => 'baz'], with => 'author');
+is(@articles, 1);
+ok($articles[0]->{related}->{author});
+is($articles[0]->author->column('name'), 'baz');
+
+Article->delete(dbh => $dbh);
+Author->delete(dbh => $dbh);
