@@ -19,7 +19,7 @@ $sql->columns({name => 'foo', as => 'bar'});
 $sql->where([id => 2]);
 $sql->where(undef);
 $sql->where([]);
-$sql->where([foo => 'bar']);
+$sql->where(foo => 'bar');
 is("$sql", "SELECT `foo` AS bar FROM `foo` WHERE (`id` = ? AND `foo` = ?)");
 
 $sql = ObjectDB::SQL::Select->new;

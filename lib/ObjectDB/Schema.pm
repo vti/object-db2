@@ -173,6 +173,7 @@ sub column {
 sub has_one        { shift->_new_relationship('has_one'        => @_) }
 sub belongs_to_one { shift->_new_relationship('belongs_to_one' => @_) }
 sub belongs_to     { shift->_new_relationship('belongs_to'     => @_) }
+sub has_many       { shift->_new_relationship('has_many'       => @_) }
 
 sub has_and_belongs_to_many {
     shift->_new_relationship('has_and_belongs_to_many' => @_);

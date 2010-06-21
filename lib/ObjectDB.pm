@@ -45,6 +45,49 @@ sub _dbh {
     return $self->{dbh};
 }
 
+sub txn {
+    my $self = shift;
+    my $cb   = pop;
+    my %params = @_;
+
+    my $dbh = $params{dbh} || (ref($self) && $self->_dbh) || $self->dbh;
+    Carp::croak qq/dbh is required/ unless $dbh;
+
+    # Already in transaction
+    return $cb->() unless $dbh->{AutoCommit};
+
+    my $raise_error_bak = $dbh->{RaiseError};
+
+    $dbh->{AutoCommit} = 0;
+    $dbh->{RaiseError} = 1;
+
+    my $wantarray = wantarray;
+
+    warn 'BEGIN TRANSACTION' if DEBUG;
+    my ($rv, @rv);
+    if ($wantarray) {
+        eval { @rv = $cb->() };
+    }
+    else {
+        eval { $rv = $cb->() };
+    }
+
+    if ($@) {
+        warn 'ROLLBACK' if DEBUG;
+        $dbh->rollback;
+        die $DBI::errstr if $raise_error_bak;
+        return;
+    }
+
+    warn 'COMMIT' if DEBUG;
+    $dbh->commit;
+
+    $dbh->{AutoCommit} = 1;
+    $dbh->{RaiseError} = $raise_error_bak;
+
+    return $wantarray ? @rv : $rv;
+}
+
 sub id {
     my $self = shift;
 
@@ -107,7 +150,7 @@ sub create {
             $related->{$key} = $value;
         }
         else {
-            Carp::croak qq/Unknown columns '$key'/;
+            Carp::croak qq/Unknown column '$key'/;
         }
     }
 
@@ -116,33 +159,36 @@ sub create {
     $sql->columns([keys %$columns]);
     $sql->driver($dbh->{Driver}->{Name});
 
-    warn "$sql" if DEBUG;
-
-    my $sth = $dbh->prepare("$sql");
-    return unless $sth;
-
-    my $rv = $sth->execute(values %$columns);
-    return unless $rv && $rv eq '1';
-
     my $self = $class->new;
     $self->_dbh($dbh);
     $self->column(%$columns);
-    $self->is_in_db(1);
 
-    if (my $auto_increment = $class->schema->auto_increment) {
-        my $id =
-          $dbh->last_insert_id(undef, undef, $class->schema->table,
-            $auto_increment);
-        $self->column($auto_increment => $id);
-    }
+    return $self->txn(sub {
+        warn "$sql" if DEBUG;
 
-    $self->is_modified(0);
+        my $sth = $dbh->prepare("$sql");
+        return unless $sth;
 
-    while (my ($key, $value) = each %$related) {
-        $self->create_related($key => $value);
-    }
+        my $rv = $sth->execute(values %$columns);
+        return unless $rv && $rv eq '1';
 
-    return $self;
+        $self->is_in_db(1);
+
+        if (my $auto_increment = $class->schema->auto_increment) {
+            my $id =
+              $dbh->last_insert_id(undef, undef, $class->schema->table,
+                $auto_increment);
+            $self->column($auto_increment => $id);
+        }
+
+        $self->is_modified(0);
+
+        while (my ($key, $value) = each %$related) {
+            $self->{related}->{$key} = $self->create_related($key => $value);
+        }
+
+        return $self;
+    });
 }
 
 sub create_related {
@@ -160,12 +206,31 @@ sub create_related {
 
     push @params, @{$rel->where} if $rel->where;
 
-    return $self->{related}->{$name} = $rel->foreign_class->create(dbh => $dbh, %$data, @params);
+    if (ref $data eq 'ARRAY' && $rel->type ne 'has_many') {
+        Carp::croak qq/Relationship is not multiple/;
+    }
+
+    my $wantarray = wantarray;
+    return $self->txn(sub {
+        if ($rel->type eq 'has_many') {
+            my $result;
+            $data = [$data] unless ref $data eq 'ARRAY';
+            foreach my $d (@$data) {
+                push @$result, $rel->foreign_class->create(dbh => $dbh, %$d, @params);
+            }
+
+            return $wantarray ? @$result : $result;
+        }
+        else {
+            return $self->{related}->{$name} = $rel->foreign_class->create(dbh => $dbh, %$data, @params);
+        }
+    });
 }
 
 sub delete_related {
     my $self = shift;
     my $name = shift;
+    my %params = @_;
 
     my $rel = $self->schema->relationship($name);
 
@@ -180,11 +245,11 @@ sub delete_related {
 
     push @params, @{$rel->where} if $rel->where;
 
-    $rel->foreign_class->delete(dbh => $dbh, where => [@params]);
+    push @params, @{delete $params{where}} if $params{where};
 
     delete $self->{related}->{$name};
 
-    return $self;
+    return $rel->foreign_class->delete(dbh => $dbh, where => [@params], %params);
 }
 
 sub related {
@@ -200,10 +265,11 @@ sub related {
     if ($type eq 'has_one' || $type eq 'belongs_to') {
         #use Data::Dumper;
         #warn Dumper $self->find_related($name, first => 1);
-        return $self->{related}->{$name} = $self->find_related($name, first => 1);
+        return $self->find_related($name, first => 1);
     }
-
-    die "implement $type";
+    else {
+        return $self->find_related($name);
+    }
 }
 
 sub find {
@@ -310,11 +376,11 @@ sub find_related {
     my @where = ($to => $self->column($from));
 
     push @where, @{$rel->where} if $rel->where;
-    push @where, delete $params{where} if $params{where};
+    push @where, @{delete $params{where}} if $params{where};
 
-    my $found = $rel->foreign_class->find(dbh => $dbh, where => [@where], %params);
+    $params{first} = 1 if $rel->type =~ m/belongs_to/;
 
-    $self->{related} = $found;
+    return $rel->foreign_class->find(dbh => $dbh, where => [@where], %params);
 }
 
 sub update_column {
@@ -330,6 +396,8 @@ sub update {
     my %params = @_;
 
     my $dbh = delete $params{dbh} || $self->_dbh || $self->dbh;
+
+    Carp::croak qq/dbh is required/ unless $dbh;
 
     if ($self->is_modified) {
         Carp::croak "->update: no primary or unique keys specified"
@@ -357,10 +425,6 @@ sub update {
         $self->is_modified(0);
     }
 
-    while (my ($key, $value) = each %{$self->{related}}) {
-        $value->update(dbh => $dbh) if $value->is_modified;
-    }
-
     return $self;
 }
 
@@ -374,42 +438,46 @@ sub delete {
         Carp::croak "->delete: no primary or unique keys specified"
           unless $self->_are_primary_keys_set;
 
-        my @child_rel = $self->schema->child_relationships;
-        foreach my $name (@child_rel) {
-            my $related = $self->find_related($name);
-            while (my $r = $related->next) {
-                $r->delete(dbh => $dbh);
+        return $self->txn(sub {
+            my @child_rel = $self->schema->child_relationships;
+            foreach my $name (@child_rel) {
+                my $related = $self->find_related($name);
+                while (my $r = $related->next) {
+                    $r->delete(dbh => $dbh);
+                }
             }
-        }
 
-        my @columns = $self->columns;
-        my @keys = grep { $self->schema->is_primary_key($_) } @columns;
-        @keys = grep { $self->schema->is_unique_key($_) } @columns unless @keys;
+            my @columns = $self->columns;
+            my @keys = grep { $self->schema->is_primary_key($_) } @columns;
+            @keys = grep { $self->schema->is_unique_key($_) } @columns unless @keys;
 
-        my $sql = ObjectDB::SQL::Delete->new;
-        $sql->table($self->schema->table);
-        $sql->where(map { $_ => $self->column($_) } @keys);
+            my $sql = ObjectDB::SQL::Delete->new;
+            $sql->table($self->schema->table);
+            $sql->where([map { $_ => $self->column($_) } @keys]);
 
-        my $sth = $dbh->prepare("$sql");
-        return unless $sth;
+            warn "$sql" if DEBUG;
 
-        my $rv = $sth->execute(@{$sql->bind});
-        return unless $rv && $rv eq '1';
+            my $sth = $dbh->prepare("$sql");
+            return unless $sth;
 
-        $self->is_in_db(0);
+            my $rv = $sth->execute(@{$sql->bind});
+            return unless $rv && $rv eq '1';
+
+            $self->is_in_db(0);
+
+            return $self;
+        });
     }
     else {
-        my $found = $self->find(dbh => $dbh, @_);
-        use Data::Dumper;
-        while (my $r = $found->next) {
-        #warn Dumper $r;
-            $r->delete(dbh => $dbh);
-        }
+        return $self->txn(dbh => $dbh, sub {
+            my $found = $self->find(dbh => $dbh, %params);
+            while (my $r = $found->next) {
+                $r->delete(dbh => $dbh);
+            }
 
-        return 1;
+            return 1;
+        });
     }
-
-    return $self;
 }
 
 sub to_hash {
@@ -574,6 +642,7 @@ sub _row_to_object {
 
             #use Data::Dumper;
             my $object = $rel->foreign_class->new;
+            $object->_dbh($dbh);
             #warn Dumper $object->schema;
             my $source = shift @$sources;
             foreach my $column (@{$source->{columns}}) {

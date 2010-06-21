@@ -29,14 +29,14 @@ is($article->author->column('name'), 'foo', 'related object has right columns');
 
 $article->author->column(name => 'baz');
 ok($article->author->is_modified, 'related object is modified');
-$article->update;
+$article->author->update;
 $article = Article->find(dbh => $dbh, id => $article->id, with => 'author');
 is($article->author->column('name'), 'baz', 'related object is updated');
 
 $article = Article->find(dbh => $dbh, id => $article->id);
-$article->find_related('author');
-ok($article->author, 'related object is prefetched');
-is($article->author->column('name'), 'baz', 'related object has right columns');
+$author = $article->find_related('author');
+ok($author, 'related object is prefetched');
+is($author->column('name'), 'baz', 'related object has right columns');
 
 ok($article->delete, 'delete object');
 ok(!Article->find(dbh => $dbh, id => $article->id), 'object not available');

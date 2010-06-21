@@ -30,7 +30,7 @@ is($author->author_admin->column('beard'), 1, 'related object has right columns'
 
 $author->author_admin->column(beard => 0);
 ok($author->author_admin->is_modified, 'related object is modified');
-$author->update;
+$author->author_admin->update;
 $author = Author->find(dbh => $dbh, id => $author->id, with => 'author_admin');
 is($author->author_admin->column('beard'), 0, 'related object is updated');
 
@@ -43,9 +43,9 @@ ok($author->author_admin, 'create related object');
 is($author->author_admin->column('beard'), 0, 'related object is prefetched');
 
 $author = Author->find(dbh => $dbh, id => $author->id);
-$author->find_related('author_admin');
-ok($author->author_admin, 'related object is prefetched');
-is($author->author_admin->column('beard'), 0, 'related object has right columns');
+my $author_admin = $author->find_related('author_admin')->next;
+ok($author_admin, 'related object is prefetched');
+is($author_admin->column('beard'), 0, 'related object has right columns');
 
 ok($author->delete, 'delete object');
 ok(!Author->find(dbh => $dbh, id => $author->id), 'object not available');
