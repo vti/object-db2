@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 28;
 
 use lib 't/lib';
 
@@ -16,11 +16,15 @@ my $dbh = TestDB->dbh;
 my $author = Author->find(dbh => $dbh, id => 999);
 ok(!$author);
 
+is(Author->count(dbh => $dbh), 0);
+
 $author = Author->create(dbh => $dbh, name => 'foo');
 ok($author);
 ok($author->is_in_db);
 ok(!$author->is_modified);
 is_deeply($author->to_hash, {id => $author->id, name => 'foo'});
+
+is(Author->count(dbh => $dbh), 1);
 
 $author = Author->find(dbh => $dbh, id => $author->id);
 ok($author);
@@ -54,7 +58,12 @@ ok(!$author->is_in_db);
 $author = Author->find(dbh => $dbh, id => $author->id);
 ok(!$author);
 
-$author = Author->create(dbh => $dbh, name => 'foo');
+$author = Author->create(dbh => $dbh, name => 'bar');
 ok($author);
+
+is(Author->count(dbh => $dbh), 1);
+is(Author->count(dbh => $dbh, name => 'bar'), 1);
+
 Author->delete(dbh => $dbh);
 ok(!Author->find(dbh => $dbh, id => $author->id));
+is(Author->count(dbh => $dbh), 0);

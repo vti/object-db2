@@ -131,6 +131,33 @@ sub columns {
     return @columns;
 }
 
+sub count {
+    my $class = shift;
+    my %params = @_;
+
+    my $dbh = delete $params{dbh} || $class->dbh;
+    Carp::croak qq/dbh is required/ unless $dbh;
+
+    my $sql = ObjectDB::SQL::Select->new;
+
+    my $table = $class->schema->table;
+    my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
+    my $pk    = join(',', @pk);
+
+    $sql->source($table);
+    $sql->columns(\"COUNT(DISTINCT $pk)");
+
+    $sql->where(%params);
+
+    warn "$sql" if DEBUG;
+
+    my $hash_ref = $dbh->selectrow_hashref("$sql", {}, @{$sql->bind});
+    return unless $hash_ref && ref $hash_ref eq 'HASH';
+
+    my @values = values %$hash_ref;
+    return shift @values;
+}
+
 sub create {
     my $class = shift;
     my %params = @_;
