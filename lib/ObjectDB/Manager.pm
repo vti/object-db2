@@ -22,7 +22,26 @@ sub name_to_class {
     my $namespace = $self->namespace;
     $namespace ||= '';
 
-    my $class = $namespace . ObjectDB::Util->camelize($name);
+    my $class;
+
+    if ($name =~ m/^[A-Z]/) {
+        $class = $namespace . $name;
+    }
+    else {
+        $class = $namespace . ObjectDB::Util->table_to_class($name);
+
+        unless ($class->can('new')) {
+            my $package = <<"EOF";
+package $class;
+use base 'ObjectDB';
+__PACKAGE__->schema('$name');
+1;
+EOF
+
+            eval $package;
+            die qq/Couldn't initialize class "$class": $@/ if $@;
+        }
+    }
 
     ObjectDB::Loader->load($class);
 
