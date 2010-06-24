@@ -12,16 +12,16 @@ use TestDB;
 use Author;
 use Article;
 
-my $dbh = TestDB->dbh;
+my $conn = TestDB->conn;
 
-my $article = Article->find(dbh => $dbh, id => 999, with => 'author');
+my $article = Article->find(conn => $conn, id => 999, with => 'author');
 ok(!$article, 'unknown id');
 
-my $author = Author->create(dbh => $dbh, name => 'foo');
+my $author = Author->create(conn => $conn, name => 'foo');
 $article =
-  Article->create(dbh => $dbh, authors_id => $author->id, title => 'bar');
+  Article->create(conn => $conn, authors_id => $author->id, title => 'bar');
 
-$article = Article->find(dbh => $dbh, id => $article->id, with => 'author');
+$article = Article->find(conn => $conn, id => $article->id, with => 'author');
 ok($article, 'find with related object');
 is($article->column('title'), 'bar', 'object loaded');
 ok($article->author, 'related object loaded');
@@ -30,36 +30,36 @@ is($article->author->column('name'), 'foo', 'related object has right columns');
 $article->author->column(name => 'baz');
 ok($article->author->is_modified, 'related object is modified');
 $article->author->update;
-$article = Article->find(dbh => $dbh, id => $article->id, with => 'author');
+$article = Article->find(conn => $conn, id => $article->id, with => 'author');
 is($article->author->column('name'), 'baz', 'related object is updated');
 
-$article = Article->find(dbh => $dbh, id => $article->id);
+$article = Article->find(conn => $conn, id => $article->id);
 $author = $article->find_related('author');
 ok($author, 'related object is prefetched');
 is($author->column('name'), 'baz', 'related object has right columns');
 
 ok($article->delete, 'delete object');
-ok(!Article->find(dbh => $dbh, id => $article->id), 'object not available');
-ok(Author->find(dbh => $dbh, id => $author->id), 'related object available');
-Author->delete(dbh => $dbh);
-Article->delete(dbh => $dbh);
+ok(!Article->find(conn => $conn, id => $article->id), 'object not available');
+ok(Author->find(conn => $conn, id => $author->id), 'related object available');
+Author->delete(conn => $conn);
+Article->delete(conn => $conn);
 
-$author = Author->create(dbh => $dbh, name => 'foo');
-Article->create(dbh => $dbh, title => 'foo', authors_id => $author->id);
-$author = Author->create(dbh => $dbh, name => 'bar');
-Article->create(dbh => $dbh, title => 'bar', authors_id => $author->id);
-$author = Author->create(dbh => $dbh, name => 'baz');
-Article->create(dbh => $dbh, title => 'baz', authors_id => $author->id);
+$author = Author->create(conn => $conn, name => 'foo');
+Article->create(conn => $conn, title => 'foo', authors_id => $author->id);
+$author = Author->create(conn => $conn, name => 'bar');
+Article->create(conn => $conn, title => 'bar', authors_id => $author->id);
+$author = Author->create(conn => $conn, name => 'baz');
+Article->create(conn => $conn, title => 'baz', authors_id => $author->id);
 
-my @articles = Article->find(dbh => $dbh, where => ['author.name' => 'foo']);
+my @articles = Article->find(conn => $conn, where => ['author.name' => 'foo']);
 is(@articles, 1);
 ok(!$articles[0]->{related}->{author});
 is($articles[0]->author->column('name'), 'foo');
 
-@articles = Article->find(dbh => $dbh, where => ['author.name' => 'baz'], with => 'author');
+@articles = Article->find(conn => $conn, where => ['author.name' => 'baz'], with => 'author');
 is(@articles, 1);
 ok($articles[0]->{related}->{author});
 is($articles[0]->author->column('name'), 'baz');
 
-Article->delete(dbh => $dbh);
-Author->delete(dbh => $dbh);
+Article->delete(conn => $conn);
+Author->delete(conn => $conn);

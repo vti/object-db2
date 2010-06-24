@@ -11,9 +11,9 @@ use TestDB;
 
 use ObjectDB::Manager;
 
-my $dbh = TestDB->dbh;
+my $conn = TestDB->conn;
 
-my $manager = ObjectDB::Manager->new(dbh => $dbh);
+my $manager = ObjectDB::Manager->new(conn => $conn);
 
 my $author = $manager->create(author => name => 'foo');
 ok($author);

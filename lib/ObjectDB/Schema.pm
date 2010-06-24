@@ -44,46 +44,52 @@ sub build {
 
 sub auto_discover {
     my $self = shift;
-    my $dbh = shift;
+    my $conn = shift;
 
-    Carp::croak qq/dbh is required for automatic column discovery/
-      unless $dbh;
+    Carp::croak qq/Connector is required for automatic column discovery/
+      unless $conn;
 
-    local $dbh->{'FetchHashKeyName'} = 'NAME';
+    #local $dbh->{'FetchHashKeyName'} = 'NAME';
 
-    my $sth = $dbh->table_info(undef, 'main', $self->table);
-    my $sql;
-    while (my $table_info = $sth->fetchrow_hashref) {
-        $sql = $table_info->{sqlite_sql};
-        last if $sql;
-    }
+    $conn->run(
+        sub {
+            my $dbh = shift;
 
-    if ($sql) {
-        if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
-            my @uk = split ',' => $unique;
-            foreach my $uk (@uk) {
-                $self->unique_key($self->_unquote($uk));
+            my $sth = $dbh->table_info(undef, 'main', $self->table);
+            my $sql;
+            while (my $table_info = $sth->fetchrow_hashref) {
+                $sql = $table_info->{sqlite_sql};
+                last if $sql;
             }
-        }
 
-        foreach my $part (split '\n' => $sql) {
-            if ($part =~ m/AUTO_?INCREMENT/i) {
-                if ($part =~ m/^\s*`(.*?)`/) {
-                    $self->auto_increment($1);
+            if ($sql) {
+                if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
+                    my @uk = split ',' => $unique;
+                    foreach my $uk (@uk) {
+                        $self->unique_key($self->_unquote($uk));
+                    }
+                }
+
+                foreach my $part (split '\n' => $sql) {
+                    if ($part =~ m/AUTO_?INCREMENT/i) {
+                        if ($part =~ m/^\s*`(.*?)`/) {
+                            $self->auto_increment($1);
+                        }
+                    }
                 }
             }
+
+            $sth = $dbh->column_info(undef, 'main', $self->table, '%');
+            while (my $col_info = $sth->fetchrow_hashref) {
+                $self->column($self->_unquote($col_info->{COLUMN_NAME}));
+            }
+
+            $sth = $dbh->primary_key_info(undef, 'main', $self->table);
+            while (my $col_info = $sth->fetchrow_hashref) {
+                $self->primary_key($self->_unquote($col_info->{COLUMN_NAME}));
+            }
         }
-    }
-
-    $sth = $dbh->column_info(undef, 'main', $self->table, '%');
-    while (my $col_info = $sth->fetchrow_hashref) {
-        $self->column($self->_unquote($col_info->{COLUMN_NAME}));
-    }
-
-    $sth = $dbh->primary_key_info(undef, 'main', $self->table);
-    while (my $col_info = $sth->fetchrow_hashref) {
-        $self->primary_key($self->_unquote($col_info->{COLUMN_NAME}));
-    }
+    );
 }
 
 sub primary_key {
@@ -170,6 +176,7 @@ sub column {
     push @{$self->columns}, $name;
 }
 
+sub proxy          { shift->_new_relationship('proxy'          => @_) }
 sub has_one        { shift->_new_relationship('has_one'        => @_) }
 sub belongs_to_one { shift->_new_relationship('belongs_to_one' => @_) }
 sub belongs_to     { shift->_new_relationship('belongs_to'     => @_) }
@@ -187,7 +194,8 @@ sub _new_relationship {
     my $class = 'ObjectDB::Relationship::' . ObjectDB::Util->camelize($type);
     ObjectDB::Loader->load($class);
 
-    my $rel = $class->new(name => $name, class => $self->class, @_);
+    my $args = @_ == 1 ? $_[0] : {@_};
+    my $rel = $class->new(name => $name, class => $self->class, %$args);
 
     $self->relationships->{$name} = $rel;
 

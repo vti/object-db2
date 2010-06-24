@@ -17,7 +17,7 @@ my $rel = ObjectDB::Relationship::HasAndBelongsToMany->new(
 );
 ok($rel);
 
-$rel->build(TestDB->dbh);
+$rel->build(TestDB->conn);
 
 is($rel->foreign_table, 'tags');
 

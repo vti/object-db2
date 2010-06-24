@@ -5,20 +5,21 @@ use warnings;
 
 use DBI;
 use File::Spec;
+use ObjectDB::Connector;
 
 my $dbi = 'dbi:SQLite';
 
 #sub _database { File::Spec->catfile(File::Spec->tmpdir, 'object_db.db') }
-sub _database { 'object_db.db' }
+sub _database {'object_db.db'}
 
 sub cleanup { !$ENV{TEST_MYSQL} && unlink _database() }
 
-our $dbh;
+our $conn;
 
-sub dbh {
+sub conn {
     my $self = shift;
 
-    return $dbh if $dbh;
+    return $conn if $conn;
 
     my @args = ();
 
@@ -30,15 +31,15 @@ sub dbh {
         push @args, 'dbi:SQLite:' . _database();
     }
 
-    $dbh = DBI->connect_cached(@args);
-    die $DBI::errorstr unless $dbh;
+    $conn = ObjectDB::Connector->new(@args);
+    die $DBI::errorstr unless $conn;
 
     unless ($ENV{TEST_MYSQL}) {
-        $dbh->do("PRAGMA default_synchronous = OFF");
-        $dbh->do("PRAGMA temp_store = MEMORY");
+        $conn->run(sub { $_->do("PRAGMA default_synchronous = OFF") });
+        $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
     }
 
-    return $dbh;
+    return $conn;
 }
 
 1;

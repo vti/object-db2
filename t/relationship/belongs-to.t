@@ -18,7 +18,7 @@ my $rel = ObjectDB::Relationship::BelongsTo->new(
 );
 ok($rel);
 
-$rel->build(TestDB->dbh);
+$rel->build(TestDB->conn);
 
 is($rel->foreign_table, 'authors');
 

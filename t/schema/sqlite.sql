@@ -1,5 +1,8 @@
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
+CREATE TABLE `dummies` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT
+);
 CREATE TABLE `authors` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `name` varchar(40) default '',
@@ -24,5 +27,17 @@ CREATE TABLE `article_tag_maps` (
 CREATE TABLE `tags` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `name` varchar(40) default ''
+);
+CREATE TABLE `nested_comments` (
+ `id`          INTEGER PRIMARY KEY AUTOINCREMENT,
+ `parent_id`   INTEGER,
+ `master_id`   INTEGER NOT NULL,
+ `master_type` VARCHAR(20) NOT NULL ,
+ `path`        VARCHAR(255),
+ `level`       INTEGER NOT NULL ,
+ `content`     VARCHAR(1024) NOT NULL,
+ `addtime`     INTEGER NOT NULL,
+ `lft`         INTEGER NOT NULL,
+ `rgt`         INTEGER NOT NULL
 );
 COMMIT;

@@ -1,9 +1,14 @@
 #!/usr/bin/env perl
 
+package Dummy;
+use base 'ObjectDB';
+
+package main;
+
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 18;
 
 use lib 't/lib';
 
@@ -11,10 +16,10 @@ use TestDB;
 
 use_ok('ObjectDB::Schema');
 
-my $dbh = TestDB->dbh;
+my $conn = TestDB->conn;
 
 my $schema = ObjectDB::Schema->new(class => 'Author');
-$schema->build($dbh);
+$schema->build($conn);
 $schema->has_one('foo');
 $schema->belongs_to('bar');
 
@@ -34,3 +39,8 @@ ok(!$schema->is_column('foo'));
 
 is_deeply([$schema->child_relationships], [qw/foo/]);
 is_deeply([$schema->parent_relationships], [qw/bar/]);
+
+Dummy->schema->build($conn);
+is(Dummy->schema->class, 'Dummy');
+is(Dummy->schema->table, 'dummies');
+is(Dummy->schema->auto_increment, 'id');

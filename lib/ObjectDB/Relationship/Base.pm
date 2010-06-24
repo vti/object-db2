@@ -52,4 +52,6 @@ sub build {
     $self->is_built(1);
 }
 
+sub _build {}
+
 1;

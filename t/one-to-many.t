@@ -12,10 +12,10 @@ use TestDB;
 use Author;
 use Article;
 
-my $dbh = TestDB->dbh;
+my $conn = TestDB->conn;
 
 my $author = Author->create(
-    dbh      => $dbh,
+    conn      => $conn,
     name     => 'foo',
     articles => [{title => 'bar'}, {title => 'baz'}]
 );
@@ -23,13 +23,13 @@ is(@{$author->articles}, 2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
 
-$author = Author->find(dbh => $dbh, id => $author->id);
+$author = Author->find(conn => $conn, id => $author->id);
 my @articles = $author->articles;
 is(@articles, 2);
 is($articles[0]->column('title'), 'bar');
 is($articles[1]->column('title'), 'baz');
 
-$author = Author->find(dbh => $dbh, id => $author->id);
+$author = Author->find(conn => $conn, id => $author->id);
 ok($author->delete_related('articles' => where => [title => 'bar']));
 @articles = $author->articles;
 is(@articles, 1);
@@ -39,10 +39,10 @@ is($articles[0]->column('title'), 'baz');
 is(@articles, 1);
 is($articles[0]->column('title'), 'bar');
 
-$author = Author->find(dbh => $dbh, id => $author->id);
+$author = Author->find(conn => $conn, id => $author->id);
 my $article = $author->find_related('articles' => where => [title => 'bar'])->next;
 ok($article);
 is($article->column('title'), 'bar');
 
-$author->delete(dbh => $dbh);
-ok(!Article->find(dbh => $dbh)->next);
+$author->delete(conn => $conn);
+ok(!Article->find(conn => $conn)->next);

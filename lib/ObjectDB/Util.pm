@@ -7,6 +7,8 @@ sub camelize {
     shift;
     my $string = shift;
 
+    return unless $string;
+
     my @parts;
     foreach my $module (split '-' => $string) {
         push @parts, join '' => map {ucfirst} split _ => $module;

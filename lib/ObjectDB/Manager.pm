@@ -5,7 +5,7 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr('dbh');
+__PACKAGE__->attr('conn');
 __PACKAGE__->attr('namespace');
 
 use ObjectDB::Util;
@@ -16,6 +16,8 @@ our $AUTOLOAD;
 sub name_to_class {
     my $self = shift;
     my $name = shift;
+
+    return unless $name;
 
     my $namespace = $self->namespace;
     $namespace ||= '';
@@ -33,6 +35,8 @@ sub AUTOLOAD {
 
     my $method = $AUTOLOAD;
 
+    return unless $method;
+
     return if $method =~ /^[A-Z]+?$/;
     return if $method =~ /^_/;
     return if $method =~ /(?:\:*?)DESTROY$/;
@@ -40,7 +44,7 @@ sub AUTOLOAD {
     $method = (split '::' => $method)[-1];
 
     my $class = $self->name_to_class($name);
-    return $class->$method(dbh => $self->dbh, @_);
+    return $class->$method(conn => $self->conn, @_);
 }
 
 1;
