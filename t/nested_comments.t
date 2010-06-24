@@ -97,3 +97,5 @@ foreach my $content (qw/1 4 2 5 7 3 6 8 9/) {
     my $comment = shift @comments;
     is($comment->column('content'), $content);
 }
+
+$master->delete;
