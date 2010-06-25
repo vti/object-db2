@@ -46,3 +46,14 @@ is($article->column('title'), 'bar');
 
 $author->delete(conn => $conn);
 ok(!Article->find(conn => $conn)->next);
+
+#$author = Author->create(
+    #conn      => $conn,
+    #name     => 'foo',
+    #articles => [{title => 'bar'}, {title => 'baz'}]
+#);
+#$author = Author->find(conn => $conn, id => $author->id, with => 'articles');
+#is(@{$author->articles}, 2);
+#is($author->articles->[0]->column('title'), 'bar');
+#is($author->articles->[1]->column('title'), 'baz');
+#$author->delete(conn => $conn);

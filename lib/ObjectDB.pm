@@ -320,8 +320,11 @@ sub find {
 
     $sql->order_by($params{order_by}) if $params{order_by};
 
-    if ($params{with}) {
-        $class->_resolve_with(with => $params{with}, sql => $sql);
+    my $subreq;
+    my $with = $params{with};
+    if ($with) {
+        $with = $class->_normalize_with($with);
+        $class->_resolve_with(with => $with, sql => $sql);
     }
 
     warn "$sql" if DEBUG;
@@ -340,15 +343,17 @@ sub find {
                 my $rows = $sth->fetchall_arrayref;
                 return () unless $rows && @$rows;
 
+                my @pk;
                 my @result;
                 foreach my $row (@$rows) {
-                    push @result,
-                      $class->_row_to_object(
+                    my $object = $class->_row_to_object(
                         conn  => $conn,
                         row  => $row,
                         sql  => $sql,
-                        with => $params{with}
+                        with => $with
                       );
+                    push @result, $object;
+                    push @pk, $object->primary_keys_values if $subreq;
                 }
 
                 return @result;
@@ -361,7 +366,7 @@ sub find {
                     conn  => $conn,
                     row  => $rows->[0],
                     sql  => $sql,
-                    with => $params{with}
+                    with => $with
                 );
             }
             else {
@@ -374,7 +379,7 @@ sub find {
                             conn  => $conn,
                             row  => [@row],
                             sql  => $sql,
-                            with => $params{with}
+                            with => $with
                         );
                     }
                 );
@@ -643,33 +648,56 @@ sub _resolve_with {
 
     return unless $with;
 
-    $with = [$with] unless ref $with eq 'ARRAY';
-    $with = $class->_fix_with($with);
-
     use Data::Dumper;
+    #warn Dumper $with;
 
-    foreach my $name (@$with) {
-        my @names = split /\./ => $name;
+    foreach my $w (@$with) {
+        my @names = split /\./ => $w->{name};
         my $parent = $class;
         while (my $name = shift @names) {
             my $rel = $parent->schema->relationship($name);
 
-            $sql->source($rel->to_source);
-            $sql->columns($rel->foreign_class->schema->columns);
+            if ($rel->type eq 'has_many') {
+                die;
+            }
+            else {
+                $sql->source($rel->to_source);
+                if (@names || !$w->{columns}) {
+                    $sql->columns($rel->foreign_class->schema->columns);
+                }
+                else {
+                    $sql->columns($rel->foreign_class->schema->primary_keys);
+                    $sql->columns($w->{columns});
+                }
 
-            $parent = $rel->foreign_class;
+                $parent = $rel->foreign_class;
+            }
         }
     }
 
     #die Dumper $sql;
 }
 
-sub _fix_with {
+sub _normalize_with {
     my $class = shift;
     my $with  = shift;
 
+    $with = [$with] unless ref $with eq 'ARRAY';
+
+    my %with;
+    my $last_key;
+    foreach my $name (@$with) {
+        if (ref($name) eq 'HASH') {
+            $with{$last_key} = {%{$with{$last_key}}, %$name};
+        }
+        else {
+            $with{$name} = {name => $name};
+            $last_key = $name;
+        }
+    }
+
     my $parts = {};
-    foreach my $rel (@$with) {
+    foreach my $rel (keys %with) {
         while ($rel =~ s/^(\w+)\.?//) {
             my $parent = $1;
             $parts->{$parent} = 1;
@@ -680,7 +708,23 @@ sub _fix_with {
         }
     }
 
-    return [sort keys %$parts];
+    my $normalized_with = [];
+    foreach my $part (sort keys %$parts) {
+        push @$normalized_with, $with{$part} || {name => $part};
+    }
+
+    return $normalized_with;
+}
+
+sub primary_keys_values {
+    my $self = shift;
+
+    my $pk;
+    foreach my $pk (@{$self->schema->primary_keys}) {
+        push @$pk, $self->column($pk);
+    }
+
+    return $pk;
 }
 
 sub _are_primary_keys_set {
@@ -719,11 +763,10 @@ sub _row_to_object {
     my $sources = [@{$sql->sources}];
     shift @$sources;
 
-    $with = [$with] unless ref $with eq 'ARRAY';
-    foreach my $name (@$with) {
-        next unless $name;
+    foreach my $w (@$with) {
+        next unless $w;
 
-        my @names = split /\./ => $name;
+        my @names = split /\./ => $w->{name};
         my $parent = $self;
         foreach my $name (@names) {
             my $rel = $parent->schema->relationship($name);

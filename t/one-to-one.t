@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 27;
+use Test::More tests => 30;
 
 use lib 't/lib';
 
@@ -64,6 +64,15 @@ is($authors[0]->author_admin->column('beard'), 1);
 is(@authors, 1);
 ok($authors[0]->{related}->{author_admin});
 is($authors[0]->author_admin->column('beard'), 0);
+
+@authors = Author->find(
+    conn  => $conn,
+    where => ['author_admin.beard' => 0],
+    with  => ['author_admin' => {columns => 'authors_id'}]
+);
+is(@authors, 1);
+ok($authors[0]->{related}->{author_admin});
+ok(not defined $authors[0]->author_admin->column('beard'));
 
 Author->delete(conn => $conn);
 ok(!AuthorAdmin->find(conn => $conn)->next);
