@@ -19,6 +19,11 @@ CREATE TABLE `articles` (
  `authors_id` INTEGER,
  `title` varchar(40) default ''
 );
+CREATE TABLE `comments` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `articles_id` INTEGER,
+ `content` varchar(40) default ''
+);
 CREATE TABLE `article_tag_maps` (
  `articles_id` INTEGER,
  `tags_id` INTEGER,

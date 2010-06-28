@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 32;
 
 use lib 't/lib';
 
@@ -11,6 +11,7 @@ use TestDB;
 
 use Author;
 use Article;
+use Comment;
 
 my $conn = TestDB->conn;
 
@@ -77,5 +78,31 @@ is(@articles, 1);
 ok($articles[0]->{related}->{author});
 ok(not defined $articles[0]->author->column('name'));
 
+Article->delete(conn => $conn);
+Author->delete(conn => $conn);
+
+$author = Author->create(
+    conn => $conn,
+    name     => 'foo',
+    articles => {title => 'bar', comments => {content => 'baz'}}
+);
+my @comments = Comment->find(conn => $conn, with => 'article');
+is(@comments, 1);
+is($comments[0]->column('content'), 'baz');
+is($comments[0]->article->column('title'), 'bar');
+
+@comments = Comment->find(conn => $conn, with => 'article.author');
+is(@comments, 1);
+is($comments[0]->column('content'), 'baz');
+ok(not defined $comments[0]->article->column('title'));
+is($comments[0]->article->author->column('name'), 'foo');
+
+@comments = Comment->find(conn => $conn, with => [qw/article article.author/]);
+is(@comments, 1);
+is($comments[0]->column('content'), 'baz');
+is($comments[0]->article->column('title'), 'bar');
+is($comments[0]->article->author->column('name'), 'foo');
+
+Comment->delete(conn => $conn);
 Article->delete(conn => $conn);
 Author->delete(conn => $conn);

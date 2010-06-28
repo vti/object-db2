@@ -20,6 +20,8 @@ use ObjectDB::SQL::Insert;
 use ObjectDB::SQL::Select;
 use ObjectDB::SQL::Update;
 
+use Data::Dumper;
+
 sub new {
     my $self   = shift->SUPER::new;
 
@@ -154,6 +156,8 @@ sub create {
     my %params = @_;
 
     my $self = ref($class) ? $class : $class->new(%params);
+
+    Carp::croak qq/Connector required/ unless $self->conn;
 
     my $sql = ObjectDB::SQL::Insert->new;
     $sql->table($class->schema->table);
@@ -320,18 +324,18 @@ sub find {
 
     $sql->order_by($params{order_by}) if $params{order_by};
 
-    my $subreq;
-    my $with = $params{with};
-    if ($with) {
+    my $subreq = [];
+    my $with;
+    if ($with = $params{with}) {
         $with = $class->_normalize_with($with);
-        $class->_resolve_with(with => $with, sql => $sql);
+        $class->_resolve_with(with => $with, sql => $sql, subreq => $subreq);
     }
-
-    warn "$sql" if DEBUG;
 
     return $conn->run(
         sub {
             my ($dbh, $wantarray) = @_;
+
+            warn "$sql" if DEBUG;
 
             my $sth = $dbh->prepare("$sql");
             return unless $sth;
@@ -353,7 +357,46 @@ sub find {
                         with => $with
                       );
                     push @result, $object;
-                    push @pk, $object->primary_keys_values if $subreq;
+                    push @pk, @{$object->primary_keys_values} if @$subreq;
+                }
+
+                #warn Dumper \@pk;
+
+                if ($subreq && @$subreq) {
+                    my $ids = [@pk];
+                    for (my $i = 0; $i < @$subreq; $i += 2) {
+                        my $name = $subreq->[$i];
+                        my $args = $subreq->[$i + 1];
+
+                        my $rel = $class->schema->relationship($name);
+
+                        my $related = [
+                            $class->find_related(
+                                $name => conn => $conn,
+                                ids   => $ids,
+                                with  => $args->{nested}
+                            )
+                        ];
+
+                        my ($from, $to) = %{$rel->map};
+
+                        my $set;
+                        foreach my $o (@$related) {
+                            my $id = $o->column($to);
+                            $set->{$id} ||= [];
+                            push @{$set->{$id}}, $o;
+
+                        }
+
+                        #warn Dumper $set;
+                        #$related = {map { $_->id => $_ } @$related};
+
+                        foreach my $o (@result) {
+                            $o->{related}->{$name} = [];
+                            #warn Dumper $o;
+                            push @{$o->{related}->{$name}}, @{$set->{$o->id}};
+                        }
+                    }
                 }
 
                 return @result;
@@ -362,12 +405,27 @@ sub find {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
-                return $class->_row_to_object(
+                my $object = $class->_row_to_object(
                     conn  => $conn,
                     row  => $rows->[0],
                     sql  => $sql,
                     with => $with
                 );
+
+                return $object unless $subreq && @$subreq;
+
+                my $ids = [$object->id];
+                for (my $i = 0; $i < @$subreq; $i += 2) {
+                    my $name = $subreq->[$i];
+                    my $args = $subreq->[$i + 1];
+
+                    my $rel = $class->schema->relationship($name);
+                    $object->{related}->{$rel->name} =
+                        [$class->find_related($name => conn => $object->conn,
+                            ids => $ids, with => $args->{nested})];
+                }
+
+                return $object;
             }
             else {
                 return ObjectDB::Iterator->new(
@@ -389,23 +447,40 @@ sub find {
 }
 
 sub find_related {
-    my $self   = shift;
+    my $class  = shift;
     my $name   = shift;
     my %params = @_;
 
-    my $rel = $self->schema->relationship($name);
+    my $rel = $class->schema->relationship($name);
 
     my ($from, $to) = %{$rel->map};
 
-    my @where = ($to => $self->column($from));
+    my $conn;
+
+    my @where;
+    if (ref($class)) {
+        my $self = $class;
+
+        $conn = $self->conn;
+
+        Carp::croak qq/$from is required for find_related/ unless $self->column($from);
+
+        @where = ($to => $self->column($from));
+
+        $params{first} = 1 if $rel->type =~ m/belongs_to/;
+    }
+    else {
+        $conn = $params{conn} || $class->init_conn;
+        Carp::croak qq/Connector is required/ unless $conn;
+
+        @where = ($to => [@{delete $params{ids}}]);
+    }
 
     push @where, @{$rel->where}           if $rel->where;
     push @where, @{delete $params{where}} if $params{where};
 
-    $params{first} = 1 if $rel->type =~ m/belongs_to/;
-
     return $rel->foreign_class->find(
-        conn  => $self->conn,
+        conn  => $conn,
         where => [@where],
         %params
     );
@@ -643,39 +718,47 @@ sub _resolve_with {
     my $class  = shift;
     my %params = @_;
 
-    my $with = $params{with};
-    my $sql  = $params{sql};
+    my $with   = $params{with};
+    my $sql    = $params{sql};
+    my $subreq = $params{subreq};
 
     return unless $with;
 
-    use Data::Dumper;
-    #warn Dumper $with;
+    my $walker;
+    $walker = sub {
+        my ($class, $with) = @_;
 
-    foreach my $w (@$with) {
-        my @names = split /\./ => $w->{name};
-        my $parent = $class;
-        while (my $name = shift @names) {
-            my $rel = $parent->schema->relationship($name);
+        for (my $i = 0; $i < @$with; $i += 2) {
+            my $name = $with->[$i];
+            my $args = $with->[$i + 1];
+
+            my $rel = $class->schema->relationship($name);
 
             if ($rel->type eq 'has_many') {
-                die;
+                push @$subreq, ($name => $args);
             }
             else {
                 $sql->source($rel->to_source);
-                if (@names || !$w->{columns}) {
+
+                if ($args->{auto}) {
+                    $sql->columns($rel->foreign_class->schema->primary_keys);
+                }
+                elsif (!$args->{columns}) {
                     $sql->columns($rel->foreign_class->schema->columns);
                 }
                 else {
                     $sql->columns($rel->foreign_class->schema->primary_keys);
-                    $sql->columns($w->{columns});
+                    $sql->columns($args->{columns});
                 }
 
-                $parent = $rel->foreign_class;
+                if (my $subwith = $args->{nested}) {
+                    $walker->($rel->foreign_class, $subwith);
+                }
             }
         }
-    }
+    };
 
-    #die Dumper $sql;
+    $walker->($class, $with);
 }
 
 sub _normalize_with {
@@ -691,37 +774,46 @@ sub _normalize_with {
             $with{$last_key} = {%{$with{$last_key}}, %$name};
         }
         else {
-            $with{$name} = {name => $name};
+            $with{$name} = {};
             $last_key = $name;
         }
     }
 
     my $parts = {};
     foreach my $rel (keys %with) {
+        my $name = '';
+        my $parent = $parts;
         while ($rel =~ s/^(\w+)\.?//) {
-            my $parent = $1;
-            $parts->{$parent} = 1;
-            while ($rel =~ s/^(\w+)\.?//) {
-                $parent .= '.' . $1;
-                $parts->{$parent} = 1;
-            }
+            $name .= $name ? '.' . $1 : $1;
+            $parent->{$1} ||= $with{$name} || {auto => 1};
+            $parent = $parent->{$1}->{nested} = {} if $rel;
         }
     }
 
-    my $normalized_with = [];
-    foreach my $part (sort keys %$parts) {
-        push @$normalized_with, $with{$part} || {name => $part};
-    }
+    my $walker; $walker = sub {
+        my $parts = shift;
 
-    return $normalized_with;
+        my $rv;
+        foreach my $key (sort keys %$parts) {
+            push @$rv, ($key => $parts->{$key});
+
+            if (my $subparts = $parts->{$key}->{nested}) {
+                $rv->[-1]->{nested} = $walker->($subparts);
+            }
+        }
+
+        return $rv;
+    };
+
+    return $walker->($parts);
 }
 
 sub primary_keys_values {
     my $self = shift;
 
     my $pk;
-    foreach my $pk (@{$self->schema->primary_keys}) {
-        push @$pk, $self->column($pk);
+    foreach my $name (@{$self->schema->primary_keys}) {
+        push @$pk, $self->column($name);
     }
 
     return $pk;
@@ -763,40 +855,41 @@ sub _row_to_object {
     my $sources = [@{$sql->sources}];
     shift @$sources;
 
-    foreach my $w (@$with) {
-        next unless $w;
+    #use Data::Dumper;
+    #warn Dumper $with;
 
-        my @names = split /\./ => $w->{name};
-        my $parent = $self;
-        foreach my $name (@names) {
-            my $rel = $parent->schema->relationship($name);
+    $with ||= [];
 
-            #use Data::Dumper;
+    my $walker; $walker = sub {
+        my ($self, $with) = @_;
+
+        for (my $i = 0; $i < @$with; $i += 2) {
+            my $name = $with->[$i];
+            my $args = $with->[$i + 1];
+
+            my $rel = $self->schema->relationship($name);
             my $object = $rel->foreign_class->new;
             $object->conn($conn);
 
-            #warn Dumper $object->schema;
             my $source = shift @$sources;
             foreach my $column (@{$source->{columns}}) {
                 $object->column($column => shift @$row);
             }
+
             $object->is_modified(0);
+            $self->{related}->{$name} = $object;
 
-            #warn 'v' x 20;
-            #die Dumper $object->schema;
-
-            #warn 'SAVE';
-            $parent->{related}->{$name} = $object;
-
-            $parent = $rel->foreign_class;
+            if (my $subwith = $args->{nested}) {
+                $walker->($object, $subwith);
+            }
         }
-    }
+    };
+
+    $walker->($self, $with);
 
     #use Data::Dumper;
     #warn Dumper $row;
     Carp::croak qq/Not all the rows are mapped to the object/ if @$row;
-
-    #die Dumper $self;
 
     $self->is_in_db(1);
     $self->is_modified(0);

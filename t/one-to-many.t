@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 23;
 
 use lib 't/lib';
 
@@ -47,13 +47,34 @@ is($article->column('title'), 'bar');
 $author->delete(conn => $conn);
 ok(!Article->find(conn => $conn)->next);
 
-#$author = Author->create(
-    #conn      => $conn,
-    #name     => 'foo',
-    #articles => [{title => 'bar'}, {title => 'baz'}]
-#);
-#$author = Author->find(conn => $conn, id => $author->id, with => 'articles');
-#is(@{$author->articles}, 2);
-#is($author->articles->[0]->column('title'), 'bar');
-#is($author->articles->[1]->column('title'), 'baz');
-#$author->delete(conn => $conn);
+$author = Author->create(
+    conn     => $conn,
+    name     => 'foo',
+    articles => [
+        {   title    => 'bar',
+            comments => [{content => 'foo'}, {content => 'bar'}]
+        },
+        {title => 'baz', comments => {content => 'baz'}}
+    ]
+);
+
+@articles = Author->find_related('articles', conn => $conn, ids => [$author->id]);
+is(@articles, 2);
+
+$author = Author->find(conn => $conn, id => $author->id, with => 'articles');
+is(@{$author->articles}, 2);
+is($author->articles->[0]->column('title'), 'bar');
+is($author->articles->[1]->column('title'), 'baz');
+
+$author = Author->find(
+    conn => $conn,
+    id   => $author->id,
+    with => [qw/articles articles.comments/]
+);
+is(@{$author->articles}, 2);
+is($author->articles->[0]->column('title'), 'bar');
+is(@{$author->articles->[0]->comments}, 2);
+is($author->articles->[1]->column('title'), 'baz');
+is(@{$author->articles->[1]->comments}, 1);
+
+$author->delete(conn => $conn);
