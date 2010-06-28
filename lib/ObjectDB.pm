@@ -331,9 +331,9 @@ sub find {
         $class->_resolve_with(with => $with, sql => $sql, subreq => $subreq);
     }
 
-    return $conn->run(
+    return $conn->txn(
         sub {
-            my ($dbh, $wantarray) = @_;
+            my ($dbh) = @_;
 
             warn "$sql" if DEBUG;
 
@@ -343,7 +343,7 @@ sub find {
             my $rv = $sth->execute(@{$sql->bind});
             return unless $rv;
 
-            if ($wantarray) {
+            if (wantarray) {
                 my $rows = $sth->fetchall_arrayref;
                 return () unless $rows && @$rows;
 
