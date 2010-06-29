@@ -449,6 +449,18 @@ sub find {
     );
 }
 
+sub find_or_create {
+    my $class = shift;
+    my %params = @_;
+
+    my $conn = delete $params{conn} || $class->init_conn;
+
+    my $self = $class->find(conn => $conn, where => [%params], single => 1);
+    return $self if $self;
+
+    return $class->create(conn => $conn, %params);
+}
+
 sub find_related {
     my $class  = shift;
     my $name   = shift;

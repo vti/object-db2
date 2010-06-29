@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 39;
+use Test::More tests => 48;
 
 use lib 't/lib';
 
@@ -92,5 +92,23 @@ is($authors[2]->column('name'), 'bar');
 @authors = Author->find(conn => $conn, limit => 1, order_by => 'name ASC');
 is(@authors, 1);
 is($authors[0]->column('name'), 'bar');
+
+Author->delete(conn => $conn);
+
+$author = Author->find_or_create(conn => $conn, name => 'foo');
+ok($author);
+ok($author->id);
+is($author->column('name'), 'foo');
+
+my $id = $author->id;
+$author = Author->find_or_create(conn => $conn, name => 'foo');
+ok($author);
+is($author->id, $id);
+is($author->column('name'), 'foo');
+
+$author = Author->find_or_create(conn => $conn, name => 'bar');
+ok($author);
+ok($author->id != $id);
+is($author->column('name'), 'bar');
 
 Author->delete(conn => $conn);
