@@ -129,7 +129,7 @@ sub count {
 
     my $table = $class->schema->table;
     my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
-    my $pk    = join(',', @pk);
+    my $pk    = join(' || ', @pk);
 
     $sql->source($table);
     $sql->columns(\"COUNT(DISTINCT $pk)");
@@ -214,7 +214,9 @@ sub create_related {
     my @params = ($to => $self->column($from));
     push @params, @{$rel->where} if $rel->where;
 
-    if (ref $data eq 'ARRAY' && $rel->type ne 'has_many') {
+    if (ref $data eq 'ARRAY'
+        && (!$rel->is_has_many && !$rel->is_has_and_belongs_to_many))
+    {
         Carp::croak qq/Relationship is not multiple/;
     }
 
@@ -222,7 +224,7 @@ sub create_related {
     my $conn = $self->conn;
     return $conn->txn(
         sub {
-            if ($rel->type eq 'has_many') {
+            if ($rel->is_has_many) {
                 my $result;
                 $data = [$data] unless ref $data eq 'ARRAY';
                 foreach my $d (@$data) {
@@ -233,6 +235,28 @@ sub create_related {
                 }
 
                 return $wantarray ? @$result : $result;
+            }
+            elsif ($rel->is_has_and_belongs_to_many) {
+                $data = [$data] unless ref $data eq 'ARRAY';
+
+                my $map_from = $rel->map_from;
+                my $map_to   = $rel->map_to;
+
+                my ($from_foreign_pk, $from_pk) =
+                  %{$rel->map_class->schema->relationship($map_from)->map};
+
+                my ($to_foreign_pk, $to_pk) =
+                  %{$rel->map_class->schema->relationship($map_to)->map};
+
+                foreach my $d (@$data) {
+                    my $object = $rel->foreign_class->find_or_create(conn => $conn, %$d);
+
+                    my $rel = $rel->map_class->create(
+                        conn             => $conn,
+                        $from_foreign_pk => $self->column($from_pk),
+                        $to_foreign_pk   => $object->column($to_pk)
+                    );
+                }
             }
             else {
                 return $self->{related}->{$name} =
@@ -613,7 +637,25 @@ sub delete {
 
                 my @child_rel = $self->schema->child_relationships;
                 foreach my $name (@child_rel) {
-                    my $related = $self->find_related($name);
+                    my $rel = $self->schema->relationship($name);
+
+                    my $related;
+
+                    if ($rel->is_has_and_belongs_to_many) {
+                        my $map_from = $rel->map_from;
+
+                        my ($to, $from) =
+                          %{$rel->map_class->schema->relationship($map_from)->map};
+
+                        $related = $rel->map_class->find(
+                            conn  => $conn,
+                            where => [$to => $self->column($from)]
+                        );
+                    }
+                    else {
+                        $related = $self->find_related($name);
+                    }
+
                     while (my $r = $related->next) {
                         $r->delete(conn => $conn);
                     }

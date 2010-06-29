@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 11;
 
 use_ok('ObjectDB::Relationship::HasAndBelongsToMany');
 
@@ -16,6 +16,9 @@ my $rel = ObjectDB::Relationship::HasAndBelongsToMany->new(
     name  => 'tags',
 );
 ok($rel);
+
+is($rel->type, 'has_and_belongs_to_many');
+ok($rel->is_has_and_belongs_to_many);
 
 $rel->build(TestDB->conn);
 

@@ -152,7 +152,8 @@ sub child_relationships {
 
     my @rel;
     while (my ($key, $value) = each %{$self->relationships}) {
-        push @rel, $key if $value->type =~ m/^(?:has_one|has_many)$/;
+        push @rel, $key
+          if $value->is_type(qw/has_one has_many has_and_belongs_to_many/);
     }
 
     return @rel;
@@ -163,7 +164,7 @@ sub parent_relationships {
 
     my @rel;
     while (my ($key, $value) = each %{$self->relationships}) {
-        push @rel, $key if $value->type =~ m/^(?:belongs_to_one|belongs_to)$/;
+        push @rel, $key if $value->is_type(qw/belongs_to_one belongs_to/);
     }
 
     return @rel;

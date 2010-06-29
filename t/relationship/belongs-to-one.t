@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use_ok('ObjectDB::Relationship::BelongsToOne');
 
@@ -16,6 +16,9 @@ my $rel = ObjectDB::Relationship::BelongsToOne->new(
     name  => 'author'
 );
 ok($rel);
+
+is($rel->type, 'belongs_to_one');
+ok($rel->is_belongs_to_one);
 
 $rel->build(TestDB->conn);
 

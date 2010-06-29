@@ -52,6 +52,18 @@ sub build {
     $self->is_built(1);
 }
 
+sub is_belongs_to              { shift->is_type('belongs_to') }
+sub is_belongs_to_one          { shift->is_type('belongs_to_one') }
+sub is_has_and_belongs_to_many { shift->is_type('has_and_belongs_to_many') }
+sub is_has_many                { shift->is_type('has_many') }
+sub is_has_one                 { shift->is_type('has_one') }
+
+sub is_type {
+    my $self = shift;
+
+    return (grep { $_ eq $self->type } @_) ? 1 : 0;
+}
+
 sub _build {}
 
 1;

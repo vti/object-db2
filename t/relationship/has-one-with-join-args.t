@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use_ok('ObjectDB::Relationship::HasOne');
 
@@ -17,6 +17,9 @@ my $rel = ObjectDB::Relationship::HasOne->new(
     join_args => [title => 'foo', content => 'bar']
 );
 ok($rel);
+
+is($rel->type, 'has_one');
+ok($rel->is_has_one);
 
 $rel->build(TestDB->conn);
 

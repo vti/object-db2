@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use_ok('ObjectDB::Relationship::BelongsTo');
 
@@ -17,6 +17,9 @@ my $rel = ObjectDB::Relationship::BelongsTo->new(
     join_args => [title => 'foo']
 );
 ok($rel);
+
+is($rel->type, 'belongs_to');
+ok($rel->is_belongs_to);
 
 $rel->build(TestDB->conn);
 

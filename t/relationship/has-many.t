@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 5;
 
 use ObjectDB::Relationship::HasMany;
 
@@ -17,6 +17,9 @@ my $rel = ObjectDB::Relationship::HasMany->new(
     where => [type => 'article'],
 );
 ok($rel);
+
+is($rel->type, 'has_many');
+ok($rel->is_has_many);
 
 $rel->build(TestDB->conn);
 
