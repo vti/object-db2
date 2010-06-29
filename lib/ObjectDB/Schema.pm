@@ -55,7 +55,7 @@ sub auto_discover {
         sub {
             my $dbh = shift;
 
-            my $sth = $dbh->table_info(undef, 'main', $self->table);
+            my $sth = $dbh->table_info(undef, undef, $self->table);
             my $sql;
             while (my $table_info = $sth->fetchrow_hashref) {
                 $sql = $table_info->{sqlite_sql};
@@ -79,12 +79,12 @@ sub auto_discover {
                 }
             }
 
-            $sth = $dbh->column_info(undef, 'main', $self->table, '%');
+            $sth = $dbh->column_info(undef, undef, $self->table, '%');
             while (my $col_info = $sth->fetchrow_hashref) {
                 $self->column($self->_unquote($col_info->{COLUMN_NAME}));
             }
 
-            $sth = $dbh->primary_key_info(undef, 'main', $self->table);
+            $sth = $dbh->primary_key_info(undef, undef, $self->table);
             while (my $col_info = $sth->fetchrow_hashref) {
                 $self->primary_key($self->_unquote($col_info->{COLUMN_NAME}));
             }
