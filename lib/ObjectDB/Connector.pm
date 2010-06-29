@@ -61,6 +61,8 @@ sub txn {
     if ($@) {
         warn 'ROLLBACK' if DEBUG;
         $dbh->rollback;
+        warn $DBI::errstr if $dbh->{PrintWarn};
+        warn $DBI::errstr;
         die $DBI::errstr if $raise_error_bak;
         return;
     }

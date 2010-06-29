@@ -22,6 +22,7 @@ CREATE TABLE `articles` (
 CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `articles_id` INTEGER,
+ `authors_id` INTEGER,
  `content` varchar(40) default ''
 );
 CREATE TABLE `article_tag_maps` (

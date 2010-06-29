@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 31;
 
 use lib 't/lib';
 
@@ -47,14 +47,17 @@ is($article->column('title'), 'bar');
 $author->delete(conn => $conn);
 ok(!Article->find(conn => $conn)->next);
 
+$author = Author->create(conn => $conn, name => 'spammer');
+
 $author = Author->create(
     conn     => $conn,
     name     => 'foo',
     articles => [
         {   title    => 'bar',
-            comments => [{content => 'foo'}, {content => 'bar'}]
+            comments => [{authors_id => $author->id, content => 'foo'},
+            {authors_id => $author->id, content => 'bar'}]
         },
-        {title => 'baz', comments => {content => 'baz'}}
+        {title => 'baz', comments => {authors_id => $author->id, content => 'baz'}}
     ]
 );
 
@@ -77,4 +80,18 @@ is(@{$author->articles->[0]->comments}, 2);
 is($author->articles->[1]->column('title'), 'baz');
 is(@{$author->articles->[1]->comments}, 1);
 
-$author->delete(conn => $conn);
+$author = Author->find(
+    conn => $conn,
+    id   => $author->id,
+    with => [qw/articles articles.comments articles.comments.author/]
+);
+is(@{$author->articles}, 2);
+is($author->articles->[0]->column('title'), 'bar');
+is(@{$author->articles->[0]->comments}, 2);
+is($author->articles->[0]->comments->[0]->author->column('name'), 'spammer');
+is($author->articles->[0]->comments->[1]->author->column('name'), 'spammer');
+is($author->articles->[1]->column('title'), 'baz');
+is(@{$author->articles->[1]->comments}, 1);
+is($author->articles->[0]->comments->[0]->author->column('name'), 'spammer');
+
+Author->delete(conn => $conn);

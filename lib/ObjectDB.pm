@@ -368,13 +368,16 @@ sub find {
                         my $name = $subreq->[$i];
                         my $args = $subreq->[$i + 1];
 
+                        my $nested = delete $args->{nested} || [];
+
                         my $rel = $class->schema->relationship($name);
 
                         my $related = [
                             $class->find_related(
                                 $name => conn => $conn,
                                 ids   => $ids,
-                                with  => $args->{nested}
+                                with  => $nested,
+                                %$args
                             )
                         ];
 
@@ -792,6 +795,9 @@ sub _normalize_with {
 
     my $walker; $walker = sub {
         my $parts = shift;
+
+        # Already normalized
+        return $parts if ref($parts) eq 'ARRAY';
 
         my $rv;
         foreach my $key (sort keys %$parts) {
