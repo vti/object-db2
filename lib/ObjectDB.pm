@@ -273,21 +273,34 @@ sub delete_related {
 
     my $rel = $self->schema->relationship($name);
 
+    my @where;
+    push @where, @{$rel->where} if $rel->where;
+    push @where, @{delete $params{where}} if $params{where};
+
     Carp::croak qq/Action on this relationship type is not supported/
-      unless $rel->type =~ m/^(?:has_one|has_many)$/;
+      unless $rel->is_type(qw/has_one has_many has_and_belongs_to_many/);
 
-    my ($from, $to) = %{$rel->map};
+    if ($rel->is_has_and_belongs_to_many) {
+        my ($to, $from) =
+          %{$rel->map_class->schema->relationship($rel->map_from)->map};
 
-    my @params = ($to => $self->column($from));
+        return $rel->map_class->delete(
+            conn  => $self->conn,
+            where => [$to => $self->column($from), @where],
+            %params
+        );
+    }
+    else {
+        my ($from, $to) = %{$rel->map};
 
-    push @params, @{$rel->where} if $rel->where;
+        delete $self->{related}->{$name};
 
-    push @params, @{delete $params{where}} if $params{where};
-
-    delete $self->{related}->{$name};
-
-    return $rel->foreign_class->delete(conn => $self->conn, where => [@params],
-        %params);
+        return $rel->foreign_class->delete(
+            conn  => $self->conn,
+            where => [$to => $self->column($from), @where],
+            %params
+        );
+    }
 }
 
 sub related {
