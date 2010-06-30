@@ -5,7 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr(driver => 'sqlite');
 __PACKAGE__->attr([qw/table class auto_increment/]);
 __PACKAGE__->attr(columns       => sub { [] });
 __PACKAGE__->attr(primary_keys  => sub { [] });
@@ -15,8 +14,8 @@ __PACKAGE__->attr(is_built => 0);
 
 require Carp;
 use ObjectDB::Loader;
+use ObjectDB::SchemaDiscoverer;
 use ObjectDB::Util;
-use Scalar::Util qw/weaken isweak/;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -49,45 +48,25 @@ sub auto_discover {
     Carp::croak qq/Connector is required for automatic column discovery/
       unless $conn;
 
-    #local $dbh->{'FetchHashKeyName'} = 'NAME';
-
     $conn->run(
         sub {
             my $dbh = shift;
 
-            my $sth = $dbh->table_info(undef, undef, $self->table);
-            my $sql;
-            while (my $table_info = $sth->fetchrow_hashref) {
-                $sql = $table_info->{sqlite_sql};
-                last if $sql;
-            }
+            my $discoverer = ObjectDB::SchemaDiscoverer->build(
+                driver => $conn->driver,
+                table  => $self->table
+            );
 
-            if ($sql) {
-                if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
-                    my @uk = split ',' => $unique;
-                    foreach my $uk (@uk) {
-                        $self->unique_key($self->_unquote($uk));
-                    }
-                }
+            $discoverer->discover($dbh);
 
-                foreach my $part (split '\n' => $sql) {
-                    if ($part =~ m/AUTO_?INCREMENT/i) {
-                        if ($part =~ m/^\s*`(.*?)`/) {
-                            $self->auto_increment($1);
-                        }
-                    }
-                }
-            }
+            $self->column($_) for @{$discoverer->columns};
 
-            $sth = $dbh->column_info(undef, undef, $self->table, '%');
-            while (my $col_info = $sth->fetchrow_hashref) {
-                $self->column($self->_unquote($col_info->{COLUMN_NAME}));
-            }
+            $self->primary_key($_) for @{$discoverer->primary_keys};
 
-            $sth = $dbh->primary_key_info(undef, undef, $self->table);
-            while (my $col_info = $sth->fetchrow_hashref) {
-                $self->primary_key($self->_unquote($col_info->{COLUMN_NAME}));
-            }
+            $self->unique_key($_) for @{$discoverer->unique_keys};
+
+            $self->auto_increment($discoverer->auto_increment)
+              if $discoverer->auto_increment;
         }
     );
 }
@@ -201,16 +180,6 @@ sub _new_relationship {
     $self->relationships->{$name} = $rel;
 
     return $self;
-}
-
-sub _unquote {
-    my $self  = shift;
-    my $value = shift;
-
-    $value =~ s/^\`//;
-    $value =~ s/\`$//;
-
-    return $value;
 }
 
 1;
