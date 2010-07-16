@@ -12,7 +12,14 @@ my $dbi = 'dbi:SQLite';
 #sub _database { File::Spec->catfile(File::Spec->tmpdir, 'object_db.db') }
 sub _database {'object_db.db'}
 
-sub cleanup { !$ENV{TEST_MYSQL} && unlink _database() }
+sub db {
+    return 'sqlite' unless $ENV{TEST_MYSQL};
+    return 'mysql';
+}
+
+sub cleanup { 
+    $ENV{TEST_MYSQL} || unlink _database() and return;
+}
 
 our $conn;
 
@@ -37,8 +44,7 @@ sub conn {
     unless ($ENV{TEST_MYSQL}) {
         $conn->run(sub { $_->do("PRAGMA default_synchronous = OFF") });
         $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
-    }
-
+    } 
     return $conn;
 }
 
