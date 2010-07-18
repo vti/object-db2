@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 8;
 
 use lib 't/lib';
 
@@ -19,9 +19,14 @@ my $article = Article->create(
     tags => [{name => 'bar'}, {name => 'baz'}]
 );
 
+is(Tag->count(conn => $conn), 2, 'related objects created');
+is(ArticleTagMap->count(conn => $conn), 2, 'mapping objects created');
+
 Article->delete(conn => $conn);
+
 is(ArticleTagMap->count(conn => $conn), 0, 'mapping objects are deleted');
 is(Tag->count(conn => $conn), 2, 'related objects are stil there');
+
 Tag->delete(conn => $conn);
 
 $article = Article->create(conn => $conn, title => 'foo');
