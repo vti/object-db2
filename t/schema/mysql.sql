@@ -1,45 +1,48 @@
+CREATE TABLE `dummies` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT
+);
 CREATE TABLE `category` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
- `author_id` INTEGER,
+ `authors_id` INTEGER,
  `title` varchar(40) default ''
 ) TYPE=innodb;
-CREATE TABLE `article` (
+CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `category_id` INTEGER,
- `author_id` INTEGER,
+ `authors_id` INTEGER,
  `title` varchar(40) default ''
 ) TYPE=innodb;
-CREATE TABLE `comment` (
+CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
- `master_id` INTEGER,
- `type` varchar(40) default '',
+ `articles_id` INTEGER,
+ `authors_id` INTEGER,
  `content` varchar(40) default ''
 ) TYPE=innodb;
 CREATE TABLE `podcast` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
- `author_id` INTEGER,
+ `authors_id` INTEGER,
  `title` varchar(40) default ''
 ) TYPE=innodb;
-CREATE TABLE `tag` (
+CREATE TABLE `tags` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `name` varchar(40) default ''
 ) TYPE=innodb;
-CREATE TABLE `article_tag_map` (
- `article_id` INTEGER,
- `tag_id` INTEGER,
- PRIMARY KEY(`article_id`, `tag_id`)
+CREATE TABLE `article_tag_maps` (
+ `articles_id` INTEGER,
+ `tags_id` INTEGER,
+ PRIMARY KEY(`articles_id`, `tags_id`)
 ) TYPE=innodb;
-CREATE TABLE `author` (
+CREATE TABLE `authors` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `name` varchar(40) default '',
  `password` varchar(40) default '',
  UNIQUE(`name`)
 ) TYPE=innodb;
-CREATE TABLE `author_admin` (
- `author_id` INTEGER PRIMARY KEY,
+CREATE TABLE `author_admins` (
+ `authors_id` INTEGER PRIMARY KEY,
  `beard` varchar(40) default ''
 ) TYPE=innodb;
-CREATE TABLE `nested_comment` (
+CREATE TABLE `nested_comments` (
  `id`          INTEGER PRIMARY KEY AUTO_INCREMENT,
  `parent_id`   INTEGER,
  `master_id`   INTEGER NOT NULL,

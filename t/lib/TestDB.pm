@@ -13,12 +13,12 @@ my $dbi = 'dbi:SQLite';
 sub _database {'object_db.db'}
 
 sub db {
-    return 'sqlite' unless $ENV{TEST_MYSQL};
-    return 'mysql';
+    return 'mysql' if $ENV{TEST_MYSQL};
+    return 'sqlite';
 }
 
 sub cleanup { 
-    $ENV{TEST_MYSQL} || unlink _database() and return;
+    $ENV{TEST_MYSQL} || unlink(_database()) && return;
 }
 
 our $conn;
