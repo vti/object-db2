@@ -20,7 +20,7 @@ sub discover {
           if $col_info->{'mysql_is_auto_increment'};
     }
 
-    $self->columns([@columns]);
+    $self->columns([sort @columns]);
 
     my $result = $dbh->selectall_arrayref(
         'SHOW INDEX FROM ' . $dbh->quote_identifier($self->table),
