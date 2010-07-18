@@ -38,3 +38,13 @@ $article->delete_related('tags');
 is(ArticleTagMap->count(conn => $conn), 0);
 
 Article->delete(conn => $conn);
+Tag->delete(conn => $conn);
+
+$article = Article->create(
+    conn      => $conn,
+    title     => 'foo',
+    tags => [{name => 'bar'}, {name => 'baz'}]
+);
+
+Article->delete(conn => $conn);
+Tag->delete(conn => $conn);

@@ -10,25 +10,25 @@ CREATE TABLE `authors` (
  UNIQUE(`name`)
 );
 CREATE TABLE `author_admins` (
- `authors_id` INTEGER PRIMARY KEY,
+ `author_id` INTEGER PRIMARY KEY,
  `beard` varchar(40) default ''
 );
 CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `category_id` INTEGER,
- `authors_id` INTEGER,
+ `author_id` INTEGER,
  `title` varchar(40) default ''
 );
 CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
- `articles_id` INTEGER,
- `authors_id` INTEGER,
+ `article_id` INTEGER,
+ `author_id` INTEGER,
  `content` varchar(40) default ''
 );
 CREATE TABLE `article_tag_maps` (
- `articles_id` INTEGER,
- `tags_id` INTEGER,
- PRIMARY KEY(`articles_id`, `tags_id`)
+ `article_id` INTEGER,
+ `tag_id` INTEGER,
+ PRIMARY KEY(`article_id`, `tag_id`)
 );
 CREATE TABLE `tags` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

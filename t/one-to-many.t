@@ -54,10 +54,10 @@ $author = Author->create(
     name     => 'foo',
     articles => [
         {   title    => 'bar',
-            comments => [{authors_id => $author->id, content => 'foo'},
-            {authors_id => $author->id, content => 'bar'}]
+            comments => [{author_id => $author->id, content => 'foo'},
+            {author_id => $author->id, content => 'bar'}]
         },
-        {title => 'baz', comments => {authors_id => $author->id, content => 'baz'}}
+        {title => 'baz', comments => {author_id => $author->id, content => 'baz'}}
     ]
 );
 

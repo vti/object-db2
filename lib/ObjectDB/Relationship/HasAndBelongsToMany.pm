@@ -65,7 +65,7 @@ EOF
 }
 
 sub map_schema { shift->map_class->schema }
-sub map_table { shift->map_schema->table }
+sub map_table  { shift->map_schema->table }
 
 sub to_source {
     my $self = shift;

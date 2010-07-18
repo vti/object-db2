@@ -31,7 +31,6 @@ is_deeply(
         as   => 'articles',
         join => 'left',
         constraint =>
-          ['articles.authors_id' => 'authors.id', 'articles.type' => 'article']
+          ['articles.author_id' => 'authors.id', 'articles.type' => 'article']
     }
 );
-

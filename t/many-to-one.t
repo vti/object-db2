@@ -20,7 +20,7 @@ ok(!$article, 'unknown id');
 
 my $author = Author->create(conn => $conn, name => 'foo');
 $article =
-  Article->create(conn => $conn, authors_id => $author->id, title => 'bar');
+  Article->create(conn => $conn, author_id => $author->id, title => 'bar');
 
 $article = Article->find(conn => $conn, id => $article->id, with => 'author');
 ok($article, 'find with related object');
@@ -48,11 +48,11 @@ Author->delete(conn => $conn);
 Article->delete(conn => $conn);
 
 $author = Author->create(conn => $conn, name => 'foo');
-Article->create(conn => $conn, title => 'foo', authors_id => $author->id);
+Article->create(conn => $conn, title => 'foo', author_id => $author->id);
 $author = Author->create(conn => $conn, name => 'bar');
-Article->create(conn => $conn, title => 'bar', authors_id => $author->id);
+Article->create(conn => $conn, title => 'bar', author_id => $author->id);
 $author = Author->create(conn => $conn, name => 'baz');
-Article->create(conn => $conn, title => 'baz', authors_id => $author->id);
+Article->create(conn => $conn, title => 'baz', author_id => $author->id);
 
 my @articles =
   Article->find(conn => $conn, where => ['author.name' => 'foo']);

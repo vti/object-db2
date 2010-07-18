@@ -25,7 +25,10 @@ sub _build {
     }
 
     unless (%{$self->map}) {
-        my $pk         = $self->foreign_table . '_id';
+        my $foreign_name =
+          ObjectDB::Util->plural_to_single($self->foreign_table);
+
+        my $pk         = $foreign_name . '_id';
         my $foreign_pk = 'id';
 
         $self->map({$pk => $foreign_pk});

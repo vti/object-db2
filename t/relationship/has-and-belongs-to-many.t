@@ -31,7 +31,7 @@ is_deeply(
     $rel->to_map_source,
     {   name       => 'article_tag_maps',
         join       => 'left',
-        constraint => ['articles.id' => 'article_tag_maps.articles_id']
+        constraint => ['articles.id' => 'article_tag_maps.article_id']
     }
 );
 
@@ -39,7 +39,7 @@ is_deeply(
     $rel->to_self_map_source,
     {   name       => 'article_tag_maps',
         join       => 'left',
-        constraint => ['tags.id' => 'article_tag_maps.tags_id']
+        constraint => ['tags.id' => 'article_tag_maps.tag_id']
     }
 );
 
@@ -48,7 +48,7 @@ is_deeply(
     {   name       => 'tags',
         as         => 'tags',
         join       => 'left',
-        constraint => ['tags.id' => 'article_tag_maps.tags_id']
+        constraint => ['tags.id' => 'article_tag_maps.tag_id']
     }
 );
 
@@ -57,6 +57,6 @@ is_deeply(
     {   name       => 'articles',
         as         => 'articles',
         join       => 'left',
-        constraint => ['articles.id' => 'article_tag_maps.articles_id']
+        constraint => ['articles.id' => 'article_tag_maps.article_id']
     }
 );
