@@ -128,11 +128,11 @@ sub count {
     my $sql = ObjectDB::SQL::Select->new;
 
     my $table = $class->schema->table;
-    my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
-    my $pk    = join(' || ', @pk);
+    #my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
+    #my $pk    = join(' || ', @pk);
 
     $sql->source($table);
-    $sql->columns(\"COUNT(DISTINCT $pk)");
+    $sql->columns(\"COUNT(*)");
 
     $sql->where(%params);
 
