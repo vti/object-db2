@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 18;
 
 use_ok('ObjectDB::Relationship::HasAndBelongsToMany');
 
@@ -58,5 +58,29 @@ is_deeply(
         as         => 'articles',
         join       => 'left',
         constraint => ['articles.id' => 'article_tag_maps.article_id']
+    }
+);
+
+$rel = ObjectDB::Relationship::HasAndBelongsToMany->new(
+    class => 'Tag',
+    name  => 'articles',
+);
+ok($rel);
+
+is($rel->type, 'has_and_belongs_to_many');
+ok($rel->is_has_and_belongs_to_many);
+
+$rel->build(TestDB->conn);
+
+is($rel->foreign_table, 'articles');
+
+is($rel->map_from, 'tag');
+is($rel->map_to, 'article');
+
+is_deeply(
+    $rel->to_map_source,
+    {   name       => 'article_tag_maps',
+        join       => 'left',
+        constraint => ['tags.id' => 'article_tag_maps.tag_id']
     }
 );

@@ -36,21 +36,27 @@ sub _build {
     }
 
     unless ($self->map_class) {
-        my $map_class  = $self->class . $self->foreign_class . 'Map';
-        my $map_table = ObjectDB::Util->class_to_table($map_class);
 
-        my $from = $self->map_from;
-        my $to   = $self->map_to;
+        # Because we have two points of view :)
+        my @classes = ($self->class, $self->foreign_class);
+        my $map_class  = join('', sort(@classes)) . 'Map';
 
-        my $package = <<"EOF";
+        unless ($map_class->can('new')) {
+            my $map_table = ObjectDB::Util->class_to_table($map_class);
+
+            my $from = $self->map_from;
+            my $to   = $self->map_to;
+
+            my $package = <<"EOF";
 package $map_class;
 use base 'ObjectDB';
 __PACKAGE__->schema('$map_table')->belongs_to('$from')->belongs_to('$to');
 1;
 EOF
 
-        eval $package;
-        die qq/Couldn't initialize class "$map_class": $@/ if $@;
+            eval $package;
+            die qq/Couldn't initialize class "$map_class": $@/ if $@;
+        }
 
         $map_class->schema->build(@_);
 

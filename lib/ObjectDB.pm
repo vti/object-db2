@@ -512,27 +512,43 @@ sub find_related {
 
     my $rel = $class->schema->relationship($name);
 
-    my ($from, $to) = %{$rel->map};
-
     my $conn;
 
     my @where;
+
     if (ref($class)) {
         my $self = $class;
 
         $conn = $self->conn;
 
-        Carp::croak qq/$from is required for find_related/ unless $self->column($from);
+        if ($rel->is_has_and_belongs_to_many) {
+            my ($to, $from) =
+              %{$rel->map_class->schema->relationship($rel->map_from)->map};
 
-        @where = ($to => $self->column($from));
+            @where = ("articles.$from" => $self->id);
+        }
+        else {
+            my ($from, $to) = %{$rel->map};
 
-        $params{first} = 1 if $rel->type =~ m/belongs_to/;
+            Carp::croak qq/$from is required for find_related/ unless $self->column($from);
+
+            @where = ($to => $self->column($from));
+
+            $params{first} = 1 if $rel->type =~ m/belongs_to/;
+        }
     }
     else {
         $conn = $params{conn} || $class->init_conn;
         Carp::croak qq/Connector is required/ unless $conn;
 
-        @where = ($to => [@{delete $params{ids}}]);
+        if ($rel->is_has_and_belongs_to_many) {
+            die 'todo';
+        }
+        else {
+            my ($from, $to) = %{$rel->map};
+
+            @where = ($to => [@{delete $params{ids}}]);
+        }
     }
 
     push @where, @{$rel->where}           if $rel->where;
@@ -773,6 +789,10 @@ sub _resolve_where {
                 $source = $rel->to_source;
                 $sql->source($source);
 
+                if ($rel->is_has_and_belongs_to_many) {
+                    $sql->source($rel->to_map_source);
+                }
+
                 #$sql->columns($rel->foreign_class->schema->primary_keys);
 
                 $parent = $rel->foreign_class;
@@ -811,7 +831,7 @@ sub _resolve_with {
 
             my $rel = $class->schema->relationship($name);
 
-            if ($rel->type eq 'has_many') {
+            if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 push @$subreq, ($name => $args);
             }
             else {

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 13;
 
 use lib 't/lib';
 
@@ -42,14 +42,32 @@ is(ArticleTagMap->count(conn => $conn), 1);
 $article->delete_related('tags');
 is(ArticleTagMap->count(conn => $conn), 0);
 
+$article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
+
+my @articles = Article->find(conn => $conn, where => ['tags.name' => 'foo']);
+is(@articles, 0);
+
+@articles = Article->find(conn => $conn, where => ['tags.name' => 'bar']);
+is(@articles, 1);
+
+my @tags = $article->find_related('tags', where => [name => 'foo']);
+is(@tags, 0);
+
+@tags = $article->find_related('tags');
+is(@tags, 2);
+is($tags[0]->column('name'), 'bar');
+
 Article->delete(conn => $conn);
 Tag->delete(conn => $conn);
 
-$article = Article->create(
-    conn      => $conn,
-    title     => 'foo',
-    tags => [{name => 'bar'}, {name => 'baz'}]
-);
+#$article = Article->create(
+    #conn      => $conn,
+    #title     => 'foo',
+    #tags => [{name => 'bar'}, {name => 'baz'}]
+#);
 
-Article->delete(conn => $conn);
-Tag->delete(conn => $conn);
+#Article->find(conn => $conn, with => 'tags');
+#is($article->tags->[0]->column('name'), '');
+
+#Article->delete(conn => $conn);
+#Tag->delete(conn => $conn);
