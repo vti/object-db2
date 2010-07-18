@@ -12,7 +12,8 @@ use warnings;
 use Test::More;
 use TestDB;
 
-plan skip_all => 'set up dbi options in TEST_MYSQL to enable this test (write privileges on db required)'
+plan skip_all =>
+  'set up dbi options in TEST_MYSQL to enable this test (write privileges on db required)'
   unless $ENV{TEST_MYSQL};
 
 plan tests => 7;
@@ -26,7 +27,7 @@ isa_ok($d, 'ObjectDB::SchemaDiscoverer::mysql');
 
 my $conn = TestDB->conn;
 
-$conn->run( sub { $d->discover(shift); });
+$conn->run(sub { $d->discover(shift); });
 
 is($d->table,          'author');
 is($d->auto_increment, 'id');

@@ -34,8 +34,8 @@ my @sql = split(/\s*;\s*/, $schema);
 
 foreach my $sql (@sql) {
     next unless $sql;
+
     my ($table) = ($sql =~ m/CREATE\s+TABLE `(.*?)`/i);
-warn "Create table $1";
     $conn->run(sub { $_->do("DROP TABLE IF EXISTS `$table`") }) if $table;
     $conn->run(sub { $_->do($sql) });
 }

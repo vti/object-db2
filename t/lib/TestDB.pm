@@ -44,7 +44,7 @@ sub conn {
     unless ($ENV{TEST_MYSQL}) {
         $conn->run(sub { $_->do("PRAGMA default_synchronous = OFF") });
         $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
-    } 
+    }
     return $conn;
 }
 
