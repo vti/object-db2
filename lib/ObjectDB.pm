@@ -284,6 +284,13 @@ sub delete_related {
         my ($to, $from) =
           %{$rel->map_class->schema->relationship($rel->map_from)->map};
 
+        for (my $i = 0; $i < @where; $i += 2) {
+            my $name = $rel->name;
+            if ($where[$i] =~ s/^$name\.//) {
+                $where[$i] = $rel->map_to . '.' . $where[$i];
+            }
+        }
+
         return $rel->map_class->delete(
             conn  => $self->conn,
             where => [$to => $self->column($from), @where],
