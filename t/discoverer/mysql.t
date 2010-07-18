@@ -21,7 +21,7 @@ plan tests => 7;
 use_ok('ObjectDB::SchemaDiscoverer::mysql');
 
 my $d =
-  ObjectDB::SchemaDiscoverer->build(driver => 'mysql', table => 'author');
+  ObjectDB::SchemaDiscoverer->build(driver => 'mysql', table => 'authors');
 
 isa_ok($d, 'ObjectDB::SchemaDiscoverer::mysql');
 
@@ -29,7 +29,7 @@ my $conn = TestDB->conn;
 
 $conn->run(sub { $d->discover(shift); });
 
-is($d->table,          'author');
+is($d->table,          'authors');
 is($d->auto_increment, 'id');
 is_deeply($d->columns,      [qw/password name id/]);
 is_deeply($d->primary_keys, [qw/id/]);
