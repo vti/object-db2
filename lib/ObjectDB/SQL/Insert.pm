@@ -5,9 +5,6 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
-__PACKAGE__->attr([qw/table/]);
-__PACKAGE__->attr(columns => sub {[]});
-
 sub to_string {
     my $self = shift;
 

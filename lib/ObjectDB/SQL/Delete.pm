@@ -5,8 +5,6 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
-__PACKAGE__->attr([qw/table where where_logic/]);
-
 sub to_string {
     my $self = shift;
 

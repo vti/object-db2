@@ -5,7 +5,7 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
-__PACKAGE__->attr([qw/group_by having order_by limit offset where_logic/]);
+__PACKAGE__->attr([qw/group_by having/]);
 __PACKAGE__->attr([qw/sources/] => sub {[]});
 
 sub new {
@@ -13,30 +13,10 @@ sub new {
 
     $self->{_columns} ||= [];
     $self->{_source} = $self->{sources}->[0];
-    $self->{where} ||= [];
 
     return $self;
 }
 
-sub where {
-    my $self = shift;
-
-    if (@_) {
-        my @params;
-
-        if (@_ == 1) {
-            push @{$self->{where}}, ref $_[0] eq 'ARRAY' ? @{$_[0]} : $_[0]
-              if defined $_[0];
-        }
-        else {
-            push @{$self->{where}}, @_;
-        }
-
-        return $self;
-    }
-
-    return $self->{where};
-}
 
 sub _columns { @_ > 1 ? $_[0]->{_columns} = $_[1] : $_[0]->{_columns} }
 
@@ -205,10 +185,8 @@ sub to_string {
     }
 
     if (my $where = $self->where) {
-        if (ref $where eq 'ARRAY' && @$where || ref $where ne 'ARRAY') {
-            $query .= ' WHERE ';
-            $query .= $self->_where_to_string($self->where, $default_prefix);
-        }
+        $query .= ' WHERE ';
+        $query .= $self->_where_to_string($self->where, $default_prefix);
     }
 
     if (my $group_by = $self->group_by) {

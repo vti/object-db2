@@ -5,8 +5,6 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
-__PACKAGE__->attr(columns => sub {[]});
-__PACKAGE__->attr([qw/table where where_logic/]);
 
 sub new {
     my $self = shift->SUPER::new(@_);
