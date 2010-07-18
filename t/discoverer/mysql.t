@@ -10,6 +10,9 @@ use strict;
 use warnings;
 
 use Test::More;
+
+use lib 't/lib';
+
 use TestDB;
 
 plan skip_all =>

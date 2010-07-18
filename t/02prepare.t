@@ -4,19 +4,21 @@ use strict;
 use warnings;
 
 use Test::More;
+
+use lib 't/lib';
+
 use TestDB;
 
 if (TestDB->db eq 'sqlite') {
     eval "use DBD::SQLite";
     plan skip_all => "DBD::SQLite is required for running this test" if $@;
-} elsif (TestDB->db eq 'mysql') {
+}
+elsif (TestDB->db eq 'mysql') {
     eval "use DBD::mysql";
     plan skip_all => "DBD::mysql is required for running this test" if $@;
 }
 
 plan tests => 1;
-
-use lib 't/lib';
 
 use FindBin;
 use TestDB;
