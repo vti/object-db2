@@ -786,12 +786,12 @@ sub _resolve_where {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
 
-                $source = $rel->to_source;
-                $sql->source($source);
-
                 if ($rel->is_has_and_belongs_to_many) {
                     $sql->source($rel->to_map_source);
                 }
+
+                $source = $rel->to_source;
+                $sql->source($source);
 
                 #$sql->columns($rel->foreign_class->schema->primary_keys);
 
