@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 26;
 
 use_ok('ObjectDB::SQL::Where');
 
@@ -65,3 +65,9 @@ $where = ObjectDB::SQL::Where->new;
 $where->where(['foo.id' => 2, \"a = 'b'"]);
 is("$where", " WHERE (`foo`.`id` = ? AND a = 'b')");
 is_deeply($where->bind, [qw/ 2 /]);
+
+$where = ObjectDB::SQL::Where->new;
+$where->where([id => 2]);
+$where->where(di => 3);
+is("$where", " WHERE (`id` = ? AND `di` = ?)");
+is_deeply($where->bind, [qw/ 2 3 /]);
