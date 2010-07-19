@@ -3,65 +3,65 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 24;
 
-use_ok('ObjectDB::SQL::Select');
+use_ok('ObjectDB::SQL::Where');
 
-my $sql;
+my $where;
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where([id => 2, title => 'hello']);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`id` = ? AND `title` = ?)");
-is_deeply($sql->bind, [qw/ 2 hello /]);
+$where = ObjectDB::SQL::Where->new;
+is("$where", "");
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where([id => [1, 2, 3]]);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`id` IN (?, ?, ?))");
-is_deeply($sql->bind, [qw/ 1 2 3 /]);
+$where = ObjectDB::SQL::Where->new;
+$where->where([id => 2, title => 'hello']);
+is("$where", " WHERE (`id` = ? AND `title` = ?)");
+is_deeply($where->bind, [qw/ 2 hello /]);
+is("$where", " WHERE (`id` = ? AND `title` = ?)");
+is_deeply($where->bind, [qw/ 2 hello /]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where([\'foo.id = 2', title => 'hello']);
-is("$sql", "SELECT `foo` FROM `table` WHERE (foo.id = 2 AND `title` = ?)");
-is_deeply($sql->bind, [qw/ hello /]);
+$where = ObjectDB::SQL::Where->new(prefix => 'foo');
+$where->where([id => 2, title => 'hello']);
+is("$where", " WHERE (`foo`.`id` = ? AND `foo`.`title` = ?)");
+is_deeply($where->bind, [qw/ 2 hello /]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where(['foo.id' => 2]);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`foo`.`id` = ?)");
-is_deeply($sql->bind, [qw/ 2 /]);
+$where = ObjectDB::SQL::Where->new;
+$where->where([id => [1, 2, 3]]);
+is("$where", " WHERE (`id` IN (?, ?, ?))");
+is_deeply($where->bind, [qw/ 1 2 3 /]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where([-or => ['foo.id' => undef, -and => ['foo.title' => 'boo', 'foo.content' => 'bar']]]);
-is("$sql", "SELECT `foo` FROM `table` WHERE ((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
-is_deeply($sql->bind, ['boo', 'bar']);
+$where = ObjectDB::SQL::Where->new;
+$where->where([\'foo.id = ?']);
+$where->bind(2);
+is("$where", " WHERE (foo.id = ?)");
+is_deeply($where->bind, [2]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where_logic('OR');
-$sql->where(['foo.id' => 2]);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`foo`.`id` = ?)");
-is_deeply($sql->bind, [qw/ 2 /]);
+$where = ObjectDB::SQL::Where->new;
+$where->where([\'foo.id = 2', title => 'hello']);
+is("$where", " WHERE (foo.id = 2 AND `title` = ?)");
+is_deeply($where->bind, [qw/ hello /]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where(['foo.id' => {'>' => 2}]);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`foo`.`id` > ?)");
-is_deeply($sql->bind, [qw/ 2 /]);
+$where = ObjectDB::SQL::Where->new;
+$where->where(['foo.id' => 2]);
+is("$where", " WHERE (`foo`.`id` = ?)");
+is_deeply($where->bind, [qw/ 2 /]);
 
-$sql = ObjectDB::SQL::Select->new;
-$sql->source('table');
-$sql->columns('foo');
-$sql->where(['foo.id' => 2, \"a = 'b'"]);
-is("$sql", "SELECT `foo` FROM `table` WHERE (`foo`.`id` = ? AND a = 'b')");
-is_deeply($sql->bind, [qw/ 2 /]);
+$where = ObjectDB::SQL::Where->new;
+$where->where([-or => ['foo.id' => undef, -and => ['foo.title' => 'boo', 'foo.content' => 'bar']]]);
+is("$where", " WHERE ((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
+is_deeply($where->bind, ['boo', 'bar']);
+
+$where = ObjectDB::SQL::Where->new;
+$where->logic('OR');
+$where->where(['foo.id' => 2]);
+is("$where", " WHERE (`foo`.`id` = ?)");
+is_deeply($where->bind, [qw/ 2 /]);
+
+$where = ObjectDB::SQL::Where->new;
+$where->where(['foo.id' => {'>' => 2}]);
+is("$where", " WHERE (`foo`.`id` > ?)");
+is_deeply($where->bind, [qw/ 2 /]);
+
+$where = ObjectDB::SQL::Where->new;
+$where->where(['foo.id' => 2, \"a = 'b'"]);
+is("$where", " WHERE (`foo`.`id` = ? AND a = 'b')");
+is_deeply($where->bind, [qw/ 2 /]);

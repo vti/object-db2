@@ -5,11 +5,21 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
+__PACKAGE__->attr(values => sub { [] });
 
-sub new {
-    my $self = shift->SUPER::new(@_);
+sub build {
+    my $self = shift;
 
-    $self->{columns} ||= [];
+    my $count = 0;
+    foreach my $name (@{$self->columns}) {
+        my $value = $self->values->[$count];
+
+        $self->bind($value) unless ref($value) eq 'SCALAR';
+
+        $count++;
+    }
+
+    $self->is_built(1);
 
     return $self;
 }
@@ -17,7 +27,7 @@ sub new {
 sub to_string {
     my $self = shift;
 
-    return $self->_string if $self->_string;
+    $self->build unless $self->is_built;
 
     my $query = "";
 
@@ -25,17 +35,16 @@ sub to_string {
     $query .= $self->escape($self->table);
     $query .= ' SET ';
 
-    my @bind;
     my $i     = @{$self->columns} - 1;
     my $count = 0;
     foreach my $name (@{$self->columns}) {
-        if (ref $self->bind->[$count] eq 'SCALAR') {
-            my $value = $self->bind->[$count];
+        my $value = $self->values->[$count];
+
+        if (ref $value eq 'SCALAR') {
             $query .= $self->escape($name) . " = $$value";
         }
         else {
             $query .= $self->escape($name) . " = ?";
-            push @bind, $self->bind->[$count];
         }
 
         $query .= ', ' if $i;
@@ -43,62 +52,9 @@ sub to_string {
         $count++;
     }
 
-    $self->bind([@bind]);
+    $query .= $self->where;
 
-    if ($self->where) {
-        $query .= ' WHERE ';
-        $query .= $self->_where_to_string($self->where);
-    }
-
-    return $self->_string($query);
+    return $query;
 }
 
 1;
-__END__
-
-=head1 NAME
-
-ObjectDB::SQL::Update - SQL update for ObjectDB
-
-=head1 SYNOPSIS
-
-    This is used internally.
-
-=head1 DESCRIPTION
-
-=head1 ATTRIBUTES
-
-=head2 C<table>
-
-Table name.
-
-=head2 C<columns>
-
-Column values.
-
-=head2 C<where>
-
-WHERE clause.
-
-=head2 C<where_logic>
-
-WHERE clause logic (AND and OR).
-
-=head1 METHODS
-
-=head2 C<to_string>
-
-String representation.
-
-=head1 AUTHOR
-
-Viacheslav Tykhanovskyi, C<vti@cpan.org>.
-
-=head1 COPYRIGHT
-
-Copyright (C) 2009, Viacheslav Tykhanovskyi.
-
-This program is free software, you can redistribute it and/or modify it under
-the same terms as Perl 5.10.
-
-=cut

@@ -17,21 +17,6 @@ sub new {
     return $self;
 }
 
-
-sub _columns { @_ > 1 ? $_[0]->{_columns} = $_[1] : $_[0]->{_columns} }
-
-sub with {
-    my $self = shift;
-
-    if (@_) {
-        $self->{with} ||= [];
-        push @{$self->{with}}, ref $_[0] eq 'ARRAY' ? @{$_[0]} : @_;
-        return $self;
-    }
-
-    return $self->{with};
-}
-
 sub first_source {
     my $self = shift;
 
@@ -184,10 +169,8 @@ sub to_string {
         $default_prefix = $self->sources->[0]->{name};
     }
 
-    if (my $where = $self->where) {
-        $query .= ' WHERE ';
-        $query .= $self->_where_to_string($self->where, $default_prefix);
-    }
+    $self->where->prefix($default_prefix) if $default_prefix;
+    $query .= $self->where;
 
     if (my $group_by = $self->group_by) {
         if ($default_prefix) {

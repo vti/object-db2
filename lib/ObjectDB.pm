@@ -592,7 +592,7 @@ sub update {
         my $sql = ObjectDB::SQL::Update->new;
         $sql->table($self->schema->table);
         $sql->columns(\@columns);
-        $sql->bind(\@values);
+        $sql->values(\@values);
         $sql->where(map { $_ => $self->column($_) }
               @{$self->schema->primary_keys});
 
@@ -628,7 +628,7 @@ sub update {
         my $sql = ObjectDB::SQL::Update->new;
         $sql->table($class->schema->table);
         $sql->columns(\@columns);
-        $sql->bind(\@values);
+        $sql->values(\@values);
         $sql->where($params{where});
 
         if (DEBUG) {
