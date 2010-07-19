@@ -17,6 +17,11 @@ ok($conn);
 
 my $db = TestDB->db;
 
+unless ($ENV{TEST_MYSQL}) {
+  TestDB->cleanup();
+  exit;
+}
+
 open(my $file, "< $FindBin::Bin/schema/$db.sql") or die $!;
 
 my $schema = do { local $/; <$file> };
