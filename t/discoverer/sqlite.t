@@ -3,19 +3,21 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 11;
 
-use File::Temp;
-use DBI;
+use lib 't/lib';
+
+use TestDB;
 
 use_ok('ObjectDB::SchemaDiscoverer');
 
-my $d =
+my $dbh = TestDB->conn->dbh;
+
+my $d;
+
+$d =
   ObjectDB::SchemaDiscoverer->build(driver => 'SQLite', table => 'authors');
-
 ok($d);
-
-my $dbh = DBI->connect('dbi:SQLite:/tmp/object-db-test.db');
 
 $d->discover($dbh);
 
@@ -24,3 +26,15 @@ is($d->auto_increment, 'id');
 is_deeply($d->columns,      [qw/id name password/]);
 is_deeply($d->primary_keys, [qw/id/]);
 is_deeply($d->unique_keys,  [qw/name/]);
+
+$d = ObjectDB::SchemaDiscoverer->build(
+    driver => 'SQLite',
+    table  => 'article_tag_maps'
+);
+ok($d);
+
+$d->discover($dbh);
+
+is($d->table, 'article_tag_maps');
+is_deeply($d->columns,      [qw/article_id tag_id/]);
+is_deeply($d->primary_keys, [qw/article_id tag_id/]);
