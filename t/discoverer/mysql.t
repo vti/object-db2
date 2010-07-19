@@ -16,7 +16,7 @@ use lib 't/lib';
 use TestDB;
 
 plan skip_all =>
-  'set up dbi options in TEST_MYSQL to enable this test (write privileges on db required)'
+  'set TEST_MYSQL to "db,user,pass" to enable this test'
   unless $ENV{TEST_MYSQL};
 
 plan tests => 7;

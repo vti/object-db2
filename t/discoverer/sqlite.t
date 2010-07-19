@@ -16,14 +16,6 @@ my $d =
 ok($d);
 
 my $dbh = DBI->connect('dbi:SQLite:/tmp/object-db-test.db');
-$dbh->do(<<"EOF");
-CREATE TABLE `authors` (
- `id` INTEGER PRIMARY KEY AUTOINCREMENT,
- `name` varchar(40) default '',
- `password` varchar(40) default '',
- UNIQUE(`name`)
-);
-EOF
 
 $d->discover($dbh);
 

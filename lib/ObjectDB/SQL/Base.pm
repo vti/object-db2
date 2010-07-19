@@ -16,7 +16,6 @@ sub where {
 
     unless (@_) {
         return unless ref($self->{where}) eq 'ARRAY';
-        return if $#{$self->{where}} < 0;
         return $self->{where};
     }
 
@@ -32,7 +31,7 @@ sub where {
         push @{$self->{where}}, @_;
     }
     else {
-        Carp::carp "Unexpected parameter: "
+        Carp::croak "Unexpected parameter: "
           . ref($_[0])
           . " (\"$_[0]\"). where() can accept reference to array/scalar or array of parameters!";
     }
