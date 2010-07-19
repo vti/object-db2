@@ -171,6 +171,8 @@ sub _new_relationship {
     my $type = shift;
     my $name = shift;
 
+    return $self->relationships->{$name} if $self->relationships->{$name};
+
     my $class = 'ObjectDB::Relationship::' . ObjectDB::Util->camelize($type);
     ObjectDB::Loader->load($class);
 
