@@ -45,7 +45,7 @@ sub where {
 sub bind {
     my $self = shift;
 
-    return $self->{bind} unless @_;
+    return $self->{bind} || [] unless @_;
 
     if (ref $_[0] eq 'ARRAY') {
         push @{$self->{bind}}, @{$_[0]};
@@ -133,6 +133,9 @@ sub _build {
                     }
 
                     $string .= ")";
+                }
+                elsif (ref $value) {
+                    $string .= "$key = $$value";
                 }
                 else {
                     $string .= "$key = ?";

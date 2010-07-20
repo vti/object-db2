@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 26;
+use Test::More tests => 28;
 
 use_ok('ObjectDB::SQL::Where');
 
@@ -34,6 +34,11 @@ $where->where([\'foo.id = ?']);
 $where->bind(2);
 is("$where", " WHERE (foo.id = ?)");
 is_deeply($where->bind, [2]);
+
+$where = ObjectDB::SQL::Where->new;
+$where->where([password => \"PASSWORD('foo')"]);
+is("$where", " WHERE (`password` = PASSWORD('foo'))");
+is_deeply($where->bind, []);
 
 $where = ObjectDB::SQL::Where->new;
 $where->where([\'foo.id = 2', title => 'hello']);
