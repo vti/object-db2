@@ -167,19 +167,27 @@ sub has_and_belongs_to_many {
 }
 
 sub _new_relationship {
-    my $self = shift;
-    my $type = shift;
-    my $name = shift;
+    my $self    = shift;
+    my $type    = shift;
+    my $foreign = shift;
 
-    return $self->relationships->{$name} if $self->relationships->{$name};
+    return $self
+      if !ref($foreign) && $self->relationships->{$foreign};
 
     my $class = 'ObjectDB::Relationship::' . ObjectDB::Util->camelize($type);
     ObjectDB::Loader->load($class);
 
     my $args = @_ == 1 ? $_[0] : {@_};
-    my $rel = $class->new(name => $name, class => $self->class, %$args);
 
-    $self->relationships->{$name} = $rel;
+    foreach my $name (@{ref($foreign) ? $foreign : [$foreign]}) {
+        my $rel = $class->new(
+            name  => $name,
+            class => $self->class,
+            %$args
+        );
+        $self->relationships->{$name} = $rel;
+    }
+
 
     return $self;
 }

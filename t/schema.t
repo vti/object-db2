@@ -8,7 +8,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 18;
+use Test::More tests => 22;
 
 use lib 't/lib';
 
@@ -39,6 +39,15 @@ ok(!$schema->is_column('foo'));
 
 is_deeply([$schema->child_relationships], [qw/foo/]);
 is_deeply([$schema->parent_relationships], [qw/bar/]);
+
+my $result = $schema->has_one('foo');
+
+isa_ok($result, ref($schema));
+is($result, $schema);
+is_deeply([$schema->child_relationships], [qw/foo/]);
+
+$result = $schema->has_one(['xyz', 'yzx', 'zyx']);
+is_deeply([sort $schema->child_relationships], [sort qw/foo xyz yzx zyx/]);
 
 Dummy->schema->build($conn);
 is(Dummy->schema->class, 'Dummy');
