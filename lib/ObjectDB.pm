@@ -345,8 +345,14 @@ sub find {
     my $sql = ObjectDB::SQL::Select->new;
     $sql->source($class->schema->table);
 
-    my @columns = $params{columns} ? @{$params{columns}} : @{$class->schema->columns};
-    unshift @columns, @{$class->schema->primary_keys};
+    my @columns;
+    if ($params{columns}) {
+        @columns = @{$params{columns}};
+        unshift @columns, @{$class->schema->primary_keys};
+    }
+    else {
+        @columns = @{$class->schema->columns};
+    }
 
     $sql->columns([@columns]);
 
