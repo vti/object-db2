@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More;
+
+plan skip_all => 'TEST_MYSQL disables this test' if $ENV{TEST_MYSQL};
+
+plan tests => 11;
 
 use lib 't/lib';
 
