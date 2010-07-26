@@ -437,6 +437,7 @@ sub find {
 
                         foreach my $o (@result) {
                             $o->{related}->{$name} = [];
+                            $set->{$o->id} ||= [];
                             #warn Dumper $o;
                             push @{$o->{related}->{$name}}, @{$set->{$o->id}};
                         }
