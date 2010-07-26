@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 48;
+use Test::More tests => 51;
 
 use lib 't/lib';
 
@@ -31,6 +31,11 @@ $author = Author->find(conn => $conn, id => $author->id);
 ok($author);
 ok($author->id);
 is($author->column('name'), 'foo');
+
+$author = Author->find(conn => $conn, id => $author->id, columns => []);
+ok($author);
+ok($author->id);
+ok(not defined $author->column('name'));
 
 is_deeply([Author->find(conn => $conn, where => [name => 'bar'])], []);
 

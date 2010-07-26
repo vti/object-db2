@@ -345,19 +345,16 @@ sub find {
     my $sql = ObjectDB::SQL::Select->new;
     $sql->source($class->schema->table);
 
-    my @columns;
+    my @columns = $params{columns} ? @{$params{columns}} : @{$class->schema->columns};
+    unshift @columns, @{$class->schema->primary_keys};
+
+    $sql->columns([@columns]);
+
     if (my $id = delete $params{id}) {
-        @columns = @{$class->schema->columns};
-        $sql->columns([@columns]);
         $sql->where($class->schema->primary_keys->[0] => $id);
         $single = 1;
     }
     else {
-        @columns = @{$class->schema->columns};
-        Carp::croak qq/Schema has no columns/ unless @columns;
-
-        $sql->columns([@columns]);
-
         if (my $where = $params{where}) {
             $class->_resolve_where(where => $where, sql => $sql);
         }
@@ -469,7 +466,7 @@ sub find {
                     my $rel = $class->schema->relationship($name);
                     $object->{related}->{$rel->name} =
                         [$class->find_related($name => conn => $object->conn,
-                            ids => $ids, with => $args->{nested})];
+                            ids => $ids, with => delete $args->{nested}, %$args)];
                 }
 
                 return $object;
@@ -832,6 +829,11 @@ sub _resolve_with {
             my $rel = $class->schema->relationship($name);
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
+                if (delete $args->{auto} && !$args->{columns}) {
+                    $args->{columns} =
+                      $rel->foreign_class->schema->primary_keys;
+                }
+
                 push @$subreq, ($name => $args);
             }
             else {
@@ -844,7 +846,7 @@ sub _resolve_with {
                     $sql->columns($rel->foreign_class->schema->columns);
                 }
                 else {
-                    $sql->columns($rel->foreign_class->schema->primary_keys);
+                    #$sql->columns($rel->foreign_class->schema->primary_keys);
                     $sql->columns($args->{columns});
                 }
 

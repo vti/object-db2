@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 36;
 
 use lib 't/lib';
 
@@ -68,6 +68,17 @@ $author = Author->find(conn => $conn, id => $author->id, with => 'articles');
 is(@{$author->articles}, 2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
+
+$author = Author->find(
+    conn => $conn,
+    id   => $author->id,
+    with => [qw/articles.comments/]
+);
+is(@{$author->articles}, 2);
+ok(not defined $author->articles->[0]->column('title'));
+is(@{$author->articles->[0]->comments}, 2);
+ok(not defined $author->articles->[1]->column('title'));
+is(@{$author->articles->[1]->comments}, 1);
 
 $author = Author->find(
     conn => $conn,
