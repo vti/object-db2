@@ -132,7 +132,7 @@ sub count {
     #my $pk    = join(' || ', @pk);
 
     $sql->source($table);
-    $sql->columns(\"COUNT(*)");
+    $sql->columns(\qq/COUNT(*)/);
 
     $sql->where(%params);
 
@@ -391,7 +391,6 @@ sub find {
             my ($dbh) = @_;
 
             warn "$sql" if DEBUG;
-
             my $sth = $dbh->prepare("$sql");
             return unless $sth;
 
@@ -906,9 +905,11 @@ sub _normalize_with {
         while ($rel =~ s/^(\w+)\.?//) {
             $name .= $name ? '.' . $1 : $1;
             $parent->{$1} ||= $with{$name} || {auto => 1};
-            $parent = $parent->{$1}->{nested} = {} if $rel;
+            $parent->{$1}->{nested} ||= {} if $rel;
+            $parent = $parent->{$1}->{nested} if $rel;
         }
     }
+
 
     my $walker; $walker = sub {
         my $parts = shift;

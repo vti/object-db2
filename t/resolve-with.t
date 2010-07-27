@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 use ObjectDB;
 
@@ -27,5 +27,27 @@ is_deeply(
             nested => [bar => {auto => 1, nested => [baz => {}]}]
         },
         hello => {a => 'b'}
+    ]
+);
+
+is_deeply(
+    ObjectDB->_normalize_with([qw/articles.comments.sub_comments articles.main_category/]),
+    [
+     'articles',
+      {
+        'auto' => 1,
+        'nested' => [
+                      'comments',
+                      {
+                        'auto' => 1,
+                        'nested' => [
+                                      'sub_comments',
+                                      {}
+                                    ]
+                      },
+                      'main_category',
+                      {}
+                    ]
+      }
     ]
 );
