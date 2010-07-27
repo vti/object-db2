@@ -977,6 +977,9 @@ sub _row_to_object {
             my $args = $with->[$i + 1];
 
             my $rel = $self->schema->relationship($name);
+
+            next if ($rel->is_type(qw/has_many has_and_belongs_to_many/));
+
             my $object = $rel->foreign_class->new;
             $object->conn($conn);
 
