@@ -57,7 +57,8 @@ is( $authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment content first'
 );
 
-# Same tests with autoload of articles
+
+# Only data of deepest relationship should be loaded completely
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments/]);
 is(@authors, 1);
 ok( !defined $authors[0]->articles->[0]->column('title') );
@@ -66,7 +67,8 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment content first'
 );
 
-# Make sure that articles do not load a second time
+
+# Mixing the order of relationship chains a bit
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments articles/]);
 is(@authors,                                                1);
 is($authors[0]->articles->[0]->column('title'), 'article title1');
@@ -81,7 +83,7 @@ SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comme
 SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comment 2');
 
 
-# Find all authors with all articles with all comments with podcast
+# Find all authors with all articles with all comments with all subcomments
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
@@ -106,7 +108,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 );
 
 
-# Find all authors with all articles with all comments with all subcomments
+# Only data of deepest relationship should be loaded completely
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments/]);
@@ -128,6 +130,7 @@ ok( defined $authors[0]->articles->[1]->comments );
 is( @{$authors[0]->articles->[1]->comments}, 0);
 
 
+# Follow a second path (articles.comments articles.main_category)
 @authors = Author->find( conn=>$conn,
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
@@ -155,7 +158,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
 
 
-# Find all authors with all articles with all comments with all subcomments
+# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments articles.main_category/]);
@@ -177,7 +180,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
 
 
-# Find all authors with all articles with all comments with all subcomments
+# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category/]);
@@ -192,7 +195,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1
 
 
 
-# 
+# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category articles/]);
