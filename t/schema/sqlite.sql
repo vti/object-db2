@@ -17,12 +17,22 @@ CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `category_id` INTEGER,
  `author_id` INTEGER,
+ `title` varchar(40) default '',
+ `main_category_id` INTEGER
+);
+CREATE TABLE `main_categories` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `title` varchar(40) default ''
 );
 CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `article_id` INTEGER,
  `author_id` INTEGER,
+ `content` varchar(40) default ''
+);
+CREATE TABLE `sub_comments` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `comment_id` INTEGER,
  `content` varchar(40) default ''
 );
 CREATE TABLE `article_tag_maps` (
