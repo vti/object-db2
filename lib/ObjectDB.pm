@@ -348,7 +348,15 @@ sub find {
     my @columns;
     if ($params{columns}) {
         @columns = @{$params{columns}};
-        unshift @columns, @{$class->schema->primary_keys};
+
+        foreach my $pk ( @{$class->schema->primary_keys} ){
+            my $add_pk_column = 1;
+            foreach my $passed_column ( @columns ){
+                $add_pk_column = 0 if $pk eq $passed_column;
+            }
+            unshift @columns, $pk if $add_pk_column;
+        }
+
     }
     else {
         @columns = @{$class->schema->columns};
@@ -419,6 +427,14 @@ sub find {
 
                         my $rel = $class->schema->relationship($name);
 
+                        my ($from, $to) = %{$rel->map};
+
+                        if ($args->{columns} && @{$args->{columns}}){
+                            unless ( grep { $_ eq $to } @{$args->{columns}} ){
+                                push @{$args->{columns}}, $to;                 
+                            }
+                        }
+
                         my $related = [
                             $class->find_related(
                                 $name => conn => $conn,
@@ -427,8 +443,6 @@ sub find {
                                 %$args
                             )
                         ];
-
-                        my ($from, $to) = %{$rel->map};
 
                         my $set;
                         foreach my $o (@$related) {

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 45;
+use Test::More tests => 47;
 
 use lib 't/lib';
 
@@ -86,6 +86,11 @@ is(@{$author->articles->[0]->comments}, 2);
 ok(not defined $author->articles->[1]->column('title'));
 is(@{$author->articles->[1]->comments}, 1);
 
+# Also works for list of authors
+my @authors = Author->find(conn=>$conn, with => [qw/articles.comments/]);
+ok(not defined $authors[1]->articles->[0]->column('title') );
+is(@{$authors[1]->articles->[0]->comments}, 2);
+
 $author = Author->find(
     conn => $conn,
     id   => $author->id,
@@ -111,7 +116,7 @@ is($author->articles->[1]->column('title'),                       'baz');
 is(@{$author->articles->[1]->comments},                           1);
 is($author->articles->[0]->comments->[0]->author->column('name'), 'spammer');
 
-my @authors = Author->find(
+@authors = Author->find(
     conn  => $conn,
     where => [id => $author->id],
     with  => [qw/articles articles.comments articles.comments.author/]
