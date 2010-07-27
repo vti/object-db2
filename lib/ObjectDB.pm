@@ -838,7 +838,7 @@ sub _resolve_with {
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 if (delete $args->{auto} && !$args->{columns}) {
                     $args->{columns} =
-                      $rel->foreign_class->schema->primary_keys;
+                      [@{$rel->foreign_class->schema->primary_keys}];
                 }
 
                 push @$subreq, ($name => $args);
