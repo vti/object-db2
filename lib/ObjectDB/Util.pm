@@ -60,7 +60,7 @@ sub single_to_plural {
     shift;
     my $string = shift;
 
-    if ($string =~ s/(?<!(?:a|e|o|i))y//) {
+    if ($string =~ s/(?<!(?:a|e|o|i))y$//) {
         $string .= 'ie';
     }
 

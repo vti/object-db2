@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 20;
 
 use_ok('ObjectDB::Util');
 
@@ -27,3 +27,7 @@ is(ObjectDB::Util->plural_to_single('categories'), 'category');
 
 is(ObjectDB::Util->class_to_table('Article'), 'articles');
 is(ObjectDB::Util->table_to_class('articles'), 'Article');
+
+is(ObjectDB::Util->class_to_table('CategoryHistory'), 'category_histories');
+is(ObjectDB::Util->decamelize('CategoryHistory'), 'category_history');
+is(ObjectDB::Util->single_to_plural('category_history'), 'category_histories');
