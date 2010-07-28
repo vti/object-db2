@@ -121,7 +121,8 @@ sub relationship {
     my $name = shift;
 
     my $rel = $self->relationships->{$name};
-    Carp::croak qq/Unknown relationship '$name'/ unless $rel;
+    my $class = $self->class;
+    Carp::croak qq/Unknown relationship '$name' in class '$class'/ unless $rel;
 
     return $rel;
 }
