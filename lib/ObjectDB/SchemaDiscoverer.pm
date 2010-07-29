@@ -17,7 +17,7 @@ sub build {
 
     unless ($driver_class->can('new')) {
         eval "require $driver_class";
-        die $@ if $@;
+        Carp::croak qq/Error while loading $driver_class: $@/ if $@;
     }
 
     return $driver_class->new(%params);
