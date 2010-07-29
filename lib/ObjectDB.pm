@@ -422,9 +422,9 @@ sub find {
                         my $args         = $subreq->[1];
                         my $subreq_class = $subreq->[2];
                         my $chain        = $subreq->[3];
+                        my $parent_args  = $subreq->[4];
 
-                        my $ids = $args->{pk} ? [@{$args->{pk}}] : [@pk];
-
+                        my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
                         my $nested = delete $args->{nested} || [];
 
                         my $rel = $subreq_class->schema->relationship($name);
@@ -856,7 +856,7 @@ sub _resolve_with {
 
     my $walker;
     $walker = sub {
-        my ($class, $with, $passed_chain) = @_;
+        my ($class, $with, $passed_chain, $parent_args) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
@@ -880,7 +880,7 @@ sub _resolve_with {
                     }
                 }
 
-                push @$subreqs, [$name, $args, $class, $chain];
+                push @$subreqs, [$name, $args, $class, $chain, $parent_args];
 
             }
             else {
@@ -900,7 +900,7 @@ sub _resolve_with {
                 }
 
                 if (my $subwith = $args->{nested}) {
-                    $walker->($rel->foreign_class, $subwith, $chain);
+                    $walker->($rel->foreign_class, $subwith, $chain, $args);
                 }
             }
         }

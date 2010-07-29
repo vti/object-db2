@@ -41,12 +41,14 @@ my $author = Author->create(
 
 my $category_1 = MainCategory->create(conn=>$conn, title => 'main category 1');
 my $category_2 = MainCategory->create(conn=>$conn, title => 'main category 2');
-$author->articles->[0]->column( 'main_category_id' => $category_1->column('id') )->update;
+my $category_3 = MainCategory->create(conn=>$conn, title => 'main category 3');
+my $category_4 = MainCategory->create(conn=>$conn, title => 'main category 4');
+$author->articles->[0]->column( 'main_category_id' => $category_4->column('id') )->update;
 
 
-$category_1->create_related('admin_histories',
+$category_4->create_related('admin_histories',
   { admin_name=>'Andre1', from => '2010-01-01', till => '2010-02-01' } );
-$category_1->create_related('admin_histories',
+$category_4->create_related('admin_histories',
   { admin_name=>'Andre2', from => '2010-02-01', till => '2010-03-01' } );
 
 
@@ -161,7 +163,7 @@ is($authors[0]->articles->[2]->column('title'), 'article title3');
 is( $authors[0]->articles->[2]->comments->[0]->column('content'),
     'comment content3'
 );
-is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
+is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
 # Similar test
@@ -183,7 +185,7 @@ is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[1]
     'sub comment 2'
 );
 is( @{$authors[0]->articles->[1]->comments}, 0);
-is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
+is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
 # Similar test
@@ -197,10 +199,9 @@ is( @{$authors[0]->articles->[0]->comments}, 2);
 is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content first');
 is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment content second');
 is( @{$authors[0]->articles->[1]->comments}, 0);
-is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
+is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-$ENV{OBJECTDB_DEBUG} = 1;
 # Similar test
 @authors =
   Author->find( conn=>$conn, 
@@ -212,7 +213,7 @@ is( @{$authors[0]->articles->[0]->comments}, 2);
 is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content first');
 is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment content second');
 is( @{$authors[0]->articles->[1]->comments}, 0);
-is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
+is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
 # One to many relationship follows a one to one relationship
@@ -231,7 +232,7 @@ ok ( not defined $articles[0]->main_category->column('title') );
 
 
 is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
-is ( $articles[0]->main_category->column('title'), 'main category 1' );
+is ( $articles[0]->main_category->column('title'), 'main category 4' );
 
 
 # One to many relationship follows a one to one relationship
@@ -241,7 +242,6 @@ is ( $articles[0]->main_category->column('title'), 'main category 1' );
 
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
-
 
 
 # Cleanup
