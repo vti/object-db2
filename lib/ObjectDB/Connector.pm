@@ -8,7 +8,7 @@ use base 'ObjectDB::Base';
 __PACKAGE__->attr('dbh');
 
 use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
-use constant DBIXCONNECTOR => eval { require DBIx::Connector; 1 } ? 1 : 0;
+use constant DBIXCONNECTOR => eval 'use DBIx::Connector 0.36; 1';
 
 use DBI;
 

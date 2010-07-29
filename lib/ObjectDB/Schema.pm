@@ -51,9 +51,8 @@ sub auto_discover {
     $conn->run(
         sub {
             my $dbh = shift;
-
             my $discoverer = ObjectDB::SchemaDiscoverer->build(
-                driver => $conn->driver,
+                driver => $dbh->{'Driver'}->{'Name'},
                 table  => $self->table
             );
 
