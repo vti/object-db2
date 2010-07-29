@@ -348,18 +348,18 @@ sub find {
     my @columns;
     if ($params{columns}) {
         @columns = @{$params{columns}};
-
-        foreach my $pk ( @{$class->schema->primary_keys} ){
-            my $add_pk_column = 1;
-            foreach my $passed_column ( @columns ){
-                $add_pk_column = 0 if $pk eq $passed_column;
-            }
-            unshift @columns, $pk if $add_pk_column;
-        }
-
     }
     else {
         @columns = @{$class->schema->columns};
+    }
+
+    # Primary keys are always loaded
+    foreach my $pk ( @{$class->schema->primary_keys} ){
+        my $add_pk_column = 1;
+        foreach my $passed_column ( @columns ){
+            $add_pk_column = 0 if $pk eq $passed_column;
+        }
+        unshift @columns, $pk if $add_pk_column;
     }
 
     $sql->columns([@columns]);
@@ -428,7 +428,7 @@ sub find {
 
                         my ($from, $to) = %{$rel->map};
 
-                        if ($args->{columns} && @{$args->{columns}}){
+                        if ($args->{columns}){
                             unless ( grep { $_ eq $to } @{$args->{columns}} ){
                                 push @{$args->{columns}}, $to;                 
                             }
@@ -850,10 +850,9 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 if (delete $args->{auto} && !$args->{columns}) {
-                    $args->{columns} =
-                      [@{$rel->foreign_class->schema->primary_keys}];
+                    # make sure that no columns are loaded
+                    $args->{columns} = [];
                 }
-
                 push @$subreq, ($name => $args);
             }
             else {
