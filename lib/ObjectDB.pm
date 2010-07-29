@@ -379,11 +379,11 @@ sub find {
 
     $sql->order_by($params{order_by}) if $params{order_by};
 
-    my $subreq = [];
+    my $subreqs = [];
     my $with;
     if ($with = $params{with}) {
         $with = $class->_normalize_with($with);
-        $class->_resolve_with(with => $with, sql => $sql, subreq => $subreq);
+        $class->_resolve_with(with => $with, sql => $sql, subreqs => $subreqs);
     }
 
     return $conn->txn(
@@ -411,25 +411,28 @@ sub find {
                         with => $with
                       );
                     push @result, $object;
-                    push @pk, @{$object->primary_keys_values} if @$subreq;
+                    push @pk, @{$object->primary_keys_values} if @$subreqs;
                 }
 
                 #warn Dumper \@pk;
 
-                if ($subreq && @$subreq) {
-                    my $ids = [@pk];
-                    for (my $i = 0; $i < @$subreq; $i += 2) {
-                        my $name = $subreq->[$i];
-                        my $args = $subreq->[$i + 1];
+                if ($subreqs && @$subreqs) {
+                    foreach my $subreq (@$subreqs) {
+                        my $name         = $subreq->[0];
+                        my $args         = $subreq->[1];
+                        my $subreq_class = $subreq->[2];
+                        my $chain        = $subreq->[3];
+
+                        my $ids = $args->{pk} ? [@{$args->{pk}}] : [@pk];
 
                         my $nested = delete $args->{nested} || [];
 
-                        my $rel = $class->schema->relationship($name);
+                        my $rel = $subreq_class->schema->relationship($name);
 
                         my ($from, $to) = %{$rel->map};
 
                         my $related = [
-                            $class->find_related(
+                            $subreq_class->find_related(
                                 $name => conn => $conn,
                                 ids   => $ids,
                                 with  => $nested,
@@ -454,6 +457,24 @@ sub find {
                             #warn Dumper $o;
                             push @{$o->{related}->{$name}}, @{$set->{$o->id}};
                         }
+
+                        OUTER_LOOP: foreach my $o (@result) {
+                            my $parent = $o;
+                            foreach my $part ( @$chain ){
+                                if ( $parent->{related}->{$part} ){
+                                    $parent = $parent->{related}->{$part};
+                                }
+                                else {
+                                    next OUTER_LOOP;
+                                }
+                            }
+
+                            next unless $parent->id;
+
+                            $parent->{related}->{$name} = [];
+                            $set->{$parent->id} ||= [];
+                            push @{$parent->{related}->{$name}}, @{$set->{$parent->id}};
+                        }
                     }
                 }
 
@@ -470,16 +491,17 @@ sub find {
                     with => $with
                 );
 
-                return $object unless $subreq && @$subreq;
+                return $object unless $subreqs && @$subreqs;
 
                 my $ids = [$object->id];
-                for (my $i = 0; $i < @$subreq; $i += 2) {
-                    my $name = $subreq->[$i];
-                    my $args = $subreq->[$i + 1];
+                foreach my $subreq (@$subreqs) {
+                    my $name         = $subreq->[0];
+                    my $args         = $subreq->[1];
+                    my $subreq_class = $subreq->[2];
 
-                    my $rel = $class->schema->relationship($name);
+                    my $rel = $subreq_class->schema->relationship($name);
                     $object->{related}->{$rel->name} =
-                        [$class->find_related($name => conn => $object->conn,
+                        [$subreq_class->find_related($name => conn => $object->conn,
                             ids => $ids, with => delete $args->{nested}, %$args)];
                 }
 
@@ -828,17 +850,19 @@ sub _resolve_with {
 
     my $with   = $params{with};
     my $sql    = $params{sql};
-    my $subreq = $params{subreq};
+    my $subreqs = $params{subreqs};
 
     return unless $with;
 
     my $walker;
     $walker = sub {
-        my ($class, $with) = @_;
+        my ($class, $with, $passed_chain) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
             my $args = $with->[$i + 1];
+
+            my $chain = $passed_chain ? [@$passed_chain] : [];
 
             my $rel = $class->schema->relationship($name);
 
@@ -856,9 +880,12 @@ sub _resolve_with {
                     }
                 }
 
-                push @$subreq, ($name => $args);
+                push @$subreqs, [$name, $args, $class, $chain];
+
             }
             else {
+                push @$chain, $name;
+
                 $sql->source($rel->to_source);
 
                 if ($args->{auto}) {
@@ -873,12 +900,11 @@ sub _resolve_with {
                 }
 
                 if (my $subwith = $args->{nested}) {
-                    $walker->($rel->foreign_class, $subwith);
+                    $walker->($rel->foreign_class, $subwith, $chain);
                 }
             }
         }
     };
-
     $walker->($class, $with);
 }
 
@@ -1007,6 +1033,12 @@ sub _row_to_object {
 
             $object->is_modified(0);
             $self->{related}->{$name} = $object;
+
+            # TO DO: only if subrequest
+            $args->{pk} ||= [];
+            foreach my $pk (@{$object->primary_keys_values}){
+                push @{$args->{pk}}, $pk if defined $pk;
+            }
 
             if (my $subwith = $args->{nested}) {
                 $walker->($object, $subwith);

@@ -24,6 +24,13 @@ CREATE TABLE `main_categories` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `title` varchar(40) default ''
 );
+CREATE TABLE `admin_histories` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `main_category_id` INTEGER,
+ `from` date default '',
+ `till` date default '',
+ `admin_name` varchar(40) default ''
+);
 CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `article_id` INTEGER,

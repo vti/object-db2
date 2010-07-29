@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 68;
+use Test::More tests => 74;
 
 use lib 't/lib';
 
@@ -42,6 +42,12 @@ my $author = Author->create(
 my $category_1 = MainCategory->create(conn=>$conn, title => 'main category 1');
 my $category_2 = MainCategory->create(conn=>$conn, title => 'main category 2');
 $author->articles->[0]->column( 'main_category_id' => $category_1->column('id') )->update;
+
+
+$category_1->create_related('admin_histories',
+  { admin_name=>'Andre1', from => '2010-01-01', till => '2010-02-01' } );
+$category_1->create_related('admin_histories',
+  { admin_name=>'Andre2', from => '2010-02-01', till => '2010-03-01' } );
 
 
 my $comment_id;
@@ -194,7 +200,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
 
 
-
+$ENV{OBJECTDB_DEBUG} = 1;
 # Similar test
 @authors =
   Author->find( conn=>$conn, 
@@ -208,6 +214,33 @@ is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment conte
 is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 1' );
 
+
+# One to many relationship follows a one to one relationship
+my @articles =
+  Article->find( conn=>$conn, 
+    with => [qw/main_category.admin_histories/]);
+
+is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+ok ( not defined $articles[0]->main_category->column('title') );
+
+
+# One to many relationship follows a one to one relationship
+@articles =
+  Article->find( conn=>$conn, 
+    with => [qw/main_category main_category.admin_histories/]);
+
+
+is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+is ( $articles[0]->main_category->column('title'), 'main category 1' );
+
+
+# One to many relationship follows a one to one relationship
+@authors =
+  Author->find( conn=>$conn, 
+    with => [qw/articles.main_category.admin_histories/]);
+
+is( $authors[0]->articles->[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
 
 
 

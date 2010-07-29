@@ -12,8 +12,8 @@ sub _build {
     my $self = shift;
 
     unless ($self->foreign_class) {
-        my $foreign_class = ObjectDB::Util->camelize($self->name);
-        $foreign_class = ObjectDB::Util->plural_to_single($foreign_class);
+        my $foreign_class = ObjectDB::Util->plural_to_single($self->name);
+        $foreign_class = ObjectDB::Util->camelize($foreign_class);
 
         ObjectDB::Loader->load($foreign_class);
         $foreign_class->schema->build(@_);
