@@ -428,12 +428,6 @@ sub find {
 
                         my ($from, $to) = %{$rel->map};
 
-                        if ($args->{columns}){
-                            unless ( grep { $_ eq $to } @{$args->{columns}} ){
-                                push @{$args->{columns}}, $to;                 
-                            }
-                        }
-
                         my $related = [
                             $class->find_related(
                                 $name => conn => $conn,
@@ -850,9 +844,18 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 if (delete $args->{auto} && !$args->{columns}) {
-                    # make sure that no columns are loaded
+                    # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
+
+                # Load columns that are required for object mapping
+                my ($from, $to) = %{$rel->map};
+                if ($args->{columns}){
+                    unless ( grep { $_ eq $to } @{$args->{columns}} ){
+                        push @{$args->{columns}}, $to;                 
+                    }
+                }
+
                 push @$subreq, ($name => $args);
             }
             else {
