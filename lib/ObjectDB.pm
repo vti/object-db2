@@ -320,6 +320,7 @@ sub related {
 
     my $related = $self->{related}->{$name};
     return $related if $related;
+    return undef if defined $related && $related == 0;
 
     my $type = $rel->type;
     if ($type eq 'has_one' || $type eq 'belongs_to') {
@@ -1053,7 +1054,12 @@ sub _row_to_object {
             }
 
             $object->is_modified(0);
-            $self->{related}->{$name} = $object;
+            if ( $object->id ){
+                $self->{related}->{$name} = $object;
+            }
+            else {
+                $self->{related}->{$name} = 0;
+            }
 
             # TO DO: only if subrequest
             $args->{pk} ||= [];

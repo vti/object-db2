@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 87;
+use Test::More tests => 88;
 
 use lib 't/lib';
 
@@ -296,6 +296,9 @@ $article =
   Article->find( conn=>$conn, id=>$author->articles->[3]->column('id'),
     with => [qw/to_do_articles special_report.main_category.admin_histories/]);
 is( $article->to_do_articles->[0]->column('to_do'), 'to do 4');
+
+# related object should not exist if no data exists for this object (empty objects not allowed)
+ok( not defined $article->special_report );
 
 
 
