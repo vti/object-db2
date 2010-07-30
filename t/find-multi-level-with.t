@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 74;
+use Test::More tests => 84;
 
 use lib 't/lib';
 
@@ -45,11 +45,16 @@ my $category_3 = MainCategory->create(conn=>$conn, title => 'main category 3');
 my $category_4 = MainCategory->create(conn=>$conn, title => 'main category 4');
 $author->articles->[0]->column( 'main_category_id' => $category_4->column('id') )->update;
 
-
 $category_4->create_related('admin_histories',
   { admin_name=>'Andre1', from => '2010-01-01', till => '2010-02-01' } );
 $category_4->create_related('admin_histories',
   { admin_name=>'Andre2', from => '2010-02-01', till => '2010-03-01' } );
+
+
+# 3rd article -> belongs to special report 1 -> belongs to main category 4
+my $special_report_1 = SpecialReport->create(conn=>$conn, title => 'special report 1');
+$author->articles->[2]->column( 'special_report_id' => $special_report_1->column('id') )->update;
+$special_report_1->column( main_category_id => $category_4->column('id') )->update;
 
 
 my $comment_id;
@@ -91,7 +96,7 @@ SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comme
 SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comment 2');
 
 
-# Find all authors with all articles with all comments with all subcomments
+###### Load all columns for each relationship
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
@@ -116,7 +121,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 );
 
 
-# Only data of deepest relationship should be loaded completely
+###### Only data of deepest relationship should be loaded completely
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments/]);
@@ -138,7 +143,7 @@ ok( defined $authors[0]->articles->[1]->comments );
 is( @{$authors[0]->articles->[1]->comments}, 0);
 
 
-# Follow a second path (articles.comments articles.main_category)
+###### Follow a second path (articles.comments articles.main_category)
 @authors = Author->find( conn=>$conn,
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
@@ -166,7 +171,6 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments articles.main_category/]);
@@ -188,7 +192,6 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category/]);
@@ -202,7 +205,6 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-# Similar test
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category articles/]);
@@ -216,7 +218,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-# One to many relationship follows a one to one relationship
+###### One-to-many relationship follows a one-to-one relationship
 my @articles =
   Article->find( conn=>$conn, 
     with => [qw/main_category.admin_histories/]);
@@ -225,7 +227,6 @@ is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'An
 ok ( not defined $articles[0]->main_category->column('title') );
 
 
-# One to many relationship follows a one to one relationship
 @articles =
   Article->find( conn=>$conn, 
     with => [qw/main_category main_category.admin_histories/]);
@@ -235,13 +236,47 @@ is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'An
 is ( $articles[0]->main_category->column('title'), 'main category 4' );
 
 
-# One to many relationship follows a one to one relationship
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.main_category.admin_histories/]);
 
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
+
+
+
+###### One-to-many relationship follows TWO one-to-one/many-to-one relationships
+@authors =
+  Author->find( conn=>$conn, 
+    with => [qw/articles.special_report.main_category.admin_histories/]);
+
+is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+ok ( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
+
+
+@authors =
+  Author->find( conn=>$conn, 
+    with => [qw/articles.special_report.main_category articles.special_report.main_category.admin_histories/]);
+
+is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 'main category 4' );
+
+
+@authors =
+  Author->find( conn=>$conn, 
+    with => [qw/articles.special_report.main_category articles.special_report.main_category.admin_histories/]);
+
+is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 'main category 4' );
+
+
+@authors =
+  Author->find( conn=>$conn, 
+    with => [qw/articles.comments articles.special_report.main_category.admin_histories/]);
+is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+ok ( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
+ok( not defined $authors[0]->articles->[2]->column('title') );
+is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
 
 
 # Cleanup

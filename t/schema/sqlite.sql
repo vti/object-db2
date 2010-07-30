@@ -18,6 +18,12 @@ CREATE TABLE `articles` (
  `category_id` INTEGER,
  `author_id` INTEGER,
  `title` varchar(40) default '',
+ `special_report_id` INTEGER,
+ `main_category_id` INTEGER
+);
+CREATE TABLE `special_reports` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `title` varchar(40) default '',
  `main_category_id` INTEGER
 );
 CREATE TABLE `main_categories` (
