@@ -493,7 +493,7 @@ sub find {
 
                 return $object unless $subreqs && @$subreqs;
 
-                foreach my $subreq (@$subreqs) {
+                SUB_REQ: foreach my $subreq (@$subreqs) {
                     my $name         = $subreq->[0];
                     my $args         = $subreq->[1];
                     my $subreq_class = $subreq->[2];
@@ -508,11 +508,11 @@ sub find {
                             $parent = $parent->{related}->{$part};
                         }
                         else {
-                            return $object;
+                            next SUB_REQ;
                         }
                     }
 
-                    return $object unless $parent->id;
+                    next SUB_REQ unless $parent->id;
 
                     $parent->{related}->{$name} =
                         [$subreq_class->find_related($name => conn => $object->conn,
