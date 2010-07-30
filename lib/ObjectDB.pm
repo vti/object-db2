@@ -1046,7 +1046,7 @@ sub _row_to_object {
 
             my $source = shift @$sources;
 
-            Carp::croak qq/No more rows left for mapping/ unless @$row;
+            Carp::croak qq/No more columns left for mapping/ unless @$row;
 
             foreach my $column (@{$source->{columns}}) {
                 $object->column($column => shift @$row);
