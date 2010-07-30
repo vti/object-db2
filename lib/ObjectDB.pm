@@ -493,14 +493,28 @@ sub find {
 
                 return $object unless $subreqs && @$subreqs;
 
-                my $ids = [$object->id];
                 foreach my $subreq (@$subreqs) {
                     my $name         = $subreq->[0];
                     my $args         = $subreq->[1];
                     my $subreq_class = $subreq->[2];
+                    my $chain        = $subreq->[3];
+                    my $parent_args  = $subreq->[4];
 
-                    my $rel = $subreq_class->schema->relationship($name);
-                    $object->{related}->{$rel->name} =
+                    my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [$object->id];
+
+                    my $parent = $object;
+                    foreach my $part ( @$chain ){
+                        if ( $parent->{related}->{$part} ){
+                            $parent = $parent->{related}->{$part};
+                        }
+                        else {
+                            return $object;
+                        }
+                    }
+    
+                    return $object unless $parent->id;
+
+                    $parent->{related}->{$name} =
                         [$subreq_class->find_related($name => conn => $object->conn,
                             ids => $ids, with => delete $args->{nested}, %$args)];
                 }

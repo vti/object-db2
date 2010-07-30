@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 84;
+use Test::More tests => 86;
 
 use lib 't/lib';
 
@@ -274,9 +274,16 @@ is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.special_report.main_category.admin_histories/]);
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
-ok ( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
+ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
 ok( not defined $authors[0]->articles->[2]->column('title') );
 is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
+
+
+my $article =
+  Article->find( conn=>$conn, id=>$author->articles->[2]->column('id'),
+    with => [qw/special_report.main_category.admin_histories/]);
+is( $article->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+ok ( not defined $article->special_report->main_category->column('title') );
 
 
 # Cleanup
