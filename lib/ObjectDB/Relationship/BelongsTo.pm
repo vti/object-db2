@@ -5,24 +5,10 @@ use warnings;
 
 use base 'ObjectDB::Relationship::Base';
 
-use ObjectDB::Util;
-use ObjectDB::Loader;
-
 sub _build {
     my $self = shift;
 
-    unless ($self->foreign_class) {
-        my $foreign_class = ObjectDB::Util->camelize($self->name);
-
-        ObjectDB::Loader->load($foreign_class);
-        $foreign_class->schema->build(@_);
-
-        $self->foreign_class($foreign_class);
-    }
-
-    unless ($self->foreign_table) {
-        $self->foreign_table($self->foreign_class->schema->table);
-    }
+    $self->_prepare_foreign(@_);
 
     unless (%{$self->map}) {
         my $foreign_name =

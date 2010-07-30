@@ -5,12 +5,13 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
+require ObjectDB::Loader;
+require ObjectDB::Util;
+
 __PACKAGE__->attr([qw/name foreign_class foreign_table/]);
 __PACKAGE__->attr([qw/map/]                  => sub { {} });
 __PACKAGE__->attr([qw/with where join_args/] => sub { [] });
 __PACKAGE__->attr(is_built => 0);
-
-use ObjectDB::Util;
 
 sub type { ObjectDB::Util->decamelize((split '::' => ref(shift))[-1]) }
 
@@ -50,6 +51,24 @@ sub build {
     $self->_build(@_);
 
     $self->is_built(1);
+}
+
+sub _prepare_foreign {
+    my ($self) = shift;
+    my $single = $_[$#_] eq 'single' ? pop : undef;
+
+    unless ($self->foreign_class) {
+        my $foreign_class = ObjectDB::Util->camelize($self->name);
+        $foreign_class = ObjectDB::Util->plural_to_single($foreign_class) if $single;
+
+        ObjectDB::Loader->load($foreign_class);
+        $foreign_class->schema->build(@_);
+
+        $self->foreign_class($foreign_class);
+    }
+    unless ($self->foreign_table) {
+        $self->foreign_table($self->foreign_class->schema->table);
+    }
 }
 
 sub is_belongs_to              { shift->is_type('belongs_to') }
