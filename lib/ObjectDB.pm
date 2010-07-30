@@ -511,7 +511,7 @@ sub find {
                             return $object;
                         }
                     }
-    
+
                     return $object unless $parent->id;
 
                     $parent->{related}->{$name} =
@@ -1043,6 +1043,9 @@ sub _row_to_object {
             $object->conn($conn);
 
             my $source = shift @$sources;
+
+            Carp::croak qq/No more rows left for mapping/ unless @$row;
+
             foreach my $column (@{$source->{columns}}) {
                 $object->column($column => shift @$row);
             }

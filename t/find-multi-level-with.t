@@ -279,11 +279,22 @@ ok( not defined $authors[0]->articles->[2]->column('title') );
 is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
 
 
+# pass specific article id
 my $article =
   Article->find( conn=>$conn, id=>$author->articles->[2]->column('id'),
     with => [qw/special_report.main_category.admin_histories/]);
 is( $article->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $article->special_report->main_category->column('title') );
+
+
+### FAILING TEST: Putting the same table in different parts of the object hierarchy
+#@articles =
+#  Article->find( conn=>$conn, 
+#    with => [qw/main_category special_report.main_category.admin_histories/]);
+#is( $articles[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+
+
+
 
 
 # Cleanup
