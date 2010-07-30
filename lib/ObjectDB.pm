@@ -880,6 +880,8 @@ sub _resolve_with {
                     }
                 }
 
+                # $chain for multi-level object-mapping
+                # $parent_args to map subreq data to correct parent ids
                 push @$subreqs, [$name, $args, $class, $chain, $parent_args];
 
             }
