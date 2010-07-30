@@ -43,6 +43,11 @@ CREATE TABLE `comments` (
  `author_id` INTEGER,
  `content` varchar(40) default ''
 );
+CREATE TABLE `to_do_articles` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `article_id` INTEGER,
+ `to_do` varchar(40) default ''
+);
 CREATE TABLE `sub_comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `comment_id` INTEGER,

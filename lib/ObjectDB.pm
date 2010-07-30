@@ -52,7 +52,9 @@ sub init {
             $self->{related}->{$key} = $value;
         }
         else {
-            Carp::croak qq/Unknown column '$key'/;
+            Carp::croak qq/Unknown column '$key' in table: /
+              .ref($self)->schema->table
+              .qq/ or unknown relationship in class: /.ref($self);
         }
     }
 

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 86;
+use Test::More tests => 87;
 
 use lib 't/lib';
 
@@ -35,6 +35,9 @@ my $author = Author->create(
         {   title    => 'article title2'},
         {   title    => 'article title3',
             comments => [{content => 'comment content3'}]
+        },
+        {   title    => 'article title4',
+            to_do_articles => [{to_do => 'to do 4'}]
         }
     ]
 );
@@ -101,7 +104,7 @@ SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comme
   Author->find( conn=>$conn, 
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 is( $authors[0]->articles->[0]->column('title'), 'article title1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment content first'
@@ -126,7 +129,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments/]);
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
 ok( not defined $authors[0]->articles->[0]->comments->[0]->column('content') );
@@ -150,7 +153,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
     ]
 );
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 is( $authors[0]->articles->[0]->column('title'), 'article title1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment content first'
@@ -175,7 +178,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments articles.main_category/]);
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
 ok( not defined $authors[0]->articles->[0]->comments->[0]->column('content') );
@@ -196,7 +199,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category/]);
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
 is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content first');
@@ -209,7 +212,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category articles/]);
 is( @authors, 1);
-is( @{$authors[0]->articles}, 3);
+is( @{$authors[0]->articles}, 4);
 is(  $authors[0]->articles->[0]->column('title'), 'article title1' );
 is( @{$authors[0]->articles->[0]->comments}, 2);
 is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content first');
@@ -279,12 +282,21 @@ ok( not defined $authors[0]->articles->[2]->column('title') );
 is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
 
 
-# pass specific article id
+# Pass specific article id
 my $article =
   Article->find( conn=>$conn, id=>$author->articles->[2]->column('id'),
     with => [qw/special_report.main_category.admin_histories/]);
 is( $article->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $article->special_report->main_category->column('title') );
+
+
+# Pass specific article id, make sure that later subrequest is performed even
+# if first subrequest does not provide any results
+$article =
+  Article->find( conn=>$conn, id=>$author->articles->[3]->column('id'),
+    with => [qw/to_do_articles special_report.main_category.admin_histories/]);
+is( $article->to_do_articles->[0]->column('to_do'), 'to do 4');
+
 
 
 ### FAILING TEST: Putting the same table in different parts of the object hierarchy
