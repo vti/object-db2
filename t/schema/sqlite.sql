@@ -74,4 +74,26 @@ CREATE TABLE `nested_comments` (
  `lft`         INTEGER NOT NULL,
  `rgt`         INTEGER NOT NULL
 );
+CREATE TABLE `hotels` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_a` INTEGER,
+ `name` varchar(40) default '',
+ `city` varchar(40) default '',
+ `street` varchar(40) default '',
+ UNIQUE(`name`)
+);
+CREATE TABLE `apartments` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_b` INTEGER,
+ `apartment_num_b` INTEGER,
+ `name` varchar(40) default '',
+ `size` INTEGER
+);
+CREATE TABLE `rooms` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_c` INTEGER,
+ `apartment_num_c` INTEGER,
+ `room_num_c` INTEGER,
+ `size` INTEGER
+);
 COMMIT;

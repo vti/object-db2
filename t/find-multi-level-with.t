@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 88;
+use Test::More tests => 119;
 
 use lib 't/lib';
 
@@ -19,6 +19,8 @@ use Article;
 use MainCategory;
 use Comment;
 use SubComment;
+
+use Hotel;
 
 
 # Create data
@@ -299,6 +301,79 @@ is( $article->to_do_articles->[0]->column('to_do'), 'to do 4');
 
 # related object should not exist if no data exists for this object (empty objects not allowed)
 ok( not defined $article->special_report );
+
+
+
+######################################################################
+###### Tests where mapping does not follow naming conventions
+###### Map different tables using multiple columns
+
+# Create data and test
+my $hotel = Hotel->create(
+    conn      => $conn,
+    name      => 'President',
+    hotel_num_a => 5,
+    apartments => [
+        {   apartment_num_b => 47,
+            name          => 'John F. Kennedy',
+            size          => 78,
+            rooms => [
+                {room_num_c => 1, size => 70},
+                {room_num_c => 2, size => 8}
+            ]
+        },
+        {   apartment_num_b => 61,
+            name          => 'George Washington',
+            size          => 50,
+            rooms => [
+                {room_num_c => 1, size => 10},
+                {room_num_c => 2, size => 15},
+                {room_num_c => 3, size => 25}
+            ]
+        },
+    ]
+);
+
+is( @{$hotel->apartments}, 2 );
+is( $hotel->apartments->[0]->column('apartment_num_b'), 47 );
+is( $hotel->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( $hotel->apartments->[0]->column('size'), 78 );
+
+is( $hotel->apartments->[1]->column('apartment_num_b'), 61 );
+is( $hotel->apartments->[1]->column('name'), 'George Washington' );
+is( $hotel->apartments->[1]->column('size'), 50 );
+
+is( @{$hotel->apartments->[0]->rooms}, 2 );
+is( $hotel->apartments->[0]->rooms->[0]->column('room_num_c'), 1);
+is( $hotel->apartments->[0]->rooms->[0]->column('size'), 70);
+is( $hotel->apartments->[0]->rooms->[1]->column('room_num_c'), 2);
+is( $hotel->apartments->[0]->rooms->[1]->column('size'), 8);
+
+is( @{$hotel->apartments->[1]->rooms}, 3 );
+is( $hotel->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
+is( $hotel->apartments->[1]->rooms->[0]->column('size'), 10);
+is( $hotel->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
+is( $hotel->apartments->[1]->rooms->[1]->column('size'), 15);
+is( $hotel->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
+is( $hotel->apartments->[1]->rooms->[2]->column('size'), 25);
+
+# Now the most interesting part:
+is( $hotel->apartments->[0]->column('hotel_num_b'), 5 );
+is( $hotel->apartments->[1]->column('hotel_num_b'), 5 );
+
+is( $hotel->apartments->[0]->rooms->[0]->column('hotel_num_c'), 5);
+is( $hotel->apartments->[0]->rooms->[1]->column('hotel_num_c'), 5);
+is( $hotel->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
+is( $hotel->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
+
+is( $hotel->apartments->[1]->rooms->[0]->column('hotel_num_c'), 5);
+is( $hotel->apartments->[1]->rooms->[1]->column('hotel_num_c'), 5);
+is( $hotel->apartments->[1]->rooms->[2]->column('hotel_num_c'), 5);
+is( $hotel->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
+is( $hotel->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
+is( $hotel->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
+
+
 
 
 

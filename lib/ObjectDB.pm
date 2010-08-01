@@ -211,9 +211,11 @@ sub create_related {
 
     my $rel = $self->schema->relationship($name);
 
-    my ($from, $to) = %{$rel->map};
+    my @params = ();
+    while (my ($from, $to) = each %{$rel->map}) {
+        push @params, ($to => $self->column($from));
+    }
 
-    my @params = ($to => $self->column($from));
     push @params, @{$rel->where} if $rel->where;
 
     if (ref $data eq 'ARRAY'
