@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 126;
+use Test::More tests => 128;
 
 use lib 't/lib';
 
@@ -382,14 +382,16 @@ my @hotels =
     with => [qw/apartments apartments.rooms/]);
 
 is( @{$hotels[0]->apartments}, 2 );
-is( $hotel->apartments->[0]->column('apartment_num_b'), 47 );
-is( $hotel->apartments->[0]->column('name'), 'John F. Kennedy' );
-is( $hotel->apartments->[0]->column('size'), 78 );
+is( $hotels[0]->apartments->[0]->column('apartment_num_b'), 47 );
+is( $hotels[0]->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( $hotels[0]->apartments->[0]->column('size'), 78 );
 
-is( $hotel->apartments->[1]->column('apartment_num_b'), 61 );
-is( $hotel->apartments->[1]->column('name'), 'George Washington' );
-is( $hotel->apartments->[1]->column('size'), 50 );
+is( $hotels[0]->apartments->[1]->column('apartment_num_b'), 61 );
+is( $hotels[0]->apartments->[1]->column('name'), 'George Washington' );
+is( $hotels[0]->apartments->[1]->column('size'), 50 );
 
+is( $hotels[0]->apartments->[0]->column('hotel_num_b'), 5 );
+is( $hotels[0]->apartments->[1]->column('hotel_num_b'), 5 );
 
 
 
