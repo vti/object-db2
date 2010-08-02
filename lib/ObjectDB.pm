@@ -1083,9 +1083,7 @@ sub _row_to_object {
                 $self->{related}->{$name} = 0;
             }
 
-            # TO DO: only if subrequest
             $args->{pk} ||= [];
-
             push @{$args->{pk}}, $object->column($args->{map_from}->[0])
               if $args->{map_from};
 
