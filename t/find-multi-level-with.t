@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 128;
+use Test::More tests => 135;
 
 use lib 't/lib';
 
@@ -332,7 +332,15 @@ my $hotel = Hotel->create(
                 {room_num_c => 3, size => 25}
             ]
         },
-    ]
+    ],
+    manager => 
+        {   manager_num_b => 5555555,
+            name          => 'Lalolu',
+            telefon_numbers => [
+                {tel_num_c => 1111, telefon_number => '123456789'},
+                {tel_num_c => 1112, telefon_number => '987654321'}
+            ]
+        }
 );
 
 is( @{$hotel->apartments}, 2 );
@@ -392,6 +400,23 @@ is( $hotels[0]->apartments->[1]->column('size'), 50 );
 
 is( $hotels[0]->apartments->[0]->column('hotel_num_b'), 5 );
 is( $hotels[0]->apartments->[1]->column('hotel_num_b'), 5 );
+
+
+
+# one-to-many rel follows one-to-one rel
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers/]);
+
+is( $hotels[0]->manager->column('name'), 'Lalolu' );
+is( $hotels[0]->manager->column('hotel_num_b'), 5 );
+
+is( @{$hotels[0]->manager->telefon_numbers}, 2);
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
+
 
 
 

@@ -417,7 +417,7 @@ sub find {
                         with => $with
                       );
                     push @result, $object;
-                    push @pk, $object->column($main->{mapping_cols}->[0]) if $main->{mapping_cols};
+                    push @pk, $object->column($main->{map_from}->[0]) if $main->{map_from};
                 }
 
                 #warn Dumper \@pk;
@@ -430,11 +430,15 @@ sub find {
                         my $chain        = $subreq->[3];
                         my $parent_args  = $subreq->[4];
 
-                        my $mapping_cols = $parent_args->{mapping_cols}
-                          || $main->{mapping_cols}
-                          || die('no mapping cols');
+                        my $map_from = $parent_args->{map_from}
+                          || $main->{map_from}
+                          || die('no map_from cols');
 
-                        if ( @$mapping_cols > 1 ){
+                        my $map_to = $parent_args->{map_to}
+                          || $main->{map_to}
+                          || die('no map_to cols');
+
+                        if ( @$map_from > 1 ){
                             warn qq/subrequest can not be executed as/;
                             warn qq/multiple column mapping is not/;
                             warn qq/supported so far/;
@@ -443,10 +447,6 @@ sub find {
 
                         my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
                         my $nested = delete $args->{nested} || [];
-
-                        my $rel = $subreq_class->schema->relationship($name);
-
-                        my ($from, $to) = %{$rel->map};
 
                         my $related = [
                             $subreq_class->find_related(
@@ -459,7 +459,7 @@ sub find {
 
                         my $set;
                         foreach my $o (@$related) {
-                            my $id = $o->column($to);
+                            my $id = $o->column($map_to->[0]);
                             $set->{$id} ||= [];
                             push @{$set->{$id}}, $o;
 
@@ -479,11 +479,11 @@ sub find {
                                 }
                             }
 
-                            next unless $parent->column($from);
+                            next unless $parent->column($map_from->[0]);
 
                             $parent->{related}->{$name} = [];
-                            $set->{$parent->column($from)} ||= [];
-                            push @{$parent->{related}->{$name}}, @{$set->{$parent->column($from)}};
+                            $set->{$parent->column($map_from->[0])} ||= [];
+                            push @{$parent->{related}->{$name}}, @{$set->{$parent->column($map_from->[0])}};
                         }
                     }
                 }
@@ -905,14 +905,17 @@ sub _resolve_with {
                     }
                 }
 
+                # Save map-from-columns and map-to-columns in with or main
                 if ( $parent_args ) {
                     while (my ($from, $to) = each %{$rel->map}) {
-                        push @{$parent_args->{mapping_cols}}, $from;                 
+                        push @{$parent_args->{map_from}}, $from;                 
+                        push @{$parent_args->{map_to}}, $to;
                     }
                 }
                 else {
                     while (my ($from, $to) = each %{$rel->map}) {
-                        push @{$main->{mapping_cols}}, $from;                 
+                        push @{$main->{map_from}}, $from;                 
+                        push @{$main->{map_to}}, $to;     
                     }
                 }
 
@@ -1082,9 +1085,9 @@ sub _row_to_object {
 
             # TO DO: only if subrequest
             $args->{pk} ||= [];
-            foreach my $pk (@{$object->primary_keys_values}){
-                push @{$args->{pk}}, $pk if defined $pk;
-            }
+
+            push @{$args->{pk}}, $object->column($args->{map_from}->[0])
+              if $args->{map_from};
 
             if (my $subwith = $args->{nested}) {
                 $walker->($object, $subwith);

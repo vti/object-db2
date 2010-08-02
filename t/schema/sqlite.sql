@@ -96,4 +96,16 @@ CREATE TABLE `rooms` (
  `room_num_c` INTEGER,
  `size` INTEGER
 );
+CREATE TABLE `managers` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_b` INTEGER,
+ `manager_num_b` INTEGER,
+ `name` varchar(40) default ''
+);
+CREATE TABLE `telefon_numbers` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `manager_num_c` INTEGER,
+ `tel_num_c` INTEGER,
+ `telefon_number` varchar(40) default ''
+);
 COMMIT;
