@@ -417,7 +417,15 @@ sub find {
                         with => $with
                       );
                     push @result, $object;
-                    push @pk, $object->column($main->{map_from}->[0]) if $main->{map_from};
+        
+                    if ( $main->{map_from} ){
+                        my $map_from_concat = '';
+                        foreach my $map_from_col ( @{$main->{map_from}} ) {
+                            $map_from_concat .= $object->column( $map_from_col );
+                        }
+                        push @pk, $map_from_concat;
+                    }
+
                 }
 
                 #warn Dumper \@pk;
@@ -438,31 +446,32 @@ sub find {
                           || $main->{map_to}
                           || die('no map_to cols');
 
-                        if ( @$map_from > 1 ){
-                            warn qq/subrequest can not be executed as/;
-                            warn qq/multiple column mapping is not/;
-                            warn qq/supported so far/;
-                            next;
-                        }
-
                         my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
                         my $nested = delete $args->{nested} || [];
 
                         my $related = [
                             $subreq_class->find_related(
-                                $name => conn => $conn,
+                                $name,
+                                conn  => $conn,
                                 ids   => $ids,
                                 with  => $nested,
+                                map_to   => $map_to,
                                 %$args
                             )
                         ];
 
+                        # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
+                        #@$map_to = sort @$map_to;
+                        #@$map_from = sort @$map_from;
+
                         my $set;
                         foreach my $o (@$related) {
-                            my $id = $o->column($map_to->[0]);
+                            my $id;
+                            foreach my $map_to_col ( @$map_to ){
+                                $id .= $o->column($map_to_col);
+                            }
                             $set->{$id} ||= [];
                             push @{$set->{$id}}, $o;
-
                         }
 
                         #warn Dumper $set;
@@ -482,8 +491,14 @@ sub find {
                             next unless $parent->column($map_from->[0]);
 
                             $parent->{related}->{$name} = [];
-                            $set->{$parent->column($map_from->[0])} ||= [];
-                            push @{$parent->{related}->{$name}}, @{$set->{$parent->column($map_from->[0])}};
+
+                            my $id;
+                            foreach my $map_from_col ( @$map_from ){
+                                $id .= $parent->column($map_from_col);
+                            }
+
+                            $set->{$id} ||= [];
+                            push @{$parent->{related}->{$name}}, @{$set->{$id}};
                         }
                     }
                 }
@@ -602,8 +617,25 @@ sub find_related {
             die 'todo';
         }
         else {
-            my ($from, $to) = %{$rel->map};
-            @where = ($to => [@{delete $params{ids}}]);
+
+            if ( $params{map_to} ){
+
+            my @map_to = @{$params{map_to}};
+
+            if ( @map_to> 1 ){
+                @map_to = map {$_ = '`'.$_.'`'} @map_to;
+                ### SQLite
+                ### TO DO: mysql: concat
+                ### TO DO: find better way to pass join(' || ', @map_to) --> unless $key =~/^`/; in where.pm
+                @where = ( join(' || ', @map_to) => [@{delete $params{ids}}]);
+                
+            }
+            else {
+                @where = ($map_to[0] => [@{delete $params{ids}}]);
+            }
+
+            }
+
         }
     }
 
@@ -1084,8 +1116,14 @@ sub _row_to_object {
             }
 
             $args->{pk} ||= [];
-            push @{$args->{pk}}, $object->column($args->{map_from}->[0])
-              if $args->{map_from};
+
+            if ( $args->{map_from} && $object->id ){
+                my $map_from_concat = '';
+                foreach my $map_from_col ( @{$args->{map_from}} ) {
+                    $map_from_concat .= $object->column( $map_from_col );
+                }
+                push @{$args->{pk}}, $map_from_concat;
+            }
 
             if (my $subwith = $args->{nested}) {
                 $walker->($object, $subwith);

@@ -105,7 +105,7 @@ sub _build {
 
             # No prefix
             else {
-                $key = "`$key`";
+                $key = "`$key`" unless $key =~/^`/;
             }
 
             if (defined $value) {

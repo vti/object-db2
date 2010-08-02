@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 135;
+use Test::More tests => 157;
 
 use lib 't/lib';
 
@@ -343,6 +343,7 @@ my $hotel = Hotel->create(
         }
 );
 
+# Just to be sure: test the data that has just been created
 is( @{$hotel->apartments}, 2 );
 is( $hotel->apartments->[0]->column('apartment_num_b'), 47 );
 is( $hotel->apartments->[0]->column('name'), 'John F. Kennedy' );
@@ -383,8 +384,46 @@ is( $hotel->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
 is( $hotel->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
 
+# Create a second hotel with same data (except hotel_num, hotel name and manager_num)
+# to make tests a bit more demanding
+# important to make sure that object mapping not only works accidentally
+my $hotel2 = Hotel->create(
+    conn      => $conn,
+    name      => 'President2',
+    hotel_num_a => 6,
+    apartments => [
+        {   apartment_num_b => 47,
+            name          => 'John F. Kennedy',
+            size          => 78,
+            rooms => [
+                {room_num_c => 1, size => 70},
+                {room_num_c => 2, size => 8}
+            ]
+        },
+        {   apartment_num_b => 61,
+            name          => 'George Washington',
+            size          => 50,
+            rooms => [
+                {room_num_c => 1, size => 10},
+                {room_num_c => 2, size => 15},
+                {room_num_c => 3, size => 25}
+            ]
+        },
+    ],
+    manager => 
+        {   manager_num_b => 666666,
+            name          => 'Lalolu',
+            telefon_numbers => [
+                {tel_num_c => 1111, telefon_number => '123456789'},
+                {tel_num_c => 1112, telefon_number => '987654321'}
+            ]
+        }
+);
+
+
 
 # Now get comparable object via find
+
 my @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/apartments apartments.rooms/]);
@@ -398,9 +437,35 @@ is( $hotels[0]->apartments->[1]->column('apartment_num_b'), 61 );
 is( $hotels[0]->apartments->[1]->column('name'), 'George Washington' );
 is( $hotels[0]->apartments->[1]->column('size'), 50 );
 
+is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('room_num_c'), 1);
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
+is( $hotels[0]->apartments->[0]->rooms->[1]->column('room_num_c'), 2);
+is( $hotels[0]->apartments->[0]->rooms->[1]->column('size'), 8);
+
+is( @{$hotels[0]->apartments->[1]->rooms}, 3 );
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10);
+is( $hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
+is( $hotels[0]->apartments->[1]->rooms->[1]->column('size'), 15);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
+
+
 is( $hotels[0]->apartments->[0]->column('hotel_num_b'), 5 );
 is( $hotels[0]->apartments->[1]->column('hotel_num_b'), 5 );
 
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('hotel_num_c'), 5);
+is( $hotels[0]->apartments->[0]->rooms->[1]->column('hotel_num_c'), 5);
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
+is( $hotels[0]->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
+
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('hotel_num_c'), 5);
+is( $hotels[0]->apartments->[1]->rooms->[1]->column('hotel_num_c'), 5);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('hotel_num_c'), 5);
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
+is( $hotels[0]->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
 
 # one-to-many rel follows one-to-one rel
@@ -416,8 +481,6 @@ is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456
 is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
-
-
 
 
 ### FAILING TEST: Putting the same table in different parts of the object hierarchy
