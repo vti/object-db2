@@ -627,7 +627,9 @@ sub find_related {
                     ### SQLite
                     ### TO DO: mysql: concat
                     ### TO DO: find better way to pass join(' || ', @map_to) --> unless $key =~/^`/; in where.pm
-                    @where = ( join(' || ', @map_to) => [@{delete $params{ids}}]);
+                    ### TO DO: Add separator between the columns to be concatenated
+                    @where = ( join(' || ',
+                        @map_to) => [@{delete $params{ids}}]);
                     
                 }
                 else {
