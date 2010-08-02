@@ -620,19 +620,19 @@ sub find_related {
 
             if ( $params{map_to} ){
 
-            my @map_to = @{$params{map_to}};
-
-            if ( @map_to> 1 ){
-                @map_to = map {$_ = '`'.$_.'`'} @map_to;
-                ### SQLite
-                ### TO DO: mysql: concat
-                ### TO DO: find better way to pass join(' || ', @map_to) --> unless $key =~/^`/; in where.pm
-                @where = ( join(' || ', @map_to) => [@{delete $params{ids}}]);
-                
-            }
-            else {
-                @where = ($map_to[0] => [@{delete $params{ids}}]);
-            }
+                my @map_to = @{$params{map_to}};
+    
+                if ( @map_to> 1 ){
+                    @map_to = map {$_ = '`'.$_.'`'} @map_to;
+                    ### SQLite
+                    ### TO DO: mysql: concat
+                    ### TO DO: find better way to pass join(' || ', @map_to) --> unless $key =~/^`/; in where.pm
+                    @where = ( join(' || ', @map_to) => [@{delete $params{ids}}]);
+                    
+                }
+                else {
+                    @where = ($map_to[0] => [@{delete $params{ids}}]);
+                }
 
             }
 
