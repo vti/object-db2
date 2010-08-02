@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 119;
+use Test::More tests => 126;
 
 use lib 't/lib';
 
@@ -305,7 +305,8 @@ ok( not defined $article->special_report );
 
 
 ######################################################################
-###### Tests where mapping does not follow naming conventions
+###### Using columns that do not follow naming conventions
+###### Using columns for mapping that are not primary key columns
 ###### Map different tables using multiple columns
 
 # Create data and test
@@ -373,6 +374,21 @@ is( $hotel->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
 is( $hotel->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
 is( $hotel->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
+
+
+# Now get comparable object via find
+my @hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/apartments apartments.rooms/]);
+
+is( @{$hotels[0]->apartments}, 2 );
+is( $hotel->apartments->[0]->column('apartment_num_b'), 47 );
+is( $hotel->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( $hotel->apartments->[0]->column('size'), 78 );
+
+is( $hotel->apartments->[1]->column('apartment_num_b'), 61 );
+is( $hotel->apartments->[1]->column('name'), 'George Washington' );
+is( $hotel->apartments->[1]->column('size'), 50 );
 
 
 

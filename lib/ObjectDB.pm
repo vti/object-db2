@@ -386,9 +386,10 @@ sub find {
 
     my $subreqs = [];
     my $with;
+    my $main = {};
     if ($with = $params{with}) {
         $with = $class->_normalize_with($with);
-        $class->_resolve_with(with => $with, sql => $sql, subreqs => $subreqs);
+        $class->_resolve_with( main=>$main, with => $with, sql => $sql, subreqs => $subreqs);
     }
 
     return $conn->txn(
@@ -416,7 +417,7 @@ sub find {
                         with => $with
                       );
                     push @result, $object;
-                    push @pk, @{$object->primary_keys_values} if @$subreqs;
+                    push @pk, $object->column($main->{mapping_cols}->[0]) if $main->{mapping_cols};
                 }
 
                 #warn Dumper \@pk;
@@ -428,6 +429,17 @@ sub find {
                         my $subreq_class = $subreq->[2];
                         my $chain        = $subreq->[3];
                         my $parent_args  = $subreq->[4];
+
+                        my $mapping_cols = $parent_args->{mapping_cols}
+                          || $main->{mapping_cols}
+                          || die('no mapping cols');
+
+                        if ( @$mapping_cols > 1 ){
+                            warn qq/subrequest can not be executed as/;
+                            warn qq/multiple column mapping is not/;
+                            warn qq/supported so far/;
+                            next;
+                        }
 
                         my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
                         my $nested = delete $args->{nested} || [];
@@ -456,13 +468,6 @@ sub find {
                         #warn Dumper $set;
                         #$related = {map { $_->id => $_ } @$related};
 
-                        foreach my $o (@result) {
-                            $o->{related}->{$name} = [];
-                            $set->{$o->id} ||= [];
-                            #warn Dumper $o;
-                            push @{$o->{related}->{$name}}, @{$set->{$o->id}};
-                        }
-
                         OUTER_LOOP: foreach my $o (@result) {
                             my $parent = $o;
                             foreach my $part ( @$chain ){
@@ -474,11 +479,11 @@ sub find {
                                 }
                             }
 
-                            next unless $parent->id;
+                            next unless $parent->column($from);
 
                             $parent->{related}->{$name} = [];
-                            $set->{$parent->id} ||= [];
-                            push @{$parent->{related}->{$name}}, @{$set->{$parent->id}};
+                            $set->{$parent->column($from)} ||= [];
+                            push @{$parent->{related}->{$name}}, @{$set->{$parent->column($from)}};
                         }
                     }
                 }
@@ -598,7 +603,6 @@ sub find_related {
         }
         else {
             my ($from, $to) = %{$rel->map};
-
             @where = ($to => [@{delete $params{ids}}]);
         }
     }
@@ -867,6 +871,7 @@ sub _resolve_with {
     my $class  = shift;
     my %params = @_;
 
+    my $main   = $params{main};
     my $with   = $params{with};
     my $sql    = $params{sql};
     my $subreqs = $params{subreqs};
@@ -892,10 +897,22 @@ sub _resolve_with {
                 }
 
                 # Load columns that are required for object mapping
-                my ($from, $to) = %{$rel->map};
                 if ($args->{columns}){
-                    unless ( grep { $_ eq $to } @{$args->{columns}} ){
-                        push @{$args->{columns}}, $to;                 
+                    while (my ($from, $to) = each %{$rel->map}) {
+                        unless ( grep { $_ eq $to } @{$args->{columns}} ){
+                            push @{$args->{columns}}, $to;                 
+                        }
+                    }
+                }
+
+                if ( $parent_args ) {
+                    while (my ($from, $to) = each %{$rel->map}) {
+                        push @{$parent_args->{mapping_cols}}, $from;                 
+                    }
+                }
+                else {
+                    while (my ($from, $to) = each %{$rel->map}) {
+                        push @{$main->{mapping_cols}}, $from;                 
                     }
                 }
 
