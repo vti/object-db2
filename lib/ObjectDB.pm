@@ -538,6 +538,9 @@ sub find {
 
                     my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [$object->id];
 
+                    my $map_to = $parent_args->{map_to}
+                      || die('no map_to cols');
+
                     my $parent = $object;
                     foreach my $part ( @$chain ){
                         if ( $parent->{related}->{$part} ){
@@ -551,8 +554,13 @@ sub find {
                     next SUB_REQ unless $parent->id;
 
                     $parent->{related}->{$name} =
-                        [$subreq_class->find_related($name => conn => $object->conn,
-                            ids => $ids, with => delete $args->{nested}, %$args)];
+                        [$subreq_class->find_related(
+                            $name,
+                            conn   => $object->conn,
+                            ids    => $ids, with => delete $args->{nested},
+                            map_to => $map_to,
+                            %$args
+                        )];
                 }
 
                 return $object;
@@ -564,10 +572,10 @@ sub find {
                         return unless @row;
 
                         return $class->_row_to_object(
-                            conn  => $conn,
-                            row  => [@row],
-                            sql  => $sql,
-                            with => $with
+                            conn   => $conn,
+                            row    => [@row],
+                            sql    => $sql,
+                            with   => $with
                         );
                     }
                 );

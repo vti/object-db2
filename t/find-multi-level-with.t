@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 179;
+use Test::More tests => 187;
 
 use lib 't/lib';
 
@@ -535,6 +535,22 @@ is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456
 is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
+
+my $hotel_id = $hotels[0]->column('id');
+
+
+
+# same test with passed id
+$hotel =
+  Hotel->find( conn=>$conn, id=>$hotel_id,
+    with => [qw/manager manager.telefon_numbers/] );
+is( $hotel->manager->column('name'), 'Lalolu' );
+is( $hotel->manager->column('hotel_num_b'), 5 );
+is( @{$hotel->manager->telefon_numbers}, 2);
+is( $hotel->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotel->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( $hotel->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
+is( $hotel->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
 
 
