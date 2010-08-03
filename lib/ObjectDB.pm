@@ -439,11 +439,9 @@ sub find {
                         my $parent_args  = $subreq->[4];
 
                         my $map_from = $parent_args->{map_from}
-                          || $main->{map_from}
                           || die('no map_from cols');
 
                         my $map_to = $parent_args->{map_to}
-                          || $main->{map_to}
                           || die('no map_to cols');
 
                         my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
@@ -914,7 +912,7 @@ sub _resolve_with {
 
     my $walker;
     $walker = sub {
-        my ($class, $with, $passed_chain, $parent_args) = @_;
+        my ($class, $with, $passed_chain, $parent_with_args) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
@@ -923,6 +921,8 @@ sub _resolve_with {
             my $chain = $passed_chain ? [@$passed_chain] : [];
 
             my $rel = $class->schema->relationship($name);
+
+            my $parent_args = $parent_with_args || $main;
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 if (delete $args->{auto} && !$args->{columns}) {
@@ -940,21 +940,13 @@ sub _resolve_with {
                 }
 
                 # Save map-from-columns and map-to-columns in with or main
-                if ( $parent_args ) {
-                    while (my ($from, $to) = each %{$rel->map}) {
-                        push @{$parent_args->{map_from}}, $from;                 
-                        push @{$parent_args->{map_to}}, $to;
-                    }
-                }
-                else {
-                    while (my ($from, $to) = each %{$rel->map}) {
-                        push @{$main->{map_from}}, $from;                 
-                        push @{$main->{map_to}}, $to;     
-                    }
+                while (my ($from, $to) = each %{$rel->map}) {
+                    push @{$parent_args->{map_from}}, $from;                 
+                    push @{$parent_args->{map_to}}, $to;
                 }
 
                 # $chain for multi-level object-mapping
-                # $parent_args to map subreq data to correct parent ids
+                # $parent_with_args to map subreq data to correct parent ids
                 push @$subreqs, [$name, $args, $class, $chain, $parent_args];
 
             }
