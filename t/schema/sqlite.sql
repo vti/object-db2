@@ -104,6 +104,7 @@ CREATE TABLE `managers` (
 );
 CREATE TABLE `telefon_numbers` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_c` INTEGER,
  `manager_num_c` INTEGER,
  `tel_num_c` INTEGER,
  `telefon_number` varchar(40) default ''

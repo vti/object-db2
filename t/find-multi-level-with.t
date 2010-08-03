@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 177;
+use Test::More tests => 175;
 
 use lib 't/lib';
 
@@ -22,6 +22,9 @@ use SubComment;
 
 use Hotel;
 
+
+######################################################################
+###### 1. following naming conventions
 
 # Create data
 my $author = Author->create(
@@ -65,6 +68,8 @@ $special_report_1->column( main_category_id => $category_4->column('id') )->upda
 my $comment_id;
 ok($comment_id = $author->articles->[0]->comments->[0]->column('id') );
 
+######################################################################
+###### 1.1 One-to-Many --> One-to-Many (--> One-to-Many)
 
 # First simple test
 my @authors = Author->find(conn=>$conn, with => [qw/articles articles.comments/]);
@@ -148,7 +153,11 @@ ok( defined $authors[0]->articles->[1]->comments );
 is( @{$authors[0]->articles->[1]->comments}, 0);
 
 
-###### Follow a second path (articles.comments articles.main_category)
+
+######################################################################
+###### 1.2 Mix One-to-Many x 3 (up to 3 levels) AND One-to-Many --> One-to-One
+###### articles.comments articles.main_category)
+
 @authors = Author->find( conn=>$conn,
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
@@ -223,11 +232,11 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
-###### One-to-many relationship follows a one-to-one relationship
+######################################################################
+###### 1.3 One-to-One --> One-to-Many
 my @articles =
   Article->find( conn=>$conn, 
     with => [qw/main_category.admin_histories/]);
-
 is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $articles[0]->main_category->column('title') );
 
@@ -235,8 +244,6 @@ ok ( not defined $articles[0]->main_category->column('title') );
 @articles =
   Article->find( conn=>$conn, 
     with => [qw/main_category main_category.admin_histories/]);
-
-
 is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 is ( $articles[0]->main_category->column('title'), 'main category 4' );
 
@@ -244,38 +251,30 @@ is ( $articles[0]->main_category->column('title'), 'main category 4' );
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.main_category.admin_histories/]);
-
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
 
 
-
-###### One-to-many relationship follows TWO one-to-one/many-to-one relationships
+######################################################################
+###### 1.3 TWO one-to-one/many-to-one --> One-to-many
 
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.special_report.main_category.admin_histories/]);
-
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
 
 
-@authors =
-  Author->find( conn=>$conn, 
-    with => [qw/articles.special_report.main_category articles.special_report.main_category.admin_histories/]);
-
-is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
-is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 'main category 4' );
-
 
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.special_report.main_category articles.special_report.main_category.admin_histories/]);
-
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 'main category 4' );
 
 
+
+### mix
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.special_report.main_category.admin_histories/]);
@@ -283,6 +282,7 @@ is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->
 ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
 ok( not defined $authors[0]->articles->[2]->column('title') );
 is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
+
 
 
 # Pass specific article id
@@ -293,6 +293,7 @@ is( $article->special_report->main_category->admin_histories->[0]->column('admin
 ok ( not defined $article->special_report->main_category->column('title') );
 
 
+
 # Pass specific article id, make sure that later subrequest is performed even
 # if first subrequest does not provide any results
 $article =
@@ -300,17 +301,20 @@ $article =
     with => [qw/to_do_articles special_report.main_category.admin_histories/]);
 is( $article->to_do_articles->[0]->column('to_do'), 'to do 4');
 
+
+
 # related object should not exist if no data exists for this object (empty objects not allowed)
 ok( not defined $article->special_report );
 
 
 
 ######################################################################
-###### Using columns that do not follow naming conventions
+###### 2. crazy naming
+###### Using columns for mapping that do not follow naming conventions
 ###### Using columns for mapping that are not primary key columns
-###### Map different tables using multiple columns
+###### Map tables using multiple columns
 
-# Create data and test
+# Create data
 my $hotel = Hotel->create(
     conn      => $conn,
     name      => 'President',
@@ -385,6 +389,7 @@ is( $hotel->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
 is( $hotel->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
 
+
 # Create a second hotel with same data (except hotel_num, hotel name and manager_num)
 # to make tests a bit more demanding
 # important to make sure that object mapping not only works accidentally
@@ -422,6 +427,8 @@ my $hotel2 = Hotel->create(
 );
 
 
+######################################################################
+###### 2.1 One-to-Many -> One-to-Many
 
 # Now get comparable object via find
 my @hotels =
@@ -468,39 +475,6 @@ is( $hotels[0]->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
 is( $hotels[0]->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
 
-# one-to-many rel follows one-to-one rel
-@hotels =
-  Hotel->find( conn=>$conn,
-    with => [qw/manager manager.telefon_numbers/]);
-
-is( $hotels[0]->manager->column('name'), 'Lalolu' );
-is( $hotels[0]->manager->column('hotel_num_b'), 5 );
-
-is( @{$hotels[0]->manager->telefon_numbers}, 2);
-is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
-is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
-is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
-is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
-
-
-
-# same test, but do not load manager data
-@hotels =
-  Hotel->find( conn=>$conn,
-    with => [qw/manager.telefon_numbers/]);
-
-ok( not defined $hotels[0]->manager->column('name') );
-ok( $hotels[0]->manager->column('id') );
-ok( not defined $hotels[0]->manager->column('hotel_num_b') );
-is( $hotels[0]->manager->column('manager_num_b'), 5555555 );
-
-is( @{$hotels[0]->manager->telefon_numbers}, 2);
-is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
-is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
-is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
-is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
-
-
 
 # Make sure that columns for mapping are present even if no columns should be loaded
 @hotels =
@@ -527,6 +501,40 @@ is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
 
 
 
+######################################################################
+#### 2.2 One-to-One --> One-to-Many 
+
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers/]);
+is( $hotels[0]->manager->column('name'), 'Lalolu' );
+is( $hotels[0]->manager->column('hotel_num_b'), 5 );
+is( @{$hotels[0]->manager->telefon_numbers}, 2);
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
+
+
+
+# same test, but do not load manager data
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager.telefon_numbers/]);
+ok( not defined $hotels[0]->manager->column('name') );
+ok( $hotels[0]->manager->column('id') );
+is( $hotels[0]->manager->column('hotel_num_b'), 5 );
+is( $hotels[0]->manager->column('manager_num_b'), 5555555 );
+is( @{$hotels[0]->manager->telefon_numbers}, 2);
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
+
+
+
+
+######################################################################
 ### FAILING TEST: Putting the same table in different parts of the object hierarchy
 #@articles =
 #  Article->find( conn=>$conn, 
