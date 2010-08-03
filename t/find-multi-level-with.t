@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 161;
+use Test::More tests => 168;
 
 use lib 't/lib';
 
@@ -423,7 +423,6 @@ my $hotel2 = Hotel->create(
 
 
 # Now get comparable object via find
-
 my @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/apartments apartments.rooms/]);
@@ -483,20 +482,32 @@ is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
 
+
+
 # Make sure that columns for mapping are present even if no columns should be loaded
 @hotels =
   Hotel->find( conn=>$conn, columns=>[],
     with => [qw/apartments apartments.rooms/]);
+is( $hotels[0]->column('hotel_num_a'), 5 );
+ok( $hotels[0]->column('id') );
+ok( not defined $hotels[0]->column('name') );
 is( @{$hotels[0]->apartments}, 2 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+
 
 
 # Make sure that columns for mapping are present even if not all apartment columns are loaded
 @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/apartments.rooms/]);
+ok( $hotels[0]->apartments->[0]->column('id') );
+is( $hotels[0]->apartments->[0]->column('hotel_num_b'), 5 );
+is( $hotels[0]->apartments->[0]->column('apartment_num_b'), 47 );
+ok( not defined $hotels[0]->apartments->[0]->column('name') );
 is( @{$hotels[0]->apartments}, 2 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+
+
 
 ### FAILING TEST: Putting the same table in different parts of the object hierarchy
 #@articles =
