@@ -527,6 +527,16 @@ sub find {
                     with => $with
                 );
 
+                my @pk;
+
+                if ( $main->{map_from} ){
+                    my $map_from_concat = '';
+                    foreach my $map_from_col ( @{$main->{map_from}} ) {
+                        $map_from_concat .= $object->column( $map_from_col );
+                    }
+                    push @pk, $map_from_concat;
+                }
+
                 return $object unless $subreqs && @$subreqs;
 
                 SUB_REQ: foreach my $subreq (@$subreqs) {
@@ -536,7 +546,7 @@ sub find {
                     my $chain        = $subreq->[3];
                     my $parent_args  = $subreq->[4];
 
-                    my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [$object->id];
+                    my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
 
                     my $map_to = $parent_args->{map_to}
                       || die('no map_to cols');

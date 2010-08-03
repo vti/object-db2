@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 187;
+use Test::More tests => 195;
 
 use lib 't/lib';
 
@@ -519,6 +519,23 @@ is( $hotels[0]->apartments->[0]->column('apartment_num_b'), 47 );
 ok( not defined $hotels[0]->apartments->[0]->column('name') );
 is( @{$hotels[0]->apartments}, 2 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
+
+my $hotel_id = $hotels[0]->column('id');
+
+
+
+# Same test with specific id
+$hotel =
+  Hotel->find( conn=>$conn, id=>$hotel_id,
+    with => [qw/apartments.rooms/]);
+ok( $hotel->apartments->[0]->column('id') );
+is( $hotel->apartments->[0]->column('hotel_num_b'), 5 );
+is( $hotel->apartments->[0]->column('apartment_num_b'), 47 );
+ok( not defined $hotel->apartments->[0]->column('name') );
+is( @{$hotel->apartments}, 2 );
+is( @{$hotel->apartments->[0]->rooms}, 2 );
+is( $hotel->apartments->[0]->rooms->[0]->column('size'), 70);
 
 
 
@@ -536,7 +553,7 @@ is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
-my $hotel_id = $hotels[0]->column('id');
+$hotel_id = $hotels[0]->column('id');
 
 
 
