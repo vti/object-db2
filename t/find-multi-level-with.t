@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 157;
+use Test::More tests => 161;
 
 use lib 't/lib';
 
@@ -482,6 +482,21 @@ is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
+
+# Make sure that columns for mapping are present even if no columns should be loaded
+@hotels =
+  Hotel->find( conn=>$conn, columns=>[],
+    with => [qw/apartments apartments.rooms/]);
+is( @{$hotels[0]->apartments}, 2 );
+is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+
+
+# Make sure that columns for mapping are present even if not all apartment columns are loaded
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/apartments.rooms/]);
+is( @{$hotels[0]->apartments}, 2 );
+is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
 
 ### FAILING TEST: Putting the same table in different parts of the object hierarchy
 #@articles =

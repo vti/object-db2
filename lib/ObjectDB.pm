@@ -350,24 +350,45 @@ sub find {
     my $sql = ObjectDB::SQL::Select->new;
     $sql->source($class->schema->table);
 
-    my @columns;
+    my $main = {};
+
+    # Default undef: load all columns
+    $main->{columns} = undef;
+
+    # Load just passed columns
     if ($params{columns}) {
-        @columns = @{$params{columns}};
-    }
-    else {
-        @columns = @{$class->schema->columns};
+        die 'columns not provided as ARRAY ref'
+          unless ref $params{columns} eq 'ARRAY';
+        $main->{columns} = $params{columns};
     }
 
     # Primary keys are always loaded
-    foreach my $pk ( @{$class->schema->primary_keys} ){
-        my $add_pk_column = 1;
-        foreach my $passed_column ( @columns ){
-            $add_pk_column = 0 if $pk eq $passed_column;
+    if ( $main->{columns} ){
+        foreach my $pk ( @{$class->schema->primary_keys} ){
+            my $add_pk_column = 1;
+            foreach my $passed_column ( @{$main->{columns}} ){
+                $add_pk_column = 0 if $pk eq $passed_column;
+            }
+            unshift @{$main->{columns}}, $pk if $add_pk_column;
         }
-        unshift @columns, $pk if $add_pk_column;
     }
 
-    $sql->columns([@columns]);
+    # Resolve "with" here to add columns needed to map related objects
+    my $subreqs = [];
+    my $with;
+    if ($with = $params{with}) {
+        $with = $class->_normalize_with($with);
+        $class->_resolve_with( main=>$main, with => $with, sql => $sql, subreqs => $subreqs);
+    }
+
+    # Load all columns in case that not columns have been passed
+    unless ( $main->{columns} ){
+        $main->{columns} = [@{$class->schema->columns}];
+    }
+
+
+    $sql->source($class->schema->table); ### switch back to main source
+    $sql->columns([@{$main->{columns}}]);
 
     if (my $id = delete $params{id}) {
         $sql->where($class->schema->primary_keys->[0] => $id);
@@ -383,14 +404,6 @@ sub find {
     $sql->limit(1) if $single;
 
     $sql->order_by($params{order_by}) if $params{order_by};
-
-    my $subreqs = [];
-    my $with;
-    my $main = {};
-    if ($with = $params{with}) {
-        $with = $class->_normalize_with($with);
-        $class->_resolve_with( main=>$main, with => $with, sql => $sql, subreqs => $subreqs);
-    }
 
     return $conn->txn(
         sub {
@@ -935,6 +948,14 @@ sub _resolve_with {
                     while (my ($from, $to) = each %{$rel->map}) {
                         unless ( grep { $_ eq $to } @{$args->{columns}} ){
                             push @{$args->{columns}}, $to;                 
+                        }
+                    }
+                }
+
+                if ($parent_args->{columns}) {
+                    while (my ($from, $to) = each %{$rel->map}) {
+                        unless ( grep { $_ eq $from } @{$parent_args->{columns}} ){
+                            push @{$parent_args->{columns}}, $from;                 
                         }
                     }
                 }
