@@ -956,7 +956,6 @@ sub _resolve_with {
                     while (my ($from, $to) = each %{$rel->map}) {
                         unless ( grep { $_ eq $from } @{$parent_args->{columns}} ){
                             push @{$parent_args->{columns}}, $from;
-                            $sql->columns($from); ### source doesn't has to be switched
                         }
                     }
                 }
@@ -989,12 +988,16 @@ sub _resolve_with {
                     $args->{columns} = [@{$rel->foreign_class->schema->columns}];
                 }
 
+                # Add source now to get correct order
                 $sql->source($rel->to_source);
-                $sql->columns( [@{$args->{columns}}] );
 
                 if (my $subwith = $args->{nested}) {
                     $walker->($rel->foreign_class, $subwith, $chain, $args);
                 }
+
+                # Switch back to right source
+                $sql->source($rel->to_source);
+                $sql->columns( [@{$args->{columns}}] );
 
             }
         }
