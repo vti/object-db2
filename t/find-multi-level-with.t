@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 175;
+use Test::More tests => 179;
 
 use lib 't/lib';
 
@@ -47,16 +47,21 @@ my $author = Author->create(
     ]
 );
 
+
+
 my $category_1 = MainCategory->create(conn=>$conn, title => 'main category 1');
 my $category_2 = MainCategory->create(conn=>$conn, title => 'main category 2');
 my $category_3 = MainCategory->create(conn=>$conn, title => 'main category 3');
 my $category_4 = MainCategory->create(conn=>$conn, title => 'main category 4');
 $author->articles->[0]->column( 'main_category_id' => $category_4->column('id') )->update;
 
+
+
 $category_4->create_related('admin_histories',
   { admin_name=>'Andre1', from => '2010-01-01', till => '2010-02-01' } );
 $category_4->create_related('admin_histories',
   { admin_name=>'Andre2', from => '2010-02-01', till => '2010-03-01' } );
+
 
 
 # 3rd article -> belongs to special report 1 -> belongs to main category 4
@@ -65,8 +70,11 @@ $author->articles->[2]->column( 'special_report_id' => $special_report_1->column
 $special_report_1->column( main_category_id => $category_4->column('id') )->update;
 
 
+
 my $comment_id;
 ok($comment_id = $author->articles->[0]->comments->[0]->column('id') );
+
+
 
 ######################################################################
 ###### 1.1 One-to-Many --> One-to-Many (--> One-to-Many)
@@ -81,6 +89,7 @@ is( $authors[0]->articles->[0]->comments->[0]->column('content'),
 );
 
 
+
 # Only data of deepest relationship should be loaded completely
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments/]);
 is(@authors, 1);
@@ -89,6 +98,7 @@ ok( !defined $authors[0]->articles->[1]->column('title') );
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment content first'
 );
+
 
 
 # Mixing the order of relationship chains a bit
@@ -101,9 +111,11 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 );
 
 
+
 # Add another level to up the ante
 SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comment 1');
 SubComment->create(conn=>$conn, comment_id => $comment_id, content => 'sub comment 2');
+
 
 
 ###### Load all columns for each relationship
@@ -129,6 +141,7 @@ is($authors[0]->articles->[2]->column('title'), 'article title3');
 is( $authors[0]->articles->[2]->comments->[0]->column('content'),
     'comment content3'
 );
+
 
 
 ###### Only data of deepest relationship should be loaded completely
@@ -185,6 +198,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
+
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments articles.main_category/]);
@@ -206,6 +220,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
+
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category/]);
@@ -217,6 +232,7 @@ is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment conte
 is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment content second');
 is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
+
 
 
 @authors =
@@ -232,6 +248,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
 
+
 ######################################################################
 ###### 1.3 One-to-One --> One-to-Many
 my @articles =
@@ -241,6 +258,7 @@ is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'An
 ok ( not defined $articles[0]->main_category->column('title') );
 
 
+
 @articles =
   Article->find( conn=>$conn, 
     with => [qw/main_category main_category.admin_histories/]);
@@ -248,11 +266,13 @@ is( $articles[0]->main_category->admin_histories->[0]->column('admin_name'), 'An
 is ( $articles[0]->main_category->column('title'), 'main category 4' );
 
 
+
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.main_category.admin_histories/]);
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
+
 
 
 ######################################################################
@@ -427,6 +447,7 @@ my $hotel2 = Hotel->create(
 );
 
 
+
 ######################################################################
 ###### 2.1 One-to-Many -> One-to-Many
 
@@ -531,6 +552,18 @@ is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
+
+
+######################################################################
+#### 2.3 Mix 2.1 and 2.2
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager.telefon_numbers apartments.rooms/]);
+is( @{$hotels[0]->apartments}, 2 );
+ok( not defined $hotels[0]->apartments->[0]->column('name') );
+ok( not defined $hotels[0]->manager->column('name') );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 
 
 
