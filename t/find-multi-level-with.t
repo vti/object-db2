@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 168;
+use Test::More tests => 177;
 
 use lib 't/lib';
 
@@ -251,12 +251,13 @@ ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
 
 
 ###### One-to-many relationship follows TWO one-to-one/many-to-one relationships
+
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.special_report.main_category.admin_histories/]);
 
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
-ok ( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
+ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
 
 
 @authors =
@@ -481,6 +482,23 @@ is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654
 is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
 is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
+
+
+# same test, but do not load manager data
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager.telefon_numbers/]);
+
+ok( not defined $hotels[0]->manager->column('name') );
+ok( $hotels[0]->manager->column('id') );
+ok( not defined $hotels[0]->manager->column('hotel_num_b') );
+is( $hotels[0]->manager->column('manager_num_b'), 5555555 );
+
+is( @{$hotels[0]->manager->telefon_numbers}, 2);
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'), '5555555' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555' );
 
 
 

@@ -955,7 +955,8 @@ sub _resolve_with {
                 if ($parent_args->{columns}) {
                     while (my ($from, $to) = each %{$rel->map}) {
                         unless ( grep { $_ eq $from } @{$parent_args->{columns}} ){
-                            push @{$parent_args->{columns}}, $from;                 
+                            push @{$parent_args->{columns}}, $from;
+                            $sql->columns($from); ### source doesn't has to be switched
                         }
                     }
                 }
@@ -972,24 +973,29 @@ sub _resolve_with {
 
             }
             else {
+
                 push @$chain, $name;
 
-                $sql->source($rel->to_source);
-
                 if ($args->{auto}) {
-                    $sql->columns($rel->foreign_class->schema->primary_keys);
+                    $args->{columns} = [@{$rel->foreign_class->schema->primary_keys}];
                 }
-                elsif (!$args->{columns}) {
-                    $sql->columns($rel->foreign_class->schema->columns);
+                elsif ( $args->{columns} ) {
+                    $args->{columns} = ref $args->{columns} eq 'ARRAY' ?
+                      $args->{columns} : [$args->{columns}];
+                    # Add primary keys
+                    #$sql->columns($rel->foreign_class->schema->primary_keys);
                 }
                 else {
-                    #$sql->columns($rel->foreign_class->schema->primary_keys);
-                    $sql->columns($args->{columns});
+                    $args->{columns} = [@{$rel->foreign_class->schema->columns}];
                 }
+
+                $sql->source($rel->to_source);
+                $sql->columns( [@{$args->{columns}}] );
 
                 if (my $subwith = $args->{nested}) {
                     $walker->($rel->foreign_class, $subwith, $chain, $args);
                 }
+
             }
         }
     };
