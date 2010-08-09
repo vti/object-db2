@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 195;
+use Test::More tests => 197;
 
 use lib 't/lib';
 
@@ -597,6 +597,24 @@ ok( not defined $hotels[0]->apartments->[0]->column('name') );
 ok( not defined $hotels[0]->manager->column('name') );
 is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
 is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
+
+
+
+######################################################################
+#### 3. NO prefetch
+
+
+# telefon_numbers are NOT prefetched, list ref should be returned
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager/]);
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
+
+
+# manager is not prefetched, a manager object should be returned
+@hotels =
+  Hotel->find( conn=>$conn );
+is( $hotels[0]->manager->column('name'), 'Lalolu' );
 
 
 

@@ -332,7 +332,13 @@ sub related {
         return $self->find_related($name, first => 1);
     }
     else {
-        return $self->find_related($name);
+        my @objects = $self->find_related($name);
+        if (wantarray) {
+            return @objects;
+        }
+        else {
+            return \@objects;
+        }
     }
 }
 
