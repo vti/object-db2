@@ -614,5 +614,4 @@ is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 # Cleanup
 Author->delete(conn => $conn);
 MainCategory->delete(conn => $conn);
-
-
+Hotel->delete(conn => $conn);
