@@ -655,7 +655,6 @@ sub find_related {
                 my @map_to = @{$params{map_to}};
     
                 if ( @map_to> 1 ){
-                    ### TO DO: Add separator between the columns to be concatenated
 
                     @map_to = map {$_ = '`'.$_.'`'} @map_to;
 
