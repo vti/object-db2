@@ -652,13 +652,19 @@ sub find_related {
                 my @map_to = @{$params{map_to}};
     
                 if ( @map_to> 1 ){
-                    @map_to = map {$_ = '`'.$_.'`'} @map_to;
-                    ### SQLite
-                    ### TO DO: mysql: concat
-                    ### TO DO: find better way to pass join(' || ', @map_to) --> unless $key =~/^`/; in where.pm
                     ### TO DO: Add separator between the columns to be concatenated
-                    @where = ( join(' || ',
-                        @map_to) => [@{delete $params{ids}}]);
+
+                    @map_to = map {$_ = '`'.$_.'`'} @map_to;
+
+                    my $concat_col_name;
+                    if ( $conn->driver eq 'SQLite' ){
+                        $concat_col_name = '-concat:'.join(' || ', @map_to);
+                    }
+                    elsif ( $conn->driver eq 'mysql' ){
+                        $concat_col_name = '-concat:concat('.join(',', @map_to).')';
+                    }
+
+                    @where = ( $concat_col_name => [@{delete $params{ids}}]);
                     
                 }
                 else {

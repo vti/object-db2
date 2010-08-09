@@ -84,6 +84,13 @@ sub _build {
             $count++;
         }
         else {
+            my $concat;
+
+            if ($key =~/^-concat:/){
+                $concat = 1;
+                $key =~s/^-concat://;
+            }
+
             if ($key =~ s/^-//) {
                 if ($key eq 'or' || $key eq 'and') {
                     $self->logic(uc $key);
@@ -92,8 +99,11 @@ sub _build {
                 }
             }
 
+            if ( $concat ){
+                # Do nothing
+            }
             # Prefixed key
-            if ($key =~ s/\.(\w+)$//) {
+            elsif ($key =~ s/\.(\w+)$//) {
                 my $col = $1;
                 $key = "`$key`.`$col`";
             }
@@ -105,7 +115,7 @@ sub _build {
 
             # No prefix
             else {
-                $key = "`$key`" unless $key =~/^`/;
+                $key = "`$key`";
             }
 
             if (defined $value) {

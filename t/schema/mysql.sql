@@ -15,7 +15,25 @@ CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `category_id` INTEGER,
  `author_id` INTEGER,
+ `title` varchar(40) default '',
+ `special_report_id` INTEGER,
+ `main_category_id` INTEGER
+) TYPE=innodb;
+CREATE TABLE `special_reports` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `title` varchar(40) default '',
+ `main_category_id` INTEGER
+)  TYPE=innodb;
+CREATE TABLE `main_categories` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `title` varchar(40) default ''
+) TYPE=innodb;
+CREATE TABLE `admin_histories` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `main_category_id` INTEGER,
+ `from` date default '0000-00-00',
+ `till` date default '0000-00-00',
+ `admin_name` varchar(40) default ''
 ) TYPE=innodb;
 CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -23,6 +41,16 @@ CREATE TABLE `comments` (
  `author_id` INTEGER,
  `content` varchar(40) default ''
 ) TYPE=innodb;
+CREATE TABLE `to_do_articles` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `article_id` INTEGER,
+ `to_do` varchar(40) default ''
+) TYPE=innodb;
+CREATE TABLE `sub_comments` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `comment_id` INTEGER,
+ `content` varchar(40) default ''
+);
 CREATE TABLE `article_tag_maps` (
  `article_id` INTEGER,
  `tag_id` INTEGER,
@@ -59,3 +87,38 @@ CREATE TABLE `family` (
  `parent_id`   INTEGER,
  `name`        VARCHAR(255)
 ) TYPE=innodb;
+CREATE TABLE `hotels` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_a` INTEGER,
+ `name` varchar(40) default '',
+ `city` varchar(40) default '',
+ `street` varchar(40) default '',
+ UNIQUE(`name`)
+) TYPE=innodb;
+CREATE TABLE `apartments` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_b` INTEGER,
+ `apartment_num_b` INTEGER,
+ `name` varchar(40) default '',
+ `size` INTEGER
+) TYPE=innodb;
+CREATE TABLE `rooms` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_c` INTEGER,
+ `apartment_num_c` INTEGER,
+ `room_num_c` INTEGER,
+ `size` INTEGER
+) TYPE=innodb;
+CREATE TABLE `managers` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_b` INTEGER,
+ `manager_num_b` INTEGER,
+ `name` varchar(40) default ''
+) TYPE=innodb;
+CREATE TABLE `telefon_numbers` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_c` INTEGER,
+ `manager_num_c` INTEGER,
+ `tel_num_c` INTEGER,
+ `telefon_number` varchar(40) default ''
+);
