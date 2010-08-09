@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 197;
+use Test::More tests => 220;
 
 use lib 't/lib';
 
@@ -603,18 +603,115 @@ is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 ######################################################################
 #### 3. NO prefetch
 
-
-# telefon_numbers are NOT prefetched, list ref should be returned
+# telefon_numbers are NOT prefetched, array ref should be returned
 @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/manager/]);
 is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
 
 
+
 # manager is not prefetched, a manager object should be returned
 @hotels =
   Hotel->find( conn=>$conn );
 is( $hotels[0]->manager->column('name'), 'Lalolu' );
+
+
+
+######################################################################
+#### 4. where and multi-level-with
+
+# Create a third hotel
+my $hotel3 = Hotel->create(
+    conn      => $conn,
+    name      => 'President3',
+    hotel_num_a => 7,
+    apartments => [
+        {   apartment_num_b => 11,
+            name          => 'John F. Kennedy',
+            size          => 78,
+            rooms => [
+                {room_num_c => 1, size => 71},
+                {room_num_c => 2, size => 7}
+            ]
+        },
+        {   apartment_num_b => 12,
+            name          => 'George Washington',
+            size          => 50,
+            rooms => [
+                {room_num_c => 1, size => 10},
+                {room_num_c => 2, size => 15},
+                {room_num_c => 3, size => 25}
+            ]
+        },
+    ],
+    manager => 
+        {   manager_num_b => 777777,
+            name          => 'Smith',
+            telefon_numbers => [
+                {tel_num_c => 3111, telefon_number => '12121212'},
+                {tel_num_c => 3222, telefon_number => '33445566'}
+            ]
+        }
+);
+
+
+# No match at all
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
+    where => [ 'manager.name'=>'Smith2' ] );
+is( @hotels, 0);
+
+
+
+# One match
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
+    where => [ 'manager.name'=>'Smith' ] );
+is( @hotels, 1);
+is( $hotels[0]->manager->column('name'), 'Smith' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '12121212' );
+is( @{$hotels[0]->apartments}, 2 );
+is( $hotels[0]->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71 );
+
+
+
+# One matching hotel, "with" dominates "where" (so all apartments
+# with all rooms are loaded for the matching hotel (where
+# condition does not apply to subrequests for apartments and rooms)
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
+    where => [ 'apartments.rooms.size'=> 71 ] );
+is( @hotels, 1);
+is( $hotels[0]->manager->column('name'), 'Smith' );
+is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '12121212' );
+is( @{$hotels[0]->apartments}, 2 );
+is( $hotels[0]->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( @{$hotels[0]->apartments->[0]->rooms}, 2);
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71 );
+
+
+
+# Two matching hotels, "with" dominates "where" (so all apartments
+# with all rooms are loaded for the matching hotel (where
+# condition does not apply to subrequests for apartments and rooms)
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
+    where => [ 'apartments.rooms.size'=> 70 ] );
+is( @hotels, 2);
+is( $hotels[0]->column('hotel_num_a'), 5 );
+is( $hotels[1]->column('hotel_num_a'), 6 );
+is( $hotels[0]->manager->column('name'), 'Lalolu' );
+is( $hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'), '987654321' );
+is( @{$hotels[0]->apartments}, 2 );
+is( $hotels[0]->apartments->[0]->column('name'), 'John F. Kennedy' );
+is( @{$hotels[0]->apartments->[0]->rooms}, 2);
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
 
 
 

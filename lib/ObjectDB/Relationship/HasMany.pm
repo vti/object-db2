@@ -29,8 +29,6 @@ sub to_source {
     my $table         = $self->table;
     my $foreign_table = $self->foreign_table;
 
-    my ($from, $to) = %{$self->map};
-
     my $as;
     if ($table eq $foreign_table) {
         $as = $self->name;
@@ -38,6 +36,12 @@ sub to_source {
     else {
         $as = $foreign_table;
     }
+
+    my @constraints;
+    while (my ($from, $to) = each %{$self->map}) {
+        push @constraints, "$as.$to" => "$table.$from";
+    }
+
 
     my @args = ();
     if ($self->{where}) {
@@ -63,7 +67,7 @@ sub to_source {
         name       => $foreign_table,
         join       => 'left',
         as         => $as,
-        constraint => ["$as.$to" => "$table.$from", @args]
+        constraint => [@constraints, @args]
     };
 }
 
