@@ -433,7 +433,10 @@ sub find {
         
                     if ( $main->{map_from} ){
                         my $map_from_concat = '';
+                        my $first = 1;
                         foreach my $map_from_col ( @{$main->{map_from}} ) {
+                            $map_from_concat .= '__' unless $first;
+                            $first = 0;
                             $map_from_concat .= $object->column( $map_from_col );
                         }
                         push @pk, $map_from_concat;
@@ -658,10 +661,10 @@ sub find_related {
 
                     my $concat_col_name;
                     if ( $conn->driver eq 'SQLite' ){
-                        $concat_col_name = '-concat:'.join(' || ', @map_to);
+                        $concat_col_name = '-concat:'.join(' || "__" || ', @map_to);
                     }
                     elsif ( $conn->driver eq 'mysql' ){
-                        $concat_col_name = '-concat:concat('.join(',', @map_to).')';
+                        $concat_col_name = '-concat:CONCAT_WS("__",'.join(',', @map_to).')';
                     }
 
                     @where = ( $concat_col_name => [@{delete $params{ids}}]);
@@ -1167,7 +1170,10 @@ sub _row_to_object {
 
             if ( $args->{map_from} && $object->id ){
                 my $map_from_concat = '';
+                my $first = 1;
                 foreach my $map_from_col ( @{$args->{map_from}} ) {
+                    $map_from_concat .= '__' unless $first;
+                    $first = 0;
                     $map_from_concat .= $object->column( $map_from_col );
                 }
                 push @{$args->{pk}}, $map_from_concat;
