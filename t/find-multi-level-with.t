@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 237;
+use Test::More tests => 241;
 
 use lib 't/lib';
 
@@ -640,6 +640,7 @@ is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 #### 2.4. include "where" parameter in "with" to only prefetch data that
 #### meets certain criteria
 
+# has_many relationship
 @hotels =
   Hotel->find( conn=>$conn,
     with => [ 'apartments.rooms' => { where=>[ size=>70 ] }, 'apartments' ] );
@@ -655,6 +656,8 @@ is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
 is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 
 
+
+# has_many relationship
 @hotels =
   Hotel->find( conn=>$conn,
     with => [ 'apartments.rooms' => { where=>[ size=>70 ] }, 'apartments' => { where=>[ name=>'John F. Kennedy' ] } ] );
@@ -665,6 +668,19 @@ is( @{$hotels[2]->apartments}, 1 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
+
+
+
+# has_one relationship
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'manager' => { where=>[ name=>'Lalolu' ] } ] );
+is( @hotels, 3);
+is( $hotels[0]->manager->column('name'), 'Lalolu' );
+is( $hotels[1]->manager->column('name'), 'Lalolu' );
+is( $hotels[2]->manager, undef );
+
+
 
 
 ######################################################################

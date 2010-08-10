@@ -25,6 +25,7 @@ sub _build {
 
 sub to_source {
     my $self   = shift;
+    my $passed_join_args = shift;
 
     my $table         = $self->table;
     my $foreign_table = $self->foreign_table;
@@ -50,6 +51,14 @@ sub to_source {
             else {
                 push @$constraint, "$as.$value";
             }
+        }
+    }
+
+
+    if ($passed_join_args) {
+        for (my $i = 0; $i < @{$passed_join_args}; $i += 2) {
+            push @$constraint,
+              $as . '.' . $passed_join_args->[$i] => $passed_join_args->[$i + 1];
         }
     }
 

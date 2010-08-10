@@ -415,7 +415,7 @@ sub find {
         sub {
             my ($dbh) = @_;
 
-            warn "$sql" if DEBUG;
+            warn "$sql" if $ENV{OBJECTDB_DEBUG};
             my $sth = $dbh->prepare("$sql");
             return unless $sth;
 
@@ -1004,7 +1004,6 @@ sub _resolve_with {
 
             }
             else {
-
                 push @$chain, $name;
 
                 if ($args->{auto}) {
@@ -1021,7 +1020,8 @@ sub _resolve_with {
                 }
 
                 # Add source now to get correct order
-                $sql->source($rel->to_source);
+                # Add where constraint as join args
+                $sql->source($rel->to_source($args->{where}) );
 
                 if (my $subwith = $args->{nested}) {
                     $walker->($rel->foreign_class, $subwith, $chain, $args);
