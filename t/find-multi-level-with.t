@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 241;
+use Test::More tests => 247;
 
 use lib 't/lib';
 
@@ -353,7 +353,7 @@ my $hotel = Hotel->create(
             size          => 50,
             rooms => [
                 {room_num_c => 1, size => 10},
-                {room_num_c => 2, size => 15},
+                {room_num_c => 2, size => 16},
                 {room_num_c => 3, size => 25}
             ]
         },
@@ -388,7 +388,7 @@ is( @{$hotel->apartments->[1]->rooms}, 3 );
 is( $hotel->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
 is( $hotel->apartments->[1]->rooms->[0]->column('size'), 10);
 is( $hotel->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
-is( $hotel->apartments->[1]->rooms->[1]->column('size'), 15);
+is( $hotel->apartments->[1]->rooms->[1]->column('size'), 16);
 is( $hotel->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
 is( $hotel->apartments->[1]->rooms->[2]->column('size'), 25);
 
@@ -511,7 +511,7 @@ is( @{$hotels[0]->apartments->[1]->rooms}, 3 );
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10);
 is( $hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
-is( $hotels[0]->apartments->[1]->rooms->[1]->column('size'), 15);
+is( $hotels[0]->apartments->[1]->rooms->[1]->column('size'), 16);
 is( $hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
 is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 
@@ -669,6 +669,17 @@ is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
 
+
+# multi-level where
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments' => { where=>[ 'rooms.size'=>15 ] } ] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments}, 0 );
+is( @{$hotels[1]->apartments}, 1 );
+is( $hotels[1]->apartments->[0]->column('apartment_num_b'), 61 );
+is( @{$hotels[2]->apartments}, 1 );
+is( $hotels[2]->apartments->[0]->column('apartment_num_b'), 12 );
 
 
 # has_one relationship
