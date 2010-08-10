@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 220;
+use Test::More tests => 237;
 
 use lib 't/lib';
 
@@ -447,6 +447,42 @@ my $hotel2 = Hotel->create(
 );
 
 
+# Create a third hotel
+my $hotel3 = Hotel->create(
+    conn      => $conn,
+    name      => 'President3',
+    hotel_num_a => 7,
+    apartments => [
+        {   apartment_num_b => 11,
+            name          => 'John F. Kennedy',
+            size          => 78,
+            rooms => [
+                {room_num_c => 1, size => 71},
+                {room_num_c => 2, size => 7}
+            ]
+        },
+        {   apartment_num_b => 12,
+            name          => 'George Washington',
+            size          => 50,
+            rooms => [
+                {room_num_c => 1, size => 10},
+                {room_num_c => 2, size => 15},
+                {room_num_c => 3, size => 25}
+            ]
+        },
+    ],
+    manager => 
+        {   manager_num_b => 777777,
+            name          => 'Smith',
+            telefon_numbers => [
+                {tel_num_c => 3111, telefon_number => '12121212'},
+                {tel_num_c => 3222, telefon_number => '33445566'}
+            ]
+        }
+);
+
+
+
 
 ######################################################################
 ###### 2.1 One-to-Many -> One-to-Many
@@ -601,6 +637,37 @@ is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
 
 
 ######################################################################
+#### 2.4. include "where" parameter in "with" to only prefetch data that
+#### meets certain criteria
+
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { where=>[ size=>70 ] }, 'apartments' ] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments}, 2 );
+is( @{$hotels[1]->apartments}, 2 );
+is( @{$hotels[2]->apartments}, 2 );
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
+
+
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { where=>[ size=>70 ] }, 'apartments' => { where=>[ name=>'John F. Kennedy' ] } ] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments}, 1 );
+is( @{$hotels[1]->apartments}, 1 );
+is( @{$hotels[2]->apartments}, 1 );
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
+
+
+######################################################################
 #### 3. NO prefetch
 
 # telefon_numbers are NOT prefetched, array ref should be returned
@@ -620,41 +687,6 @@ is( $hotels[0]->manager->column('name'), 'Lalolu' );
 
 ######################################################################
 #### 4. where and multi-level-with
-
-# Create a third hotel
-my $hotel3 = Hotel->create(
-    conn      => $conn,
-    name      => 'President3',
-    hotel_num_a => 7,
-    apartments => [
-        {   apartment_num_b => 11,
-            name          => 'John F. Kennedy',
-            size          => 78,
-            rooms => [
-                {room_num_c => 1, size => 71},
-                {room_num_c => 2, size => 7}
-            ]
-        },
-        {   apartment_num_b => 12,
-            name          => 'George Washington',
-            size          => 50,
-            rooms => [
-                {room_num_c => 1, size => 10},
-                {room_num_c => 2, size => 15},
-                {room_num_c => 3, size => 25}
-            ]
-        },
-    ],
-    manager => 
-        {   manager_num_b => 777777,
-            name          => 'Smith',
-            telefon_numbers => [
-                {tel_num_c => 3111, telefon_number => '12121212'},
-                {tel_num_c => 3222, telefon_number => '33445566'}
-            ]
-        }
-);
-
 
 # No match at all
 @hotels =
@@ -696,9 +728,7 @@ is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71 );
 
 
 
-# Two matching hotels, "with" dominates "where" (so all apartments
-# with all rooms are loaded for the matching hotel (where
-# condition does not apply to subrequests for apartments and rooms)
+# Similar test, but now two matching hotels
 @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
@@ -712,6 +742,7 @@ is( @{$hotels[0]->apartments}, 2 );
 is( $hotels[0]->apartments->[0]->column('name'), 'John F. Kennedy' );
 is( @{$hotels[0]->apartments->[0]->rooms}, 2);
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 
 
 
