@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 252;
+use Test::More tests => 255;
 
 use lib 't/lib';
 
@@ -781,6 +781,16 @@ is( $rooms[0]->column('size'), 70 );
 is( $rooms[0]->apartment->hotel->column('name'), 'President' );
 is( $rooms[7]->column('size'), 10 );
 is( $rooms[7]->apartment->hotel->column('name'), 'President2' );
+
+
+# Similar test with "where" condition
+@rooms =
+  Room->find( conn=>$conn,
+    with => [qw/ apartment apartment.hotel /],
+    where => [ 'apartment.hotel.name' => 'President' ] );
+is( @rooms, 5);
+is( $rooms[3]->column('size'), 16 );
+is( $rooms[3]->apartment->hotel->column('name'), 'President' );
 
 
 ######################################################################
