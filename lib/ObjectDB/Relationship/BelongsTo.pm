@@ -30,7 +30,6 @@ sub to_source {
     my $table         = $self->table;
     my $foreign_table = $self->foreign_table;
 
-    my ($pk, $foreign_pk) = %{$self->map};
 
     my $as;
     if ($foreign_table eq $table) {
@@ -40,7 +39,11 @@ sub to_source {
         $as = $foreign_table;
     }
 
-    my $constraint = ["$as.$foreign_pk" => "$table.$pk"];
+    my $constraint;
+
+    while (my ($pk, $foreign_pk) = each %{$self->map}) {
+        push @$constraint, "$as.$foreign_pk" => "$table.$pk";
+    }
 
     if ($self->join_args) {
         my $i = 0;

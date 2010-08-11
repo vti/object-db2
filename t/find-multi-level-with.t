@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 247;
+use Test::More tests => 252;
 
 use lib 't/lib';
 
@@ -771,6 +771,16 @@ is( @{$hotels[0]->apartments->[0]->rooms}, 2);
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
 
 
+
+# one-to-one relationships with multiple column mapping
+my @rooms =
+  Room->find( conn=>$conn,
+    with => [qw/ apartment apartment.hotel /] );
+is( @rooms, 15);
+is( $rooms[0]->column('size'), 70 );
+is( $rooms[0]->apartment->hotel->column('name'), 'President' );
+is( $rooms[7]->column('size'), 10 );
+is( $rooms[7]->apartment->hotel->column('name'), 'President2' );
 
 
 ######################################################################
