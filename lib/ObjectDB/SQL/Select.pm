@@ -17,7 +17,7 @@ sub new {
     return $self;
 }
 
-sub escape_prefix_column {
+sub prepare_column {
     my $class   = shift;
     my $column  = shift;
     my $default = shift;
@@ -159,11 +159,10 @@ sub to_string {
                         $col_full = $$col_full;
                     }
                     else {
-                        my $default_prefix = $need_prefix ? $source->{as}
+                        my $prefix = $need_prefix ? $source->{as}
                           || $source->{name} : undef;
                         $col_full =
-                          $self->escape_prefix_column($col_full,
-                          $default_prefix);
+                          $self->prepare_column($col_full,$prefix);
                     }
 
                     push @columns, $as ? "$col_full AS $as" : $col_full;
@@ -189,7 +188,7 @@ sub to_string {
     $query .= $self->where;
 
     if (my $group_by = $self->group_by) {
-        $group_by = $self->escape_prefix_column($group_by,$default_prefix);
+        $group_by = $self->prepare_column($group_by,$default_prefix);
         $query .= ' GROUP BY ' . $group_by;
     }
 
@@ -207,7 +206,7 @@ sub to_string {
                 $order = $1;
             }
 
-            $col = $self->escape_prefix_column($col,$default_prefix);
+            $col = $self->prepare_column($col,$default_prefix);
 
             $query .= ', ' unless $first;
 
@@ -256,7 +255,7 @@ sub sources_to_string {
                 my $from = $key;
                 my $to   = $value;
 
-                $from = $self->escape_prefix_column($from);
+                $from = $self->prepare_column($from);
 
                 if ($to =~ s/^(\w+)\.//) {
                     $to = $self->escape($1) . '.' . $self->escape($to);

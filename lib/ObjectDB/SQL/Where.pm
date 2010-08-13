@@ -123,7 +123,7 @@ sub _build {
             # Prefixed key
             else {
                 $key = ObjectDB::SQL::Select
-                  ->escape_prefix_column($key,$self->prefix);
+                  ->prepare_column($key,$self->prefix);
             }
 
             if (defined $value) {
