@@ -17,6 +17,29 @@ sub new {
     return $self;
 }
 
+sub escape_prefix_column {
+    my $class   = shift;
+    my $column  = shift;
+    my $default = shift;
+
+    # Prefixed
+    if ($column =~ s/^(\w+)\.//) {
+        $column = $class->escape($1) . '.' . $class->escape($column);
+    }
+    # Default prefix
+    elsif ($default) {
+        $column =
+            $class->escape($default) . '.'
+          . $class->escape($column);
+    }
+    # No Prefix
+    else {
+        $column = $class->escape($column);
+    }
+    return $column;
+
+}
+
 sub first_source {
     my $self = shift;
 
@@ -173,21 +196,7 @@ sub to_string {
     $query .= $self->where;
 
     if (my $group_by = $self->group_by) {
-        # Prefixed
-        if ($group_by =~ s/^(\w+)\.//) {
-            $group_by = $self->escape($1) . '.' . $self->escape($group_by);
-        }
-        # Default prefix
-        elsif ($default_prefix) {
-            $group_by =
-                $self->escape($default_prefix) . '.'
-              . $self->escape($group_by);
-        }
-        # No Prefix
-        else {
-            $group_by = $self->escape($group_by);
-        }
-
+        $group_by = $self->escape_prefix_column($group_by,$default_prefix);
         $query .= ' GROUP BY ' . $group_by;
     }
 
@@ -205,15 +214,7 @@ sub to_string {
                 $order = $1;
             }
 
-            if ($col =~ s/^(\w+)\.//) {
-                $col = $self->escape($1) . '.' . $self->escape($col);
-            }
-            elsif ($default_prefix) {
-                $col = $self->escape($default_prefix) . '.' .  $self->escape($col);
-            }
-            else {
-                $col = $self->escape($col);
-            }
+            $col = $self->escape_prefix_column($col,$default_prefix);
 
             $query .= ', ' unless $first;
 

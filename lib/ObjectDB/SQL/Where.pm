@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use base 'ObjectDB::Base';
+use ObjectDB::SQL::Select;
 
 __PACKAGE__->attr(qw/driver/);
 __PACKAGE__->attr(is_built => 0);
@@ -120,18 +121,9 @@ sub _build {
                 }
             }
             # Prefixed key
-            elsif ($key =~ s/^(\w+)\.//) {
-                $key = $self->escape($1) . '.' . $self->escape($key);
-            }
-            # Default prefix
-            elsif (my $default_prefix = $self->prefix) {
-                $key =
-                    $self->escape($default_prefix) . '.'
-                  . $self->escape($key);
-            }
-            # No prefix
             else {
-                $key = $self->escape($key);
+                $key = ObjectDB::SQL::Select
+                  ->escape_prefix_column($key,$self->prefix);
             }
 
             if (defined $value) {
