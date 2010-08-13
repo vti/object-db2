@@ -18,7 +18,7 @@ sub where {
     my $self = shift;
 
     # Lazy initialization
-    $self->{where} ||= ObjectDB::SQL::Where->new;
+    $self->{where} ||= ObjectDB::SQL::Where->new({ driver=>$self->driver });
 
     # Get
     return $self->{where} unless @_;

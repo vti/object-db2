@@ -91,10 +91,19 @@ CREATE TABLE `apartments` (
 );
 CREATE TABLE `rooms` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `maid_id` INTEGER,
  `hotel_num_c` INTEGER,
  `apartment_num_c` INTEGER,
  `room_num_c` INTEGER,
  `size` INTEGER
+);
+CREATE TABLE `maids` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_d` INTEGER,
+ `apartment_num_c` INTEGER,
+ `room_num_d` INTEGER,
+ `name` varchar(40) default '',
+ `age` INTEGER
 );
 CREATE TABLE `managers` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

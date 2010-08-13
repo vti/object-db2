@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 255;
+use Test::More tests => 256;
 
 use lib 't/lib';
 
@@ -430,9 +430,9 @@ my $hotel2 = Hotel->create(
             name          => 'George Washington',
             size          => 50,
             rooms => [
-                {room_num_c => 1, size => 10},
-                {room_num_c => 2, size => 15},
-                {room_num_c => 3, size => 25}
+                {room_num_c => 1, size => 10, maid=>{name=>'Amelie'}},
+                {room_num_c => 2, size => 15, maid=>{name=>'Lucy'}},
+                {room_num_c => 3, size => 25, maid=>{name=>'Sissy'}}
             ]
         },
     ],
@@ -542,6 +542,15 @@ ok( $hotels[0]->column('id') );
 ok( not defined $hotels[0]->column('name') );
 is( @{$hotels[0]->apartments}, 2 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+
+
+
+# one-to-one after one-to-many to make sure that column aliases work correctly in find_related
+# map: rooms.apartment_num_c => maid.apartment_num_c, i.e. same column name for mapping in both tables
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/apartments apartments.rooms.maid/]);
+is( $hotels[1]->apartments->[1]->rooms->[0]->maid->column('name'), 'Amelie' );
 
 
 

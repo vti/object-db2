@@ -104,10 +104,19 @@ CREATE TABLE `apartments` (
 ) TYPE=innodb;
 CREATE TABLE `rooms` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `maid_id` INTEGER,
  `hotel_num_c` INTEGER,
  `apartment_num_c` INTEGER,
  `room_num_c` INTEGER,
  `size` INTEGER
+) TYPE=innodb;
+CREATE TABLE `maids` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_d` INTEGER,
+ `apartment_num_c` INTEGER,
+ `room_num_d` INTEGER,
+ `name` varchar(40) default '',
+ `age` INTEGER
 ) TYPE=innodb;
 CREATE TABLE `managers` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,

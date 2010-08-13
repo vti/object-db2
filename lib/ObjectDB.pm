@@ -353,7 +353,7 @@ sub find {
 
     my $single = $params{first} || $params{single} ? 1 : 0;
 
-    my $sql = ObjectDB::SQL::Select->new;
+    my $sql = ObjectDB::SQL::Select->new({ driver=>$conn->driver });
     $sql->source($class->schema->table);
 
     my $main = {};
@@ -662,17 +662,9 @@ sub find_related {
     
                 if ( @map_to> 1 ){
 
-                    @map_to = map {$_ = '`'.$_.'`'} @map_to;
+                    my $concat = '-concat('.join(',', @map_to).')';
 
-                    my $concat_col_name;
-                    if ( $conn->driver eq 'SQLite' ){
-                        $concat_col_name = '-concat:'.join(' || "__" || ', @map_to);
-                    }
-                    elsif ( $conn->driver eq 'mysql' ){
-                        $concat_col_name = '-concat:CONCAT_WS("__",'.join(',', @map_to).')';
-                    }
-
-                    @where = ( $concat_col_name => [@{delete $params{ids}}]);
+                    @where = ( $concat => [@{delete $params{ids}}]);
                     
                 }
                 else {

@@ -5,6 +5,7 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
+__PACKAGE__->attr(qw/driver/);
 __PACKAGE__->attr(is_built => 0);
 __PACKAGE__->attr(prefix => '');
 __PACKAGE__->attr(logic => 'AND');
@@ -86,9 +87,9 @@ sub _build {
         else {
             my $concat;
 
-            if ($key =~/^-concat:/){
-                $concat = 1;
-                $key =~s/^-concat://;
+            # concat(col1,col2...)
+            if ($key =~/^-concat\(([\w,]+)\)/){
+                $concat = $1;
             }
 
             if ($key =~ s/^-//) {
@@ -100,7 +101,23 @@ sub _build {
             }
 
             if ( $concat ){
-                # Do nothing
+                my @concat = split (/,/,$concat);
+                foreach my $concat (@concat){
+                    $concat = $self->escape( $concat );
+
+                    if (my $prefix = $self->prefix) {
+                        $concat = $self->escape($prefix).'.'.$concat;
+                    }
+                }
+
+                $self->driver || die 'no sql driver defined';
+
+                if ( $self->driver eq 'SQLite' ){
+                    $key = join(' || "__" || ', @concat);
+                }
+                elsif ( $self->driver eq 'mysql' ){
+                    $key = 'CONCAT_WS("__",'.join(',', @concat).')';
+                }
             }
             # Prefixed key
             elsif ($key =~ s/\.(\w+)$//) {
@@ -173,6 +190,15 @@ sub build {
     $self->is_built(1);
 
     return $self->{to_string};
+}
+
+sub escape {
+    my $self = shift;
+    my $value = shift;
+
+    $value =~ s/`/\\`/g;
+
+    return "`$value`";
 }
 
 sub to_string {
