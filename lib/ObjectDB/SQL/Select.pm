@@ -159,18 +159,11 @@ sub to_string {
                         $col_full = $$col_full;
                     }
                     else {
-                        if ($col_full =~ s/^(\w+)\.//) {
-                            $col_full = $self->escape($1) . '.' . $self->escape($col_full);
-                        }
-                        elsif ($need_prefix) {
-                            $col_full =
-                              $self->escape($source->{as} || $source->{name})
-                              . '.'
-                              . $self->escape($col_full);
-                        }
-                        else {
-                            $col_full = $self->escape($col_full);
-                        }
+                        my $default_prefix = $need_prefix ? $source->{as}
+                          || $source->{name} : undef;
+                        $col_full =
+                          $self->escape_prefix_column($col_full,
+                          $default_prefix);
                     }
 
                     push @columns, $as ? "$col_full AS $as" : $col_full;
