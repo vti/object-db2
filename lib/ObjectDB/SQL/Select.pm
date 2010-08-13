@@ -256,12 +256,7 @@ sub sources_to_string {
                 my $from = $key;
                 my $to   = $value;
 
-                if ($from =~ s/^(\w+)\.//) {
-                    $from = $self->escape($1) . '.' . $self->escape($from);
-                }
-                else {
-                    $from = $self->escape($from);
-                }
+                $from = $self->escape_prefix_column($from);
 
                 if ($to =~ s/^(\w+)\.//) {
                     $to = $self->escape($1) . '.' . $self->escape($to);
