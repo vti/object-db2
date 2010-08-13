@@ -173,16 +173,17 @@ sub to_string {
     $query .= $self->where;
 
     if (my $group_by = $self->group_by) {
-        if ($default_prefix) {
-            if ($group_by =~ s/^(\w+)\.//) {
-                $group_by = $self->escape($1) . '.' . $self->escape($group_by);
-            }
-            else {
-                $group_by =
-                    $self->escape($default_prefix) . '.'
-                  . $self->escape($group_by);
-            }
+        # Prefixed
+        if ($group_by =~ s/^(\w+)\.//) {
+            $group_by = $self->escape($1) . '.' . $self->escape($group_by);
         }
+        # Default prefix
+        elsif ($default_prefix) {
+            $group_by =
+                $self->escape($default_prefix) . '.'
+              . $self->escape($group_by);
+        }
+        # No Prefix
         else {
             $group_by = $self->escape($group_by);
         }

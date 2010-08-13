@@ -120,19 +120,18 @@ sub _build {
                 }
             }
             # Prefixed key
-            elsif ($key =~ s/\.(\w+)$//) {
-                my $col = $1;
-                $key = "`$key`.`$col`";
+            elsif ($key =~ s/^(\w+)\.//) {
+                $key = $self->escape($1) . '.' . $self->escape($key);
             }
-
-            # Prefix
-            elsif (my $prefix = $self->prefix) {
-                $key = "`$prefix`.`$key`";
+            # Default prefix
+            elsif (my $default_prefix = $self->prefix) {
+                $key =
+                    $self->escape($default_prefix) . '.'
+                  . $self->escape($key);
             }
-
             # No prefix
             else {
-                $key = "`$key`";
+                $key = $self->escape($key);
             }
 
             if (defined $value) {
