@@ -907,9 +907,14 @@ sub _resolve_where {
         if ($key =~ m/\./) {
             my $parent = $class;
             my $source;
+            my $one_to_many = 0;
             while ($key =~ s/(\w+)\.//) {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
+
+                if ( $rel->is_has_many ) {
+                    $one_to_many = 1;
+                }
 
                 if ($rel->is_has_and_belongs_to_many) {
                     $sql->source($rel->to_map_source);
@@ -924,6 +929,10 @@ sub _resolve_where {
             }
 
             $sql->where($source->{as} . '.' . $key => $value);
+
+            $sql->group_by( 'id' ) if $one_to_many;
+            # TO DO: group by primary key
+
         }
         else {
             $sql->first_source;

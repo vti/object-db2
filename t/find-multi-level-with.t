@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 256;
+use Test::More tests => 274;
 
 use lib 't/lib';
 
@@ -354,7 +354,7 @@ my $hotel = Hotel->create(
             rooms => [
                 {room_num_c => 1, size => 10},
                 {room_num_c => 2, size => 16},
-                {room_num_c => 3, size => 25}
+                {room_num_c => 3, size => 70}
             ]
         },
     ],
@@ -390,7 +390,7 @@ is( $hotel->apartments->[1]->rooms->[0]->column('size'), 10);
 is( $hotel->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
 is( $hotel->apartments->[1]->rooms->[1]->column('size'), 16);
 is( $hotel->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
-is( $hotel->apartments->[1]->rooms->[2]->column('size'), 25);
+is( $hotel->apartments->[1]->rooms->[2]->column('size'), 70);
 
 # Now the most interesting part:
 is( $hotel->apartments->[0]->column('hotel_num_b'), 5 );
@@ -465,9 +465,11 @@ my $hotel3 = Hotel->create(
             name          => 'George Washington',
             size          => 50,
             rooms => [
-                {room_num_c => 1, size => 10},
+                {room_num_c => 1, size => 9},
                 {room_num_c => 2, size => 15},
-                {room_num_c => 3, size => 25}
+                {room_num_c => 3, size => 25},
+                {room_num_c => 4, size => 7},
+                {room_num_c => 5, size => 7}
             ]
         },
     ],
@@ -513,7 +515,7 @@ is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10);
 is( $hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
 is( $hotels[0]->apartments->[1]->rooms->[1]->column('size'), 16);
 is( $hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
-is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 70);
 
 
 is( $hotels[0]->apartments->[0]->column('hotel_num_b'), 5 );
@@ -641,7 +643,7 @@ is( @{$hotels[0]->apartments}, 2 );
 ok( not defined $hotels[0]->apartments->[0]->column('name') );
 ok( not defined $hotels[0]->manager->column('name') );
 is( $hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'), '123456789' );
-is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 25);
+is( $hotels[0]->apartments->[1]->rooms->[2]->column('size'), 70);
 
 
 
@@ -658,7 +660,7 @@ is( @{$hotels[0]->apartments}, 2 );
 is( @{$hotels[1]->apartments}, 2 );
 is( @{$hotels[2]->apartments}, 2 );
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
-is( @{$hotels[0]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
 is( @{$hotels[2]->apartments->[0]->rooms}, 0 );
@@ -689,6 +691,17 @@ is( @{$hotels[1]->apartments}, 1 );
 is( $hotels[1]->apartments->[0]->column('apartment_num_b'), 61 );
 is( @{$hotels[2]->apartments}, 1 );
 is( $hotels[2]->apartments->[0]->column('apartment_num_b'), 12 );
+
+
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments' => { where=>[ 'rooms.size'=>7 ] } ] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments}, 0 );
+is( @{$hotels[1]->apartments}, 0 );
+is( @{$hotels[2]->apartments}, 2 );
+is( $hotels[2]->apartments->[0]->column('apartment_num_b'), 11 );
+is( $hotels[2]->apartments->[1]->column('apartment_num_b'), 12 );
 
 
 # has_one relationship
@@ -768,7 +781,7 @@ is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71 );
 @hotels =
   Hotel->find( conn=>$conn,
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
-    where => [ 'apartments.rooms.size'=> 70 ] );
+    where => [ 'apartments.rooms.size'=> 10 ] );
 is( @hotels, 2);
 is( $hotels[0]->column('hotel_num_a'), 5 );
 is( $hotels[1]->column('hotel_num_a'), 6 );
@@ -781,11 +794,42 @@ is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
 
 
 
+# Similar test, but now LOOKING FOR ROOMS WITH SAME SIZE IN ONE HOTEL
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
+    where => [ 'apartments.rooms.size'=> 70 ] );
+is( @hotels, 2); ### should still be 2, not 3 as in sql (left join)
+is( $hotels[0]->column('hotel_num_a'), 5 );
+is( $hotels[1]->column('hotel_num_a'), 6 );
+is( @{$hotels[0]->apartments}, 2 );
+is( @{$hotels[1]->apartments}, 2 );
+is( @{$hotels[0]->apartments->[0]->rooms}, 2 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 3 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 2 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 3 );
+
+
+
+# Similar test, but now WITHOUT WITH
+@hotels =
+  Hotel->find( conn=>$conn,
+    where => [ 'apartments.rooms.size'=> 70 ] );
+is( @hotels, 2); ### should still be 2, not 3 as in sql (left join)
+is( $hotels[0]->column('hotel_num_a'), 5 );
+is( $hotels[1]->column('hotel_num_a'), 6 );
+
+# TO DO: check in tests whether data has been prefetched (or loaded afterwards)
+# TO DO: create more complex where related tests in seperate file
+# is( @{$hotels[0]->apartments}, undef );
+
+
+
 # one-to-one relationships with multiple column mapping
 my @rooms =
   Room->find( conn=>$conn,
     with => [qw/ apartment apartment.hotel /] );
-is( @rooms, 15);
+is( @rooms, 17);
 is( $rooms[0]->column('size'), 70 );
 is( $rooms[0]->apartment->hotel->column('name'), 'President' );
 is( $rooms[7]->column('size'), 10 );
