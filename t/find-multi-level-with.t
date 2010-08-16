@@ -693,13 +693,14 @@ is( @{$hotels[2]->apartments}, 1 );
 is( $hotels[2]->apartments->[0]->column('apartment_num_b'), 12 );
 
 
+# Similar test, but now LOOKING FOR ROOMS THAT HAVE SAME SIZE IN 2nd APARTMENT
 @hotels =
   Hotel->find( conn=>$conn,
     with => [ 'apartments' => { where=>[ 'rooms.size'=>7 ] } ] );
 is( @hotels, 3);
 is( @{$hotels[0]->apartments}, 0 );
 is( @{$hotels[1]->apartments}, 0 );
-is( @{$hotels[2]->apartments}, 2 );
+is( @{$hotels[2]->apartments}, 2 ); # only 2 apartments (in sql: 3 rows)
 is( $hotels[2]->apartments->[0]->column('apartment_num_b'), 11 );
 is( $hotels[2]->apartments->[1]->column('apartment_num_b'), 12 );
 
