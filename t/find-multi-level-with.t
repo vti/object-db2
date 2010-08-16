@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 274;
+use Test::More tests => 243;
 
 use lib 't/lib';
 
@@ -22,7 +22,7 @@ use SubComment;
 
 # Load test data
 require "t/test_data/hotel.testdata";
-TestDataHotel->load($conn);
+ObjectDB::TestData::Hotel->load($conn);
 
 
 
@@ -713,4 +713,4 @@ is( $rooms[3]->apartment->hotel->column('name'), 'President' );
 # Cleanup
 Author->delete(conn => $conn);
 MainCategory->delete(conn => $conn);
-TestDataHotel->delete($conn);
+ObjectDB::TestData::Hotel->delete($conn);
