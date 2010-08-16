@@ -120,7 +120,12 @@ Author->delete(conn => $conn);
 
 
 
-# Create multi-level test data: ObjectDB::TestData::Hotel
+### Create ObjectDB::TestData::Hotel and test the created objects
+# what makes these tests special?
+# - mapping columns do not follow naming conventions
+# - mapping columns are not primary key columns
+# - multiple columns used to map tables
+
 require "t/test_data/hotel.testdata";
 my ($hotel,$hotel2,$hotel3) = ObjectDB::TestData::Hotel->load($conn);
 
