@@ -33,7 +33,7 @@ my $author = ObjectDB::TestData::Author->load($conn);
 
 # First simple test
 my @authors = Author->find(conn=>$conn, with => [qw/articles articles.comments/]);
-is(@authors, 1);
+is(@authors, 2);
 is($authors[0]->articles->[0]->column('title'), 'article title1');
 is($authors[0]->articles->[1]->column('title'), 'article title2');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
@@ -44,7 +44,7 @@ is( $authors[0]->articles->[0]->comments->[0]->column('content'),
 
 # Only data of deepest relationship should be loaded completely
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments/]);
-is(@authors, 1);
+is(@authors, 2);
 ok( !defined $authors[0]->articles->[0]->column('title') );
 ok( !defined $authors[0]->articles->[1]->column('title') );
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
@@ -55,7 +55,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 
 # Mixing the order of relationship chains a bit
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments articles/]);
-is(@authors,                                                1);
+is(@authors,                                                2);
 is($authors[0]->articles->[0]->column('title'), 'article title1');
 is($authors[0]->articles->[1]->column('title'), 'article title2');
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
@@ -68,7 +68,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 is( $authors[0]->articles->[0]->column('title'), 'article title1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
@@ -94,7 +94,7 @@ is( $authors[0]->articles->[2]->comments->[0]->column('content'),
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments/]);
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
@@ -121,7 +121,7 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
     ]
 );
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 is( $authors[0]->articles->[0]->column('title'), 'article title1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
@@ -147,7 +147,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments.sub_comments articles.main_category/]);
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
@@ -169,7 +169,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category/]);
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 2);
@@ -183,7 +183,7 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
 @authors =
   Author->find( conn=>$conn, 
     with => [qw/articles.comments articles.main_category articles/]);
-is( @authors, 1);
+is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 is(  $authors[0]->articles->[0]->column('title'), 'article title1' );
 is( @{$authors[0]->articles->[0]->comments}, 2);

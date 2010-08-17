@@ -50,7 +50,39 @@ sub load {
             }
         ]
     );
-    
+
+
+    my $author2 = Author->create(
+        conn     => $conn,
+        name     => 'Author the Second',
+        articles => [
+            {   title    => 'article second title1',
+                comments => [
+                    {   content => 'objectdb first',
+                        sub_comments => [
+                            { content => 'sub comment 1' },
+                            { content => 'sub comment 2' }
+                        ]
+                    },
+                    {   content => 'objectdb second'}
+                ]
+            },
+            {   title    => 'article second title2'},
+            {   title    => 'article second title3',
+                comments => [
+                    {   content => 'objectdb third'
+                    }
+                ]
+            },
+            {   title    => 'article second title4',
+                to_do_articles => [
+                    {   to_do => 'to do 4'
+                    }
+                ]
+            }
+        ]
+    );
+
     
     
     my $category_1 = MainCategory->create(conn=>$conn, title => 'main category 1');
