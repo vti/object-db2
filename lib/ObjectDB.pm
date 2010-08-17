@@ -447,6 +447,17 @@ sub find {
             type    =>'max'
         });
     }
+    elsif ( $params{min} ) {
+        $class->_resolve_max_min_n_results_by_group({
+            group   =>$params{min}->{group},
+            column  =>$params{min}->{column},
+            top     =>$params{min}->{top} || 1,
+            strict  =>$params{min}->{strict},
+            main    =>$main,
+            sql     =>$sql,
+            type    =>'min'
+        });
+    }
     # Standard case
     else {
         $sql->source($class->schema->table);
