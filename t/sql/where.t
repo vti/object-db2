@@ -56,7 +56,7 @@ is("$where", " WHERE ((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`conte
 is_deeply($where->bind, ['boo', 'bar']);
 
 $where = ObjectDB::SQL::Where->new;
-$where->logic('OR');
+$where->condition->logic('OR');
 $where->where(['foo.id' => 2]);
 is("$where", " WHERE (`foo`.`id` = ?)");
 is_deeply($where->bind, [qw/ 2 /]);
