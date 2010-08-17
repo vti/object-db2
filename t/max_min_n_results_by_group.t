@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 56;
+use Test::More tests => 85;
 
 use lib 't/lib';
 
@@ -112,6 +112,52 @@ is( $rooms[2]->column('hotel_num_c'), 7 );
 is( $rooms[2]->column('apartment_num_c'), 11 );
 is( $rooms[2]->column('room_num_c'), 2 );
 is( $rooms[2]->column('size'), 7 );
+is( $rooms[3]->column('hotel_num_c'), 7 );
+is( $rooms[3]->column('apartment_num_c'), 12 );
+is( $rooms[3]->column('room_num_c'), 4 );
+is( $rooms[3]->column('size'), 7 );
+is( $rooms[4]->column('hotel_num_c'), 7 );
+is( $rooms[4]->column('apartment_num_c'), 12 );
+is( $rooms[4]->column('room_num_c'), 5 );
+is( $rooms[4]->column('size'), 7 );
+
+
+
+# Multiple grouping columns, find smallest room for each apartment
+@rooms =
+  Room->find( conn=>$conn,
+    min => { column => 'size', group => ['hotel_num_c','apartment_num_c'] }
+  );
+is( @rooms, 6); ### should be 6 ??
+is( $rooms[0]->column('size'), 8 );
+is( $rooms[1]->column('size'), 10 );
+is( $rooms[2]->column('hotel_num_c'), 6 );
+is( $rooms[2]->column('apartment_num_c'), 47 );
+is( $rooms[2]->column('room_num_c'), 2 );
+is( $rooms[2]->column('size'), 8 );
+is( $rooms[3]->column('size'), 10 );
+is( $rooms[4]->column('size'), 7 );
+is( $rooms[5]->column('size'), 7 );
+
+
+
+# same test, without strict
+@rooms =
+  Room->find( conn=>$conn,
+    min => { column => 'size', group => ['hotel_num_c','apartment_num_c'], strict=>0 }
+  );
+is( @rooms, 7); ### should be 6 ??
+is( $rooms[0]->column('size'), 8 );
+is( $rooms[1]->column('size'), 10 );
+is( $rooms[2]->column('size'), 8 );
+is( $rooms[3]->column('size'), 10 );
+is( $rooms[4]->column('size'), 7 );
+is( $rooms[5]->column('size'), 7 );
+is( $rooms[6]->column('hotel_num_c'), 7 );
+is( $rooms[6]->column('apartment_num_c'), 12 );
+is( $rooms[6]->column('room_num_c'), 5 );
+is( $rooms[6]->column('size'), 7 );
+
 
 
 
