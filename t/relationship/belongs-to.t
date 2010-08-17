@@ -14,7 +14,7 @@ use TestDB;
 my $rel = ObjectDB::Relationship::BelongsTo->new(
     class     => 'Article',
     name      => 'author',
-    join_args => [title => 'foo']
+    join_args => [title => \'foo']
 );
 ok($rel);
 
@@ -31,8 +31,8 @@ is_deeply(
         as         => 'authors',
         join       => 'left',
         constraint => [
-            'authors.id'    => 'articles.author_id',
-            'authors.title' => 'foo'
+            'authors.id'    => \'`articles`.`author_id`',
+            'authors.title' => \'foo'
         ]
     }
 );

@@ -29,7 +29,7 @@ is_deeply(
     {   name       => 'author_admins',
         as         => 'author_admins',
         join       => 'left',
-        constraint => ['author_admins.author_id' => 'authors.id']
+        constraint => ['author_admins.author_id' => \'`authors`.`id`']
     }
 );
 

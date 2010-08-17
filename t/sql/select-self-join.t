@@ -25,17 +25,17 @@ $sql->source(
     {   name       => 'table',
         join       => 'left',
         as         => 'alias',
-        constraint => ['alias.id' => 'table.id']
+        constraint => ['alias.id' => \'`table`.`id`']
     }
 );
 $sql->source(
     {   name       => 'table',
         join       => 'left',
         as         => 'alias',
-        constraint => ['alias.id' => 'table.id']
+        constraint => ['alias.id' => \'`table`.`id`']
     }
 );
 $sql->columns(qw/foo/);
 is("$sql",
-    "SELECT `alias`.`foo` FROM `table` LEFT JOIN `table` AS `alias` ON `alias`.`id` = `table`.`id`"
+    "SELECT `alias`.`foo` FROM `table` LEFT JOIN `table` AS `alias` ON (`alias`.`id` = `table`.`id`)"
 );

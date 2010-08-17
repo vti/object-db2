@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 25;
 
 use_ok('ObjectDB::SQL::Select');
 
@@ -98,16 +98,16 @@ $sql->columns('bar_2.foo');
 $sql->source(
     {   join       => 'inner',
         name       => 'table2',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ bar baz/);
 
 is("$sql",
-    "SELECT `bar_2`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON `table1`.`foo` = `table2`.`bar`"
+    "SELECT `bar_2`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar`)"
 );
 is("$sql",
-    "SELECT `bar_2`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON `table1`.`foo` = `table2`.`bar`"
+    "SELECT `bar_2`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar`)"
 );
 
 
@@ -117,7 +117,7 @@ $sql->columns('bar_2.foo');
 $sql->source(
     {   join       => 'inner',
         name       => 'table2',
-        constraint => ['table1.foo' => 'table2.bar', 'table1.bar' => 'hello']
+        constraint => ['table1.foo' => \'`table2`.`bar`', 'table1.bar' => 'hello']
     }
 );
 $sql->columns(qw/ bar baz/);
@@ -125,8 +125,9 @@ $sql->source('table1');
 $sql->columns('bar_3.foo');
 
 is("$sql",
-    "SELECT `bar_2`.`foo`, `bar_3`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON `table1`.`foo` = `table2`.`bar` AND `table1`.`bar` = 'hello'"
+    "SELECT `bar_2`.`foo`, `bar_3`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar` AND `table1`.`bar` = ?)"
 );
+is_deeply( $sql->bind, [ 'hello' ]);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
@@ -134,13 +135,13 @@ $sql->columns('foo');
 $sql->source(
     {   join       => 'inner',
         name       => 'table2',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ bar baz/);
 
 is("$sql",
-    "SELECT `table1`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON `table1`.`foo` = `table2`.`bar`"
+    "SELECT `table1`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar`)"
 );
 
 $sql = ObjectDB::SQL::Select->new;
@@ -149,12 +150,12 @@ $sql->source('table2');
 $sql->source(
     {   join       => 'inner',
         name       => 'table3',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ foo bar /);
 is("$sql",
-    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON `table1`.`foo` = `table2`.`bar`"
+    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`)"
 );
 
 $sql = ObjectDB::SQL::Select->new;
@@ -163,14 +164,15 @@ $sql->source('table2');
 $sql->source(
     {   join       => 'inner',
         name       => 'table3',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ foo bar /);
 $sql->where(['table3.foo' => 1]);
 is("$sql",
-    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON `table1`.`foo` = `table2`.`bar` WHERE (`table3`.`foo` = ?)"
+    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) WHERE (`table3`.`foo` = ?)"
 );
+is_deeply( $sql->bind, [ 1 ]);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
@@ -178,14 +180,15 @@ $sql->source('table2');
 $sql->source(
     {   join       => 'inner',
         name       => 'table3',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ foo bar /);
 $sql->where(['foo' => 1]);
 is("$sql",
-    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON `table1`.`foo` = `table2`.`bar` WHERE (`table1`.`foo` = ?)"
+    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) WHERE (`table1`.`foo` = ?)"
 );
+is_deeply( $sql->bind, [ 1 ]);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
@@ -193,14 +196,14 @@ $sql->source('table2');
 $sql->source(
     {   join       => 'inner',
         name       => 'table3',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ foo bar /);
 $sql->order_by('addtime');
 $sql->group_by('foo');
 is("$sql",
-    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON `table1`.`foo` = `table2`.`bar` GROUP BY `table1`.`foo` ORDER BY `table1`.`addtime`"
+    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) GROUP BY `table1`.`foo` ORDER BY `table1`.`addtime`"
 );
 
 $sql = ObjectDB::SQL::Select->new;
@@ -209,13 +212,13 @@ $sql->source('table2');
 $sql->source(
     {   join       => 'inner',
         name       => 'table3',
-        constraint => ['table1.foo' => 'table2.bar']
+        constraint => ['table1.foo' => \'`table2`.`bar`']
     }
 );
 $sql->columns(qw/ foo bar /);
 $sql->order_by('table2.addtime');
 $sql->group_by('table2.foo');
 is("$sql",
-    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON `table1`.`foo` = `table2`.`bar` GROUP BY `table2`.`foo` ORDER BY `table2`.`addtime`"
+    "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) GROUP BY `table2`.`foo` ORDER BY `table2`.`addtime`"
 );
 

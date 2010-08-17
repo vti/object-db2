@@ -40,7 +40,7 @@ sub to_source {
 
     my @constraints;
     while (my ($from, $to) = each %{$self->map}) {
-        push @constraints, "$as.$to" => "$table.$from";
+        push @constraints, "$as.$to" => \qq/`$table`.`$from`/;
     }
 
 

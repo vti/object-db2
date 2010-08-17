@@ -48,8 +48,8 @@ sub bind {
     my $self = shift;
 
     if ( @_ ) {
-        return $self->condition->bind(@_);
         $self->is_built(0);
+        return $self->condition->bind(@_);
     }
     else {
         return $self->condition->bind;

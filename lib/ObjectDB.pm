@@ -729,8 +729,8 @@ sub update {
 
                 my $sth = $dbh->prepare("$sql");
                 return unless $sth;
-
                 my $rv = $sth->execute(@{$sql->bind});
+
                 return unless $rv && $rv eq '1';
 
                 $self->is_in_db(1);
@@ -756,8 +756,8 @@ sub update {
         $sql->values(\@values);
         $sql->where($params{where});
 
-        if (DEBUG) {
-            warn "$sql" if DEBUG;
+        if ($ENV{OBJECTDB_DEBUG}) {
+            warn "$sql";
             warn join(', ', @{$sql->bind});
         }
 

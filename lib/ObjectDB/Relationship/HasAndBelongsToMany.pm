@@ -76,7 +76,7 @@ sub to_source {
         name       => $table,
         as         => $table,
         join       => 'left',
-        constraint => ["$table.$to" => "$map_table.$from"]
+        constraint => ["$table.$to" => \qq/`$map_table`.`$from`/]
     };
 }
 
@@ -96,7 +96,7 @@ sub to_map_source {
     return {
         name       => $map_table,
         join       => 'left',
-        constraint => ["$table.$to" => "$map_table.$from"]
+        constraint => ["$table.$to" => \qq/`$map_table`.`$from`/]
     };
 }
 
@@ -115,7 +115,7 @@ sub to_self_map_source {
     return {
         name       => $map_table,
         join       => 'left',
-        constraint => ["$table.$to" => "$map_table.$from"]
+        constraint => ["$table.$to" => \qq/`$map_table`.`$from`/]
     };
 }
 
@@ -135,7 +135,7 @@ sub to_self_source {
         name       => $table,
         as         => $table,
         join       => 'left',
-        constraint => ["$table.$to" => "$map_table.$from"]
+        constraint => ["$table.$to" => \qq/`$map_table`.`$from`/]
     };
 }
 

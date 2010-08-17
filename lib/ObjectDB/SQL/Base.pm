@@ -35,14 +35,19 @@ sub where {
 sub bind {
     my $self = shift;
 
+    # Initialize
+    $self->{bind} ||= [];
+
     # Get
-    return $self->where->bind || [] unless @_;
+    return $self->{bind} unless @_;
 
     # Set
-    $self->where->bind(@_) if @_;
-
-    # Rebuild
-    $self->is_built(0);
+    if (ref $_[0] eq 'ARRAY') {
+        push @{$self->{bind}}, @{$_[0]};
+    }
+    else {
+        push @{$self->{bind}}, $_[0];
+    }
 
     return $self;
 }

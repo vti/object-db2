@@ -42,7 +42,7 @@ sub to_source {
     my $constraint;
 
     while (my ($pk, $foreign_pk) = each %{$self->map}) {
-        push @$constraint, "$as.$foreign_pk" => "$table.$pk";
+        push @$constraint, "$as.$foreign_pk" => \qq/`$table`.`$pk`/;
     }
 
     if ($self->join_args) {

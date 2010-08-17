@@ -173,7 +173,6 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 ######################################################################
 ###### 1.2 Mix One-to-Many x 3 (up to 3 levels) AND One-to-Many --> One-to-One
 ###### articles.comments articles.main_category)
-
 @authors = Author->find( conn=>$conn,
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/

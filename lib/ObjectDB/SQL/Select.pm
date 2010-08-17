@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use base 'ObjectDB::SQL::Base';
+use ObjectDB::SQL::Condition;
 
 __PACKAGE__->attr([qw/group_by having/]);
 __PACKAGE__->attr([qw/sources/] => sub {[]});
@@ -132,6 +133,7 @@ sub to_string {
     my $self = shift;
 
     my $query = "";
+    $self->{bind} = [];
 
     $query .= 'SELECT ';
 
@@ -177,15 +179,17 @@ sub to_string {
 
     $query .= ' FROM ';
 
-    $query .= $self->sources_to_string;
-
     my $default_prefix;
     if ($need_prefix) {
         $default_prefix = $self->sources->[0]->{name};
     }
 
+    $query .= $self->sources_to_string($default_prefix);
+
+
     $self->where->prefix($default_prefix) if $default_prefix;
     $query .= $self->where;
+    $self->bind( $self->where->bind );
 
     if (my $group_by = $self->group_by) {
         $group_by = $self->prepare_column($group_by,$default_prefix);
@@ -226,6 +230,7 @@ sub to_string {
 
 sub sources_to_string {
     my $self = shift;
+    my $default_prefix = shift;
 
     my $string = "";
 
@@ -244,32 +249,18 @@ sub sources_to_string {
         if ($source->{constraint}) {
             $string .= ' ON ';
 
-            my $count = 0;
-            while (my ($key, $value) =
-                @{$source->{constraint}}[$count, $count + 1])
-            {
-                last unless $key;
+            my $condition = ObjectDB::SQL::Condition->new;
 
-                $string .= ' AND ' unless $count == 0;
+            $string .=
+              $condition->_build({
+                condition => $source->{constraint},
+                prefix    => $default_prefix,
+                driver    => $self->driver
+               });
 
-                my $from = $key;
-                my $to   = $value;
+            $self->bind( $condition->bind );
 
-                $from = $self->prepare_column($from);
-
-                if ($to =~ s/^(\w+)\.//) {
-                    $to = $self->escape($1) . '.' . $self->escape($to);
-                }
-                else {
-                    $to = "'$to'";
-                }
-
-                $string .= $from . ' = ' . $to;
-
-                $count += 2;
-            }
         }
-
         $first = 0;
     }
 
