@@ -198,7 +198,7 @@ sub to_string {
 
     # TO DO: REWRITE NECESSARY
     if ( $self->having && ref $self->having eq 'SCALAR'){
-        $query .= ' HAVING ' . $self->having if $self->having;
+        $query .= ' HAVING ' . ${$self->having} if $self->having;
     }
     else {
         $query .= ' HAVING ' . $self->escape( $self->having) if $self->having;

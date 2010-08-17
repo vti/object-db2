@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 85;
+use Test::More tests => 152;
 
 use lib 't/lib';
 
@@ -158,6 +158,116 @@ is( $rooms[6]->column('apartment_num_c'), 12 );
 is( $rooms[6]->column('room_num_c'), 5 );
 is( $rooms[6]->column('size'), 7 );
 
+
+
+# strict top 2
+# Get the Top 2 rooms per hotel with biggest size
+@rooms =
+  Room->find( conn=>$conn,
+    max => { column => 'size', group => 'hotel_num_c', top=>2 }
+  );
+is( @rooms, 6);
+is( $rooms[0]->column('room_num_c'), 1 );
+is( $rooms[0]->column('size'), 70 );
+is( $rooms[1]->column('room_num_c'), 3 );
+is( $rooms[1]->column('size'), 70 );
+
+is( $rooms[2]->column('room_num_c'), 1 );
+is( $rooms[2]->column('size'), 70 );
+is( $rooms[3]->column('room_num_c'), 3 );
+is( $rooms[3]->column('size'), 25 );
+
+is( $rooms[4]->column('room_num_c'), 1 );
+is( $rooms[4]->column('size'), 71 );
+is( $rooms[5]->column('room_num_c'), 3 );
+is( $rooms[5]->column('size'), 25 );
+
+
+
+# same test without strict
+@rooms =
+  Room->find( conn=>$conn,
+    max => { column => 'size', group => 'hotel_num_c', top=>2, strict=>0 }
+  );
+is( @rooms, 6);
+is( $rooms[0]->column('room_num_c'), 1 );
+is( $rooms[0]->column('size'), 70 );
+is( $rooms[1]->column('room_num_c'), 3 );
+is( $rooms[1]->column('size'), 70 );
+
+is( $rooms[2]->column('room_num_c'), 1 );
+is( $rooms[2]->column('size'), 70 );
+is( $rooms[3]->column('room_num_c'), 3 );
+is( $rooms[3]->column('size'), 25 );
+
+is( $rooms[4]->column('room_num_c'), 1 );
+is( $rooms[4]->column('size'), 71 );
+is( $rooms[5]->column('room_num_c'), 3 );
+is( $rooms[5]->column('size'), 25 );
+
+
+
+# now the same test with min, and order_by to up the ante
+@rooms =
+  Room->find( conn=>$conn,
+    min => { column => 'size', group => 'hotel_num_c', top=>2 },
+    order_by => 'hotel_num_c asc, size asc, room_num_c desc'
+  );
+is( @rooms, 6);
+is( $rooms[0]->column('hotel_num_c'), 5 );
+is( $rooms[0]->column('room_num_c'), 2 );
+is( $rooms[0]->column('size'), 8 );
+is( $rooms[1]->column('hotel_num_c'), 5 );
+is( $rooms[1]->column('room_num_c'), 1 );
+is( $rooms[1]->column('size'), 10 );
+
+is( $rooms[2]->column('hotel_num_c'), 6 );
+is( $rooms[2]->column('room_num_c'), 2 );
+is( $rooms[2]->column('size'), 8 );
+is( $rooms[3]->column('hotel_num_c'), 6 );
+is( $rooms[3]->column('room_num_c'), 1 );
+is( $rooms[3]->column('size'), 10 );
+
+is( $rooms[4]->column('hotel_num_c'), 7 );
+is( $rooms[4]->column('room_num_c'), 4 ); # second lowest id
+is( $rooms[4]->column('size'), 7 );
+is( $rooms[5]->column('hotel_num_c'), 7 );
+is( $rooms[5]->column('room_num_c'), 2 ); # lowest id
+is( $rooms[5]->column('size'), 7 );
+
+
+
+# same test, but strict turned off
+@rooms =
+  Room->find( conn=>$conn,
+    min => { column => 'size', group => 'hotel_num_c', top=>2, strict=>0 },
+    order_by => 'hotel_num_c asc, size asc, room_num_c desc'
+  );
+
+is( @rooms, 7); ## TO DO: SHOULD BE 6 ??? (3 rooms with same size in 3rd hotel)
+is( $rooms[0]->column('hotel_num_c'), 5 );
+is( $rooms[0]->column('room_num_c'), 2 );
+is( $rooms[0]->column('size'), 8 );
+is( $rooms[1]->column('hotel_num_c'), 5 );
+is( $rooms[1]->column('room_num_c'), 1 );
+is( $rooms[1]->column('size'), 10 );
+
+is( $rooms[2]->column('hotel_num_c'), 6 );
+is( $rooms[2]->column('room_num_c'), 2 );
+is( $rooms[2]->column('size'), 8 );
+is( $rooms[3]->column('hotel_num_c'), 6 );
+is( $rooms[3]->column('room_num_c'), 1 );
+is( $rooms[3]->column('size'), 10 );
+
+is( $rooms[4]->column('hotel_num_c'), 7 );
+is( $rooms[4]->column('room_num_c'), 5 );
+is( $rooms[4]->column('size'), 7 );
+is( $rooms[5]->column('hotel_num_c'), 7 );
+is( $rooms[5]->column('room_num_c'), 4 );
+is( $rooms[5]->column('size'), 7 );
+is( $rooms[6]->column('hotel_num_c'), 7 );
+is( $rooms[6]->column('room_num_c'), 2 );
+is( $rooms[6]->column('size'), 7 );
 
 
 

@@ -346,7 +346,6 @@ sub related {
 # get the max/min top n results per group (e.g. the top 4 comments for each article)
 # WARNING: the proposed SQL is probably anything but effective (but usable if amount
 # of data is limited) and will have to be replaced by database specific syntax
-
 sub _resolve_max_min_n_results_by_group {
     my $class  = shift;
     my $params = shift;
@@ -413,7 +412,7 @@ sub _resolve_max_min_n_results_by_group {
         $sql->where( $join_table_alias.'.id' => undef );
     }
     else {
-        $sql->having("COUNT(*) < $top");
+        $sql->having(\"COUNT(*) < $top");
     }
 
 }
