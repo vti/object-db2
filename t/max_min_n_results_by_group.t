@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 152;
+use Test::More tests => 213;
 
 use lib 't/lib';
 
@@ -269,6 +269,103 @@ is( $rooms[6]->column('hotel_num_c'), 7 );
 is( $rooms[6]->column('room_num_c'), 2 );
 is( $rooms[6]->column('size'), 7 );
 
+
+
+###### NESTED IN WITH
+
+# Prefetch only the biggest room of each hotel
+my @hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { max=>{column=>'size', group=>'hotel_num_c'} }] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
+is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
+
+
+
+# same test, but now less strict (include all biggest rooms per hotel)
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { max=>{column=>'size', group=>'hotel_num_c', strict=>0} }] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 1 ); ### a second room with same size is loaded
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
+is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
+
+
+
+
+# Prefetch the TWO biggest rooms of each hotel
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { max=>{column=>'size', group=>'hotel_num_c', top=>2} }] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
+is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 25 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
+is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 1 );
+is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 25 );
+
+
+
+# Prefetch only the 2 smalest rooms of each hotel
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { min=>{column=>'size', group=>'hotel_num_c', top=>2 } }] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 8 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 8 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
+is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 10 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
+is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 7 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 1 );
+is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 7 );
+
+
+# same test, but strict turned off
+@hotels =
+  Hotel->find( conn=>$conn,
+    with => [ 'apartments.rooms' => { min=>{column=>'size', group=>'hotel_num_c', top=>2, strict=>0 } }] );
+is( @hotels, 3);
+is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
+is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 8 );
+is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
+is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10 );
+is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
+is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 8 );
+is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
+is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 10 );
+is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
+is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 7 );
+is( @{$hotels[2]->apartments->[1]->rooms}, 2 );
+is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 7 );
+is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 
 
 
