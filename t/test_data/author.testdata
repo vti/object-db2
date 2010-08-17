@@ -34,19 +34,24 @@ sub load {
                 comments => [
                     {   content => 'comment content first',
                         sub_comments => [
-                            { content => 'sub comment 1' },
-                            { content => 'sub comment 2' }
+                            {   content => 'sub comment 1' },
+                            {   content => 'sub comment 2' }
                         ]
                     },
-                    {content => 'comment content second'}
+                    {   content => 'comment content second'
+                    }
                 ]
             },
-            {   title    => 'article title2'},
+            {   title    => 'article title2' },
             {   title    => 'article title3',
-                comments => [{content => 'comment content3'}]
+                comments => [
+                    {   content => 'comment content3' }
+                ]
             },
             {   title    => 'article title4',
-                to_do_articles => [{to_do => 'to do 4'}]
+                to_do_articles => [
+                    {   to_do => 'to do 4' }
+                ]
             }
         ]
     );
@@ -64,20 +69,18 @@ sub load {
                             { content => 'sub comment 2' }
                         ]
                     },
-                    {   content => 'objectdb second'}
+                    {   content => 'objectdb second' }
                 ]
             },
-            {   title    => 'article second title2'},
+            {   title    => 'article second title2' },
             {   title    => 'article second title3',
                 comments => [
-                    {   content => 'objectdb third'
-                    }
+                    {   content => 'objectdb third' }
                 ]
             },
             {   title    => 'article second title4',
                 to_do_articles => [
-                    {   to_do => 'to do 4'
-                    }
+                    {   to_do => 'to do 4' }
                 ]
             }
         ]
@@ -85,9 +88,18 @@ sub load {
 
     
     
-    my $category_1 = MainCategory->create(conn=>$conn, title => 'main category 1');
-    my $category_2 = MainCategory->create(conn=>$conn, title => 'main category 2');
-    my $category_3 = MainCategory->create(conn=>$conn, title => 'main category 3');
+    my $category_1 = MainCategory->create(
+        conn    => $conn,
+        title   => 'main category 1'
+    );
+    my $category_2 = MainCategory->create(
+        conn    => $conn,
+        title   => 'main category 2'
+    );
+    my $category_3 = MainCategory->create(
+        conn    =>$conn,
+        title   => 'main category 3'
+    );
     my $category_4 = MainCategory->create(
         conn            => $conn,
         title           => 'main category 4',
@@ -104,15 +116,22 @@ sub load {
         ]
     );
 
-    $author->articles->[0]->column( 'main_category_id' => $category_4->column('id') )->update;
+    $author->articles->[0]
+      ->column( 'main_category_id' => $category_4->column('id') )
+      ->update;
 
     
     # 3rd article -> belongs to special report 1 -> belongs to main category 4
-    my $special_report_1 = SpecialReport->create(conn=>$conn, title => 'special report 1');
-    $author->articles->[2]->column( 'special_report_id' => $special_report_1->column('id') )->update;
-    $special_report_1->column( main_category_id => $category_4->column('id') )->update;
+    my $special_report_1
+      = SpecialReport->create(conn=>$conn, title => 'special report 1');
+    $author->articles->[2]
+      ->column( 'special_report_id' => $special_report_1->column('id') )
+      ->update;
+    $special_report_1
+      ->column( main_category_id => $category_4->column('id') )
+      ->update;
 
-    return $author;
+    return ( $author, $author2 );
 
 }
 

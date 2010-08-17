@@ -31,10 +31,12 @@ is( $rooms[0]->column('hotel_num_c'), 5 );
 is( $rooms[0]->column('apartment_num_c'), 47 );
 is( $rooms[0]->column('room_num_c'), 1 );
 is( $rooms[0]->column('size'), 70 );
+
 is( $rooms[1]->column('hotel_num_c'), 6 );
 is( $rooms[1]->column('apartment_num_c'), 47 );
 is( $rooms[1]->column('room_num_c'), 1 );
 is( $rooms[1]->column('size'), 70 );
+
 is( $rooms[2]->column('hotel_num_c'), 7 );
 is( $rooms[2]->column('apartment_num_c'), 11 );
 is( $rooms[2]->column('room_num_c'), 1 );
@@ -64,6 +66,7 @@ is( $rooms[2]->column('hotel_num_c'), 6 );
 is( $rooms[2]->column('apartment_num_c'), 47 );
 is( $rooms[2]->column('room_num_c'), 1 );
 is( $rooms[2]->column('size'), 70 );
+
 is( $rooms[3]->column('hotel_num_c'), 7 );
 is( $rooms[3]->column('apartment_num_c'), 11 );
 is( $rooms[3]->column('room_num_c'), 1 );
@@ -82,14 +85,17 @@ is( $rooms[0]->column('hotel_num_c'), 5 );
 is( $rooms[0]->column('apartment_num_c'), 47 );
 is( $rooms[0]->column('room_num_c'), 2 );
 is( $rooms[0]->column('size'), 8 );
+
 is( $rooms[1]->column('hotel_num_c'), 6 );
 is( $rooms[1]->column('apartment_num_c'), 47 );
 is( $rooms[1]->column('room_num_c'), 2 );
 is( $rooms[1]->column('size'), 8 );
+
 is( $rooms[2]->column('hotel_num_c'), 7 );
 is( $rooms[2]->column('apartment_num_c'), 11 );
 is( $rooms[2]->column('room_num_c'), 2 );
 is( $rooms[2]->column('size'), 7 );
+
 
 
 # same test, but turn strict off
@@ -104,18 +110,22 @@ is( $rooms[0]->column('hotel_num_c'), 5 );
 is( $rooms[0]->column('apartment_num_c'), 47 );
 is( $rooms[0]->column('room_num_c'), 2 );
 is( $rooms[0]->column('size'), 8 );
+
 is( $rooms[1]->column('hotel_num_c'), 6 );
 is( $rooms[1]->column('apartment_num_c'), 47 );
 is( $rooms[1]->column('room_num_c'), 2 );
 is( $rooms[1]->column('size'), 8 );
+
 is( $rooms[2]->column('hotel_num_c'), 7 );
 is( $rooms[2]->column('apartment_num_c'), 11 );
 is( $rooms[2]->column('room_num_c'), 2 );
 is( $rooms[2]->column('size'), 7 );
+
 is( $rooms[3]->column('hotel_num_c'), 7 );
 is( $rooms[3]->column('apartment_num_c'), 12 );
 is( $rooms[3]->column('room_num_c'), 4 );
 is( $rooms[3]->column('size'), 7 );
+
 is( $rooms[4]->column('hotel_num_c'), 7 );
 is( $rooms[4]->column('apartment_num_c'), 12 );
 is( $rooms[4]->column('room_num_c'), 5 );
@@ -130,13 +140,18 @@ is( $rooms[4]->column('size'), 7 );
   );
 is( @rooms, 6); ### should be 6 ??
 is( $rooms[0]->column('size'), 8 );
+
 is( $rooms[1]->column('size'), 10 );
+
 is( $rooms[2]->column('hotel_num_c'), 6 );
 is( $rooms[2]->column('apartment_num_c'), 47 );
 is( $rooms[2]->column('room_num_c'), 2 );
 is( $rooms[2]->column('size'), 8 );
+
 is( $rooms[3]->column('size'), 10 );
+
 is( $rooms[4]->column('size'), 7 );
+
 is( $rooms[5]->column('size'), 7 );
 
 
@@ -148,11 +163,17 @@ is( $rooms[5]->column('size'), 7 );
   );
 is( @rooms, 7); ### should be 6 ??
 is( $rooms[0]->column('size'), 8 );
+
 is( $rooms[1]->column('size'), 10 );
+
 is( $rooms[2]->column('size'), 8 );
+
 is( $rooms[3]->column('size'), 10 );
+
 is( $rooms[4]->column('size'), 7 );
+
 is( $rooms[5]->column('size'), 7 );
+
 is( $rooms[6]->column('hotel_num_c'), 7 );
 is( $rooms[6]->column('apartment_num_c'), 12 );
 is( $rooms[6]->column('room_num_c'), 5 );
@@ -244,10 +265,11 @@ is( $rooms[5]->column('size'), 7 );
     order_by => 'hotel_num_c asc, size asc, room_num_c desc'
   );
 
-is( @rooms, 7); ## TO DO: SHOULD BE 6 ??? (3 rooms with same size in 3rd hotel)
+is( @rooms, 7);
 is( $rooms[0]->column('hotel_num_c'), 5 );
 is( $rooms[0]->column('room_num_c'), 2 );
 is( $rooms[0]->column('size'), 8 );
+
 is( $rooms[1]->column('hotel_num_c'), 5 );
 is( $rooms[1]->column('room_num_c'), 1 );
 is( $rooms[1]->column('size'), 10 );
@@ -255,6 +277,7 @@ is( $rooms[1]->column('size'), 10 );
 is( $rooms[2]->column('hotel_num_c'), 6 );
 is( $rooms[2]->column('room_num_c'), 2 );
 is( $rooms[2]->column('size'), 8 );
+
 is( $rooms[3]->column('hotel_num_c'), 6 );
 is( $rooms[3]->column('room_num_c'), 1 );
 is( $rooms[3]->column('size'), 10 );
@@ -262,9 +285,11 @@ is( $rooms[3]->column('size'), 10 );
 is( $rooms[4]->column('hotel_num_c'), 7 );
 is( $rooms[4]->column('room_num_c'), 5 );
 is( $rooms[4]->column('size'), 7 );
+
 is( $rooms[5]->column('hotel_num_c'), 7 );
 is( $rooms[5]->column('room_num_c'), 4 );
 is( $rooms[5]->column('size'), 7 );
+
 is( $rooms[6]->column('hotel_num_c'), 7 );
 is( $rooms[6]->column('room_num_c'), 2 );
 is( $rooms[6]->column('size'), 7 );
@@ -278,14 +303,20 @@ my @hotels =
   Hotel->find( conn=>$conn,
     with => [ 'apartments.rooms' => { max=>{column=>'size', group=>'hotel_num_c'} }] );
 is( @hotels, 3);
+
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[0]->apartments->[1]->rooms}, 0 );
+
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
+
 is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
 is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
+
 is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 
 
@@ -297,15 +328,19 @@ is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 is( @hotels, 3);
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[0]->apartments->[1]->rooms}, 1 ); ### a second room with same size is loaded
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[1]->apartments->[1]->rooms}, 0 );
+
 is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
 is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
-is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 
+is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 
 
 
@@ -316,14 +351,19 @@ is( @{$hotels[2]->apartments->[1]->rooms}, 0 );
 is( @hotels, 3);
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 70 );
+
 is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
 is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 25 );
+
 is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
 is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 71 );
+
 is( @{$hotels[2]->apartments->[1]->rooms}, 1 );
 is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 25 );
 
@@ -336,16 +376,22 @@ is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 25 );
 is( @hotels, 3);
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 8 );
+
 is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10 );
+
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 8 );
+
 is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
 is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 10 );
+
 is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
 is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 7 );
+
 is( @{$hotels[2]->apartments->[1]->rooms}, 1 );
 is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 7 );
+
 
 
 # same test, but strict turned off
@@ -355,14 +401,19 @@ is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 7 );
 is( @hotels, 3);
 is( @{$hotels[0]->apartments->[0]->rooms}, 1 );
 is( $hotels[0]->apartments->[0]->rooms->[0]->column('size'), 8 );
+
 is( @{$hotels[0]->apartments->[1]->rooms}, 1 );
 is( $hotels[0]->apartments->[1]->rooms->[0]->column('size'), 10 );
+
 is( @{$hotels[1]->apartments->[0]->rooms}, 1 );
 is( $hotels[1]->apartments->[0]->rooms->[0]->column('size'), 8 );
+
 is( @{$hotels[1]->apartments->[1]->rooms}, 1 );
 is( $hotels[1]->apartments->[1]->rooms->[0]->column('size'), 10 );
+
 is( @{$hotels[2]->apartments->[0]->rooms}, 1 );
 is( $hotels[2]->apartments->[0]->rooms->[0]->column('size'), 7 );
+
 is( @{$hotels[2]->apartments->[1]->rooms}, 2 );
 is( $hotels[2]->apartments->[1]->rooms->[0]->column('size'), 7 );
 is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );

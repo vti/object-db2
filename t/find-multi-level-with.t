@@ -21,7 +21,7 @@ require "t/test_data/hotel.testdata";
 ObjectDB::TestData::Hotel->load($conn);
 
 require "t/test_data/author.testdata";
-my $author = ObjectDB::TestData::Author->load($conn);
+my ($author, $author2) = ObjectDB::TestData::Author->load($conn);
 
 
 
