@@ -342,6 +342,83 @@ sub related {
     }
 }
 
+
+# get the max/min top n results per group (e.g. the top 4 comments for each article)
+# WARNING: the proposed SQL is probably anything but effective (but usable if amount
+# of data is limited) and will have to be replaced by database specific syntax
+
+sub _resolve_max_min_n_results_by_group {
+    my $class  = shift;
+    my $params = shift;
+
+    # Get params
+    my $sql    = $params->{sql};
+    my $type   = uc ($params->{type});
+    my $group  = $params->{group};
+    my $column = $params->{column};
+    my $top    = $params->{top};
+    my $strict = $params->{strict};
+
+    $group = ref $group ? $group : [$group];
+    $strict = defined $strict ? $strict : 1;
+
+    my $op;
+    if ( $type eq 'MIN' ){
+        $op = '>';
+    }
+    if ( $type eq 'MAX' ){
+        $op = '<';
+    }
+
+    my $table = $class->schema->table;
+    my $join_table_alias = $class->schema->table.'_'.$type;
+
+    # Add main source
+    $sql->source( $class->schema->table );
+
+    my @constraint1;
+    foreach my $column ( @$group ){
+        push @constraint1, ("$table.$column" => \"`$join_table_alias`.`$column`");
+    }
+
+    # join bigger/smaller entries
+    my @constraint2;
+    push @constraint2, ("$table.$column" => { $op, \"`$join_table_alias`.`$column`" } );
+
+    # or join entries with lower ids in case of same values
+    my @constraint3;
+    push @constraint3, (
+        "$table.$column" => \"`$join_table_alias`.`$column`",
+        "$table.id"      => { '>', \"`$join_table_alias`.`id`"}
+    );
+
+    my $constraint;
+    if ( !$strict) {
+        $constraint = [ @constraint1, @constraint2 ];
+    }
+    else {
+        $constraint = [ @constraint1, -or=>[ @constraint2, -and=>\@constraint3 ] ];
+    }
+
+    $sql->source({
+      name       => $class->schema->table,
+      as         => $join_table_alias,
+      join       => 'left',
+      constraint => $constraint
+    });
+
+    $sql->group_by( 'id' );
+
+    if ( $top == 1 ) {
+        $sql->where( $join_table_alias.'.id' => undef );
+    }
+    else {
+        $sql->having("COUNT(*) < $top");
+    }
+
+}
+
+
 sub find {
     my $class  = shift;
     my %params = @_;
@@ -357,6 +434,24 @@ sub find {
     $sql->source($class->schema->table);
 
     my $main = {};
+
+
+    if ( $params{max} ) {
+        $class->_resolve_max_min_n_results_by_group({
+            group   =>$params{max}->{group},
+            column  =>$params{max}->{column},
+            top     =>$params{max}->{top} || 1,
+            strict  =>$params{max}->{strict},
+            main    =>$main,
+            sql     =>$sql,
+            type    =>'max'
+        });
+    }
+    # Standard case
+    else {
+        $sql->source($class->schema->table);
+    }
+
 
     # Default undef: load all columns
     $main->{columns} = undef;

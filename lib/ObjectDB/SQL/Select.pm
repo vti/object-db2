@@ -196,7 +196,13 @@ sub to_string {
         $query .= ' GROUP BY ' . $group_by;
     }
 
-    $query .= ' HAVING ' . $self->escape($self->having) if $self->having;
+    # TO DO: REWRITE NECESSARY
+    if ( $self->having && ref $self->having eq 'SCALAR'){
+        $query .= ' HAVING ' . $self->having if $self->having;
+    }
+    else {
+        $query .= ' HAVING ' . $self->escape( $self->having) if $self->having;
+    }
 
     if (my $order_by = $self->order_by) {
         my @cols = split(/\s*,\s*/, $order_by);

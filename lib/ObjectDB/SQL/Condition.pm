@@ -82,8 +82,13 @@ sub _build {
                     my ($op, $val) = %$value;
 
                     if (defined $val) {
-                        $string .= "$key $op ?";
-                        $self->bind( $val );
+                        if ( ref $val ){
+                            $string .= "$key $op $$val";
+                        }
+                        else {
+                            $string .= "$key $op ?";
+                            $self->bind( $val );
+                        }
                     }
                     else {
                         $string .= "$key IS $op NULL";
