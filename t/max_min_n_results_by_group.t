@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 248;
+use Test::More tests => 249;
 
 use lib 't/lib';
 
@@ -429,10 +429,10 @@ is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 ### EXPERIMENTAL
 
 # now group by criteria that can NOT be found in the same table
-# get the 6 latest comments on articles of each author for each author
+# get the 6 latest comments on articles of an author for each author
 # note: there is no column in the comments table that allows to group
 # directly by author (the existing author_id column contains no data as
-# it refers to direct comments on the author, not on comments for articles
+# it refers to direct comments on the author, not to comments on articles
 # of the author)
 
 # Max top 1, strict mode
@@ -488,7 +488,7 @@ is ($comments[6]->column('content'), 'comment 2-3-1' );
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', strict=>0 },
 );
-#is( @comments, 2 );
+is( @comments, 2 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
 is ($comments[1]->column('creation_date'), '2011-12-01' );
 
