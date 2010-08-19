@@ -358,7 +358,7 @@ sub _resolve_max_min_n_results_by_group {
     my $top    = $params->{top};
     my $strict = $params->{strict};
 
-    $group = ref $group ? $group : [$group];
+    $group = ref $group ? [@$group] : [$group];
     $strict = defined $strict ? $strict : 1;
 
     my $op;
@@ -412,7 +412,7 @@ sub _resolve_max_min_n_results_by_group {
         $sql->where( $join_table_alias.'.id' => undef );
     }
     else {
-        $sql->having(\"COUNT(*) < $top");
+        $sql->having(\qq/COUNT(*) < $top/);
     }
 
 }
@@ -470,7 +470,7 @@ sub find {
     if ($params{columns}) {
         die 'columns not provided as ARRAY ref'
           unless ref $params{columns} eq 'ARRAY';
-        $main->{columns} = $params{columns};
+        $main->{columns} = [@{$params{columns}}];
     }
 
     # Primary keys are always loaded
@@ -1000,10 +1000,10 @@ sub _resolve_where {
     my $class  = shift;
     my %params = @_;
 
-    my $where = $params{where};
-    my $sql   = $params{sql};
+    return unless $params{where} && @{$params{where}};
 
-    return unless $where && @$where;
+    my $where = [@{$params{where}}];
+    my $sql   = $params{sql};
 
     for (my $i = 0; $i < @$where; $i += 2) {
         my $key   = $where->[$i];
@@ -1147,7 +1147,7 @@ sub _normalize_with {
     my $class = shift;
     my $with  = shift;
 
-    $with = [$with] unless ref $with eq 'ARRAY';
+    $with = ref $with eq 'ARRAY' ? [@$with] : [$with];
 
     my %with;
     my $last_key;
