@@ -498,7 +498,7 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
     my $constraint;
     if ( !$strict) {
-        $constraint = [ @constraint2 ];
+        $constraint = [ 'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/ , @constraint2 ];
     }
     else {
         $constraint = [ 'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/ ,-or=>[ @constraint2, -and=>\@constraint3 ] ];

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 221;
+use Test::More tests => 248;
 
 use lib 't/lib';
 
@@ -435,17 +435,17 @@ is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 # it refers to direct comments on the author, not on comments for articles
 # of the author)
 
-
+# Max top 1, strict mode
 my @comments = Comment->find( conn=>$conn,
-    max => { column=>'creation_date', group=>'article.author.id', top=>6 },
+    max => { column=>'creation_date', group=>'article.author.id' },
 );
-is( @comments, 9 );
+is( @comments, 2 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
-is ($comments[2]->column('content'), 'comment content 1-2' );
-is ($comments[6]->column('content'), 'objectdb third' );
+is ($comments[1]->column('creation_date'), '2011-12-01' );
 
 
 
+# Max top 2, strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>2 },
 );
@@ -456,5 +456,84 @@ is ($comments[3]->column('content'), 'objectdb first' );
 
 
 
+# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>3 },
+);
+is( @comments, 6 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[1]->column('creation_date'), '2009-11-21' );
+is ($comments[2]->column('creation_date'), '2008-12-21' );
+is ($comments[2]->column('content'), 'comment content 1-2' );
+
+
+
+# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)
+# comment no 6 and 7 (no date) compete for higher spot, lower id wins
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>6 },
+);
+is( @comments, 9 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[5]->column('creation_date'), '0000-00-00' );
+is ($comments[5]->column('content'), 'comment content 1-1' ); # lower id
+is ($comments[6]->column('content'), 'objectdb third' );
+
+
+### now non strict mode
+
+# Max top 1, strict mode
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', strict=>0 },
+);
+#is( @comments, 2 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[1]->column('creation_date'), '2011-12-01' );
+
+
+
+# Max top 2, strict mode
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>2, strict=>0 },
+);
+is( @comments, 4 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[2]->column('content'), 'objectdb third' );
+is ($comments[3]->column('content'), 'objectdb first' );
+
+
+
+# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>3, strict=>0 },
+);
+is( @comments, 7 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[1]->column('creation_date'), '2009-11-21' );
+is ($comments[2]->column('creation_date'), '2008-12-21' );
+is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[3]->column('creation_date'), '2008-12-21' );
+is ($comments[3]->column('content'), 'comment content 1-4' );
+
+
+# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>6, strict=>0 },
+);
+is( @comments, 10 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[7]->column('content'), 'objectdb third' );
+
+
+
+
+##########################################################################
+# TO DO: Tests where other parameters are passed (where, with, columns ...)
+# to eliminate interactions
+
+
+# Cleanup
 ObjectDB::TestData::Hotel->delete($conn);
 ObjectDB::TestData::Author->delete($conn);
