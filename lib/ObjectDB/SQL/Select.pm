@@ -246,7 +246,12 @@ sub sources_to_string {
 
         $string .= ' ' . uc $source->{join} . ' JOIN ' if $source->{join};
 
-        $string .= $self->escape($source->{name});
+        if ( $source->{sub_req} ){
+            $string .= '('.$source->{sub_req}.')';
+        }
+        else {
+            $string .= $self->escape($source->{name});
+        }
 
         if ($source->{as}) {
             $string .= ' AS ' . $self->escape($source->{as});

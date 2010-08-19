@@ -344,8 +344,8 @@ sub related {
 
 
 # get the max/min top n results per group (e.g. the top 4 comments for each article)
-# WARNING: the proposed SQL is probably anything but effective (but usable if amount
-# of data is limited) and will have to be replaced by database specific syntax
+# WARNING: the proposed SQL works fine with multiple thausend rows, but might consume
+# a lot of resources in cases that amount of data is much bigger (not tested so far)
 sub _resolve_max_min_n_results_by_group {
     my $class  = shift;
     my $params = shift;
@@ -372,13 +372,19 @@ sub _resolve_max_min_n_results_by_group {
     my $table = $class->schema->table;
     my $join_table_alias = $class->schema->table.'_'.$type;
 
-    # Add main source
-    $sql->source( $class->schema->table );
-
     my @constraint1;
     foreach my $column ( @$group ){
+        # generate a more complex query in case that grouping
+        # depends on other tables
+        if ( $column =~/[.]/ ){
+            $class->_resolve_max_min_n_results_by_group_multi_table($params);
+        }
+
         push @constraint1, ("$table.$column" => \"`$join_table_alias`.`$column`");
     }
+
+    # Add main source
+    $sql->source( $class->schema->table );
 
     # join bigger/smaller entries
     my @constraint2;
@@ -417,6 +423,146 @@ sub _resolve_max_min_n_results_by_group {
 
 }
 
+### EXPERIMENTAL
+### a more complex query is required in case that grouping
+### is performed based on data in other tables
+sub _resolve_max_min_n_results_by_group_multi_table {
+    my $class  = shift;
+    my $params = shift;
+
+    # Get params
+    my $sql    = $params->{sql};
+    my $type   = uc ($params->{type});
+    my $group  = $params->{group};
+    my $column = $params->{column};
+    my $top    = $params->{top};
+    my $strict = $params->{strict};
+    my $conn   = $params->{conn};
+
+    my $op;
+    if ( $type eq 'MIN' ){
+        $op = '>';
+    }
+    if ( $type eq 'MAX' ){
+        $op = '<';
+    }
+
+    $group = ref $group ? [@$group] : [$group];
+    $strict = defined $strict ? $strict : 1;
+
+
+    # Build first subrequest
+    my $sub_sql_1 = ObjectDB::SQL::Select->new;
+    $sub_sql_1->source( $class->schema->table );
+    $sub_sql_1->columns( $class->schema->columns );
+    $class->_resolve_multi_table(
+        where     => $group,
+        sql       => $sub_sql_1,
+        col_alias => 'OBJECTDB_COMPARE_1' );
+
+
+    # Build second subrequest
+    my $sub_sql_2 = ObjectDB::SQL::Select->new;
+    $sub_sql_2->source( $class->schema->table );
+    $sub_sql_2->columns( $class->schema->columns );
+
+    $class->_resolve_multi_table(
+        where     => $group,
+        sql       => $sub_sql_2,
+        col_alias => 'OBJECTDB_COMPARE_2'
+    );
+
+
+    # Build main request
+    $sql->source({
+        name    => $class->schema->table,
+        as      => $class->schema->table,
+        sub_req => $sub_sql_1->to_string
+    });
+    $sql->columns( $class->schema->columns );
+
+
+    my $table = $class->schema->table;
+    my $join_table_alias = $class->schema->table.'_'.$type;
+
+    # join bigger/smaller entries
+    my @constraint2;
+    push @constraint2, ("$table.$column" => { $op, \qq/`$join_table_alias`.`$column`/ } );
+
+    # or join entries with lower ids in case of same values
+    my @constraint3;
+    push @constraint3, (
+        "$table.$column" => \"`$join_table_alias`.`$column`",
+        "$table.id"      => { '>', \"`$join_table_alias`.`id`"}
+    );
+
+    my $constraint;
+    if ( !$strict) {
+        $constraint = [ @constraint2 ];
+    }
+    else {
+        $constraint = [ 'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/ ,-or=>[ @constraint2, -and=>\@constraint3 ] ];
+    }
+
+    $sql->source({ name=>$join_table_alias, as=>$join_table_alias, sub_req=>$sub_sql_2->to_string, join=>'left', constraint => $constraint });
+
+
+    $sql->group_by( 'id' );
+    $sql->order_by( "OBJECTDB_COMPARE_1 asc, $column desc, id asc" );
+
+    if ( $top == 1 ) {
+        $sql->where( $join_table_alias.'.id' => undef );
+    }
+    else {
+        $sql->having(\qq/COUNT(*) < $top/);
+    }
+
+    #warn "$sql";
+
+}
+
+
+sub _resolve_multi_table {
+    my $class  = shift;
+    my %params = @_;
+
+    my $where = $params{where};
+    my $sql   = $params{sql};
+    my $col_alias = $params{col_alias};
+
+    return unless $where && @$where;
+
+    for (my $i = 0; $i < @$where; $i += 2) {
+        my $key   = $where->[$i];
+        my $value = $where->[$i + 1];
+
+        if ($key =~ m/\./) {
+            my $parent = $class;
+            my $source;
+            my $one_to_many = 0;
+            while ($key =~ s/(\w+)\.//) {
+                my $name = $1;
+                my $rel  = $parent->schema->relationship($name);
+
+                if ( $rel->is_has_many ) {
+                    $one_to_many = 1;
+                }
+
+                $source = $rel->to_source();
+                $sql->source($source);
+
+                $parent = $rel->foreign_class;
+            }
+            die 'only one to one allowed' if $one_to_many;
+            $sql->columns({ name=>$key, as=>$col_alias });
+        }
+
+    }
+}
+
+
+
+
 
 sub find {
     my $class  = shift;
@@ -430,7 +576,6 @@ sub find {
     my $single = $params{first} || $params{single} ? 1 : 0;
 
     my $sql = ObjectDB::SQL::Select->new({ driver=>$conn->driver });
-    $sql->source($class->schema->table);
 
     my $main = {};
 

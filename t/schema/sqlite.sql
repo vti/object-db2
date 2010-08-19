@@ -41,7 +41,8 @@ CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `article_id` INTEGER,
  `author_id` INTEGER,
- `content` varchar(40) default ''
+ `content` varchar(40) default '',
+ `creation_date` date default ``
 );
 CREATE TABLE `to_do_articles` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

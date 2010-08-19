@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 213;
+use Test::More tests => 221;
 
 use lib 't/lib';
 
@@ -12,10 +12,13 @@ use TestDB;
 
 my $conn = TestDB->conn;
 
-### ObjectDB::TestData::Hotel
+### Load test data
 
 require "t/test_data/hotel.testdata";
 ObjectDB::TestData::Hotel->load($conn);
+
+require "t/test_data/author.testdata";
+my ($author, $author2) = ObjectDB::TestData::Author->load($conn);
 
 
 
@@ -420,4 +423,38 @@ is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 
 
 
+
+### MAX/MIN data using relationsships
+
+### EXPERIMENTAL
+
+# now group by criteria that can NOT be found in the same table
+# get the 6 latest comments on articles of each author for each author
+# note: there is no column in the comments table that allows to group
+# directly by author (the existing author_id column contains no data as
+# it refers to direct comments on the author, not on comments for articles
+# of the author)
+
+
+my @comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>6 },
+);
+is( @comments, 9 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[6]->column('content'), 'objectdb third' );
+
+
+
+@comments = Comment->find( conn=>$conn,
+    max => { column=>'creation_date', group=>'article.author.id', top=>2 },
+);
+is( @comments, 4 );
+is ($comments[0]->column('creation_date'), '2010-01-01' );
+is ($comments[2]->column('content'), 'objectdb third' );
+is ($comments[3]->column('content'), 'objectdb first' );
+
+
+
 ObjectDB::TestData::Hotel->delete($conn);
+ObjectDB::TestData::Author->delete($conn);

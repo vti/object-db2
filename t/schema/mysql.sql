@@ -39,7 +39,8 @@ CREATE TABLE `comments` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `article_id` INTEGER,
  `author_id` INTEGER,
- `content` varchar(40) default ''
+ `content` varchar(40) default '',
+ `creation_date` date default '0000-00-00'
 ) TYPE=innodb;
 CREATE TABLE `to_do_articles` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
