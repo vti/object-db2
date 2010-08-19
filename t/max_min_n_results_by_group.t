@@ -481,9 +481,10 @@ is ($comments[5]->column('content'), 'comment content 1-1' ); # lower id
 is ($comments[6]->column('content'), 'objectdb third' );
 
 
+
 ### now non strict mode
 
-# Max top 1, strict mode
+# Max top 1, non strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', strict=>0 },
 );
@@ -493,7 +494,7 @@ is ($comments[1]->column('creation_date'), '2011-12-01' );
 
 
 
-# Max top 2, strict mode
+# Max top 2, non strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>2, strict=>0 },
 );
@@ -504,7 +505,7 @@ is ($comments[3]->column('content'), 'objectdb first' );
 
 
 
-# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)
+# Max top 3, non strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>3, strict=>0 },
 );
@@ -517,7 +518,8 @@ is ($comments[3]->column('creation_date'), '2008-12-21' );
 is ($comments[3]->column('content'), 'comment content 1-4' );
 
 
-# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)
+
+# Max top 6, non strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>6, strict=>0 },
 );
