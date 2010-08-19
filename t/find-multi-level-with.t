@@ -34,10 +34,10 @@ my ($author, $author2) = ObjectDB::TestData::Author->load($conn);
 # First simple test
 my @authors = Author->find(conn=>$conn, with => [qw/articles articles.comments/]);
 is(@authors, 2);
-is($authors[0]->articles->[0]->column('title'), 'article title1');
-is($authors[0]->articles->[1]->column('title'), 'article title2');
+is($authors[0]->articles->[0]->column('title'), 'article 1-1');
+is($authors[0]->articles->[1]->column('title'), 'article 1-2');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
-    'comment content 1-1'
+    'comment 1-1-1'
 );
 
 
@@ -48,7 +48,7 @@ is(@authors, 2);
 ok( !defined $authors[0]->articles->[0]->column('title') );
 ok( !defined $authors[0]->articles->[1]->column('title') );
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
-    'comment content 1-1'
+    'comment 1-1-1'
 );
 
 
@@ -56,10 +56,10 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 # Mixing the order of relationship chains a bit
 @authors = Author->find(conn=>$conn, with => [qw/articles.comments articles/]);
 is(@authors,                                                2);
-is($authors[0]->articles->[0]->column('title'), 'article title1');
-is($authors[0]->articles->[1]->column('title'), 'article title2');
+is($authors[0]->articles->[0]->column('title'), 'article 1-1');
+is($authors[0]->articles->[1]->column('title'), 'article 1-2');
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
-    'comment content 1-1'
+    'comment 1-1-1'
 );
 
 
@@ -70,22 +70,22 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
 is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
-is( $authors[0]->articles->[0]->column('title'), 'article title1');
+is( $authors[0]->articles->[0]->column('title'), 'article 1-1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
-    'comment content 1-1'
+    'comment 1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[1]->column('content'),
-    'comment content 1-2'
+    'comment 1-1-2'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[0]
-  ->column('content'), 'sub comment 1'
+  ->column('content'), 'sub comment 1-1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[1]
-  ->column('content'), 'sub comment 2'
+  ->column('content'), 'sub comment 1-1-1-2'
 );
-is($authors[0]->articles->[2]->column('title'), 'article title3');
+is($authors[0]->articles->[2]->column('title'), 'article 1-3');
 is( $authors[0]->articles->[2]->comments->[0]->column('content'),
-    'comment content3'
+    'comment 1-3-1'
 );
 
 
@@ -102,11 +102,11 @@ ok( not defined $authors[0]->articles->[0]->comments->[0]->column('content') );
 ok( not defined $authors[0]->articles->[0]->comments->[1]->column('content') );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[0]
   ->column('content'),
-    'sub comment 1'
+    'sub comment 1-1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[1]
   ->column('content'),
-    'sub comment 2'
+    'sub comment 1-1-1-2'
 );
 ok( defined $authors[0]->articles->[1]->comments );
 is( @{$authors[0]->articles->[1]->comments}, 0);
@@ -123,22 +123,22 @@ is( @{$authors[0]->articles->[1]->comments}, 0);
 );
 is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
-is( $authors[0]->articles->[0]->column('title'), 'article title1');
+is( $authors[0]->articles->[0]->column('title'), 'article 1-1');
 is( $authors[0]->articles->[0]->comments->[0]->column('content'),
-    'comment content 1-1'
+    'comment 1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[1]->column('content'),
-    'comment content 1-2'
+    'comment 1-1-2'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[0]
-  ->column('content'), 'sub comment 1'
+  ->column('content'), 'sub comment 1-1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[1]
-  ->column('content'), 'sub comment 2'
+  ->column('content'), 'sub comment 1-1-1-2'
 );
-is($authors[0]->articles->[2]->column('title'), 'article title3');
+is($authors[0]->articles->[2]->column('title'), 'article 1-3');
 is( $authors[0]->articles->[2]->comments->[0]->column('content'),
-    'comment content3'
+    'comment 1-3-1'
 );
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
@@ -155,11 +155,11 @@ ok( not defined $authors[0]->articles->[0]->comments->[0]->column('content') );
 ok( not defined $authors[0]->articles->[0]->comments->[1]->column('content') );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[0]
   ->column('content'),
-    'sub comment 1'
+    'sub comment 1-1-1-1'
 );
 is( $authors[0]->articles->[0]->comments->[0]->sub_comments->[1]
   ->column('content'),
-    'sub comment 2'
+    'sub comment 1-1-1-2'
 );
 is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
@@ -173,8 +173,8 @@ is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
 ok( not defined $authors[0]->articles->[0]->column('title') );
 is( @{$authors[0]->articles->[0]->comments}, 6);
-is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content 1-1');
-is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment content 1-2');
+is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment 1-1-1');
+is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment 1-1-2');
 is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
@@ -185,10 +185,10 @@ is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4
     with => [qw/articles.comments articles.main_category articles/]);
 is( @authors, 2);
 is( @{$authors[0]->articles}, 4);
-is(  $authors[0]->articles->[0]->column('title'), 'article title1' );
+is(  $authors[0]->articles->[0]->column('title'), 'article 1-1' );
 is( @{$authors[0]->articles->[0]->comments}, 6);
-is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment content 1-1');
-is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment content 1-2');
+is( $authors[0]->articles->[0]->comments->[0]->column('content'), 'comment 1-1-1');
+is( $authors[0]->articles->[0]->comments->[1]->column('content'), 'comment 1-1-2');
 is( @{$authors[0]->articles->[1]->comments}, 0);
 is( $authors[0]->articles->[0]->main_category->column('title'), 'main category 4' );
 
@@ -246,7 +246,7 @@ is( $authors[0]->articles->[2]->special_report->main_category->column('title'), 
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
 ok( not defined $authors[0]->articles->[2]->column('title') );
-is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment content3' );
+is( $authors[0]->articles->[2]->comments->[0]->column('content'), 'comment 1-3-1' );
 
 
 

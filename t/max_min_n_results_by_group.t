@@ -451,8 +451,8 @@ is ($comments[1]->column('creation_date'), '2011-12-01' );
 );
 is( @comments, 4 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
-is ($comments[2]->column('content'), 'objectdb third' );
-is ($comments[3]->column('content'), 'objectdb first' );
+is ($comments[2]->column('content'), 'comment 2-3-1' );
+is ($comments[3]->column('content'), 'comment 2-1-1' );
 
 
 
@@ -464,7 +464,7 @@ is( @comments, 6 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
 is ($comments[1]->column('creation_date'), '2009-11-21' );
 is ($comments[2]->column('creation_date'), '2008-12-21' );
-is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[2]->column('content'), 'comment 1-1-2' );
 
 
 
@@ -475,10 +475,10 @@ is ($comments[2]->column('content'), 'comment content 1-2' );
 );
 is( @comments, 9 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
-is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[2]->column('content'), 'comment 1-1-2' );
 is ($comments[5]->column('creation_date'), '0000-00-00' );
-is ($comments[5]->column('content'), 'comment content 1-1' ); # lower id
-is ($comments[6]->column('content'), 'objectdb third' );
+is ($comments[5]->column('content'), 'comment 1-1-1' ); # lower id
+is ($comments[6]->column('content'), 'comment 2-3-1' );
 
 
 
@@ -500,8 +500,8 @@ is ($comments[1]->column('creation_date'), '2011-12-01' );
 );
 is( @comments, 4 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
-is ($comments[2]->column('content'), 'objectdb third' );
-is ($comments[3]->column('content'), 'objectdb first' );
+is ($comments[2]->column('content'), 'comment 2-3-1' );
+is ($comments[3]->column('content'), 'comment 2-1-1' );
 
 
 
@@ -513,9 +513,9 @@ is( @comments, 7 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
 is ($comments[1]->column('creation_date'), '2009-11-21' );
 is ($comments[2]->column('creation_date'), '2008-12-21' );
-is ($comments[2]->column('content'), 'comment content 1-2' );
+is ($comments[2]->column('content'), 'comment 1-1-2' );
 is ($comments[3]->column('creation_date'), '2008-12-21' );
-is ($comments[3]->column('content'), 'comment content 1-4' );
+is ($comments[3]->column('content'), 'comment 1-1-4' );
 
 
 
@@ -525,8 +525,8 @@ is ($comments[3]->column('content'), 'comment content 1-4' );
 );
 is( @comments, 10 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
-is ($comments[2]->column('content'), 'comment content 1-2' );
-is ($comments[7]->column('content'), 'objectdb third' );
+is ($comments[2]->column('content'), 'comment 1-1-2' );
+is ($comments[7]->column('content'), 'comment 2-3-1' );
 
 
 
