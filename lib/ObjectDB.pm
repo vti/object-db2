@@ -440,11 +440,14 @@ sub _resolve_max_min_n_results_by_group_multi_table {
     my $conn   = $params->{conn};
 
     my $op;
+    my $order;
     if ( $type eq 'MIN' ){
         $op = '>';
+        $order = 'asc';
     }
     if ( $type eq 'MAX' ){
         $op = '<';
+        $order = 'desc';
     }
 
     $group = ref $group ? [@$group] : [$group];
@@ -508,7 +511,7 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
 
     $sql->group_by( 'id' );
-    $sql->order_by( "OBJECTDB_COMPARE_1 asc, $column desc, id asc" );
+    $sql->order_by( "OBJECTDB_COMPARE_1 asc, $column $order, id asc" );
 
     if ( $top == 1 ) {
         $sql->where( $join_table_alias.'.id' => undef );

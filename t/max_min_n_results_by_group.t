@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 249;
+use Test::More tests => 284;
 
 use lib 't/lib';
 
@@ -141,7 +141,7 @@ is( $rooms[4]->column('size'), 7 );
   Room->find( conn=>$conn,
     min => { column => 'size', group => ['hotel_num_c','apartment_num_c'] }
   );
-is( @rooms, 6); ### should be 6 ??
+is( @rooms, 6);
 is( $rooms[0]->column('size'), 8 );
 
 is( $rooms[1]->column('size'), 10 );
@@ -164,7 +164,7 @@ is( $rooms[5]->column('size'), 7 );
   Room->find( conn=>$conn,
     min => { column => 'size', group => ['hotel_num_c','apartment_num_c'], strict=>0 }
   );
-is( @rooms, 7); ### should be 6 ??
+is( @rooms, 7);
 is( $rooms[0]->column('size'), 8 );
 
 is( $rooms[1]->column('size'), 10 );
@@ -435,7 +435,7 @@ is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 # it refers to direct comments on the author, not to comments on articles
 # of the author)
 
-# Max top 1, strict mode
+# Max top 1, strict mode-
 my @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id' },
 );
@@ -445,7 +445,7 @@ is ($comments[1]->column('creation_date'), '2011-12-01' );
 
 
 
-# Max top 2, strict mode
+# Max top 2, strict mode-
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>2 },
 );
@@ -456,7 +456,7 @@ is ($comments[3]->column('content'), 'comment 2-1-1' );
 
 
 
-# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)
+# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)-
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>3 },
 );
@@ -468,7 +468,7 @@ is ($comments[2]->column('content'), 'comment 1-1-2' );
 
 
 
-# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)
+# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)-
 # comment no 6 and 7 (no date) compete for higher spot, lower id wins
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>6 },
@@ -476,7 +476,7 @@ is ($comments[2]->column('content'), 'comment 1-1-2' );
 is( @comments, 9 );
 is ($comments[0]->column('creation_date'), '2010-01-01' );
 is ($comments[2]->column('content'), 'comment 1-1-2' );
-is ($comments[5]->column('creation_date'), '0000-00-00' );
+is ($comments[5]->column('creation_date'), '2005-12-01' );
 is ($comments[5]->column('content'), 'comment 1-1-1' ); # lower id
 is ($comments[6]->column('content'), 'comment 2-3-1' );
 
@@ -528,6 +528,92 @@ is ($comments[0]->column('creation_date'), '2010-01-01' );
 is ($comments[2]->column('content'), 'comment 1-1-2' );
 is ($comments[7]->column('content'), 'comment 2-3-1' );
 
+
+
+### now similar tests for min
+
+
+# Min top 1, strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id' },
+);
+is( @comments, 2 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[1]->column('content'), 'comment 2-1-2' );
+
+
+
+# Min top 2, strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', top=>2 },
+);
+is( @comments, 4 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[1]->column('content'), 'comment 1-3-1' );
+is ($comments[2]->column('content'), 'comment 2-1-2' );
+is ($comments[3]->column('content'), 'comment 2-1-1' );
+
+
+
+# Min top 3, strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', top=>3 },
+);
+is( @comments, 6 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[1]->column('content'), 'comment 1-3-1' );
+is ($comments[2]->column('content'), 'comment 1-1-6' );
+is ($comments[3]->column('content'), 'comment 2-1-2' );
+is ($comments[4]->column('content'), 'comment 2-1-1' );
+is ($comments[5]->column('content'), 'comment 2-3-1' );
+
+
+
+# Min top 6, strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', top=>6 },
+);
+is( @comments, 9 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[5]->column('content'), 'comment 1-1-3' );
+is ($comments[6]->column('content'), 'comment 2-1-2' );
+is ($comments[7]->column('content'), 'comment 2-1-1' );
+is ($comments[7]->column('creation_date'), '2005-07-31' );
+is ($comments[8]->column('content'), 'comment 2-3-1' );
+
+
+
+# Min top 1, non strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', strict=>0 },
+);
+is( @comments, 3 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[1]->column('content'), 'comment 1-3-1' );
+is ($comments[2]->column('content'), 'comment 2-1-2' );
+
+
+
+# Min top 2, non strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', top=>2, strict=>0 },
+);
+is( @comments, 4 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[1]->column('content'), 'comment 1-3-1' );
+is ($comments[2]->column('content'), 'comment 2-1-2' );
+is ($comments[3]->column('content'), 'comment 2-1-1' );
+
+
+
+# Min top 6, non strict mode
+@comments = Comment->find( conn=>$conn,
+    min => { column=>'creation_date', group=>'article.author.id', top=>6, strict=>0 },
+);
+is( @comments, 9 );
+is ($comments[0]->column('content'), 'comment 1-1-1' );
+is ($comments[6]->column('content'), 'comment 2-1-2' );
+is ($comments[8]->column('content'), 'comment 2-3-1' );
 
 
 
