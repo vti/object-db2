@@ -435,7 +435,7 @@ is( $hotels[2]->apartments->[1]->rooms->[1]->column('size'), 7 );
 # it refers to direct comments on the author, not to comments on articles
 # of the author)
 
-# Max top 1, strict mode-
+# Max top 1, strict mode
 my @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id' },
 );
@@ -445,7 +445,7 @@ is ($comments[1]->column('creation_date'), '2011-12-01' );
 
 
 
-# Max top 2, strict mode-
+# Max top 2, strict mode
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>2 },
 );
@@ -456,7 +456,7 @@ is ($comments[3]->column('content'), 'comment 2-1-1' );
 
 
 
-# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)-
+# Max top 3, strict mode (1st author has two articles with same date, both competing for the number 3 spot)
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>3 },
 );
@@ -468,7 +468,7 @@ is ($comments[2]->column('content'), 'comment 1-1-2' );
 
 
 
-# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)-
+# Max top 6, strict mode (2nd author has only 2 articles with a total of 3 comments)
 # comment no 6 and 7 (no date) compete for higher spot, lower id wins
 @comments = Comment->find( conn=>$conn,
     max => { column=>'creation_date', group=>'article.author.id', top=>6 },
