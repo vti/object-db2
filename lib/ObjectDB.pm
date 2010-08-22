@@ -583,26 +583,16 @@ sub find {
     my $main = {};
 
 
-    if ( $params{max} ) {
+    if ( $params{max} || $params{min} ) {
+        my $type = $params{max} ? 'max' : 'min';
         $class->_resolve_max_min_n_results_by_group({
-            group   =>$params{max}->{group},
-            column  =>$params{max}->{column},
-            top     =>$params{max}->{top} || 1,
-            strict  =>$params{max}->{strict},
+            group   =>$params{$type}->{group},
+            column  =>$params{$type}->{column},
+            top     =>$params{$type}->{top} || 1,
+            strict  =>$params{$type}->{strict},
             main    =>$main,
             sql     =>$sql,
-            type    =>'max'
-        });
-    }
-    elsif ( $params{min} ) {
-        $class->_resolve_max_min_n_results_by_group({
-            group   =>$params{min}->{group},
-            column  =>$params{min}->{column},
-            top     =>$params{min}->{top} || 1,
-            strict  =>$params{min}->{strict},
-            main    =>$main,
-            sql     =>$sql,
-            type    =>'min'
+            type    =>$type
         });
     }
     # Standard case
