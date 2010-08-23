@@ -37,7 +37,8 @@ sub txn {
     my $self = shift;
     my $cb   = pop;
 
-    my $dbh = $self->dbh;
+    my $dbh = $self->dbh && $self->dbh->FETCH('Active') ? $self->dbh : undef;
+    $dbh ||= $self->connect;
 
     # Already in transaction
     return $cb->($dbh) if $self->in_txn;
