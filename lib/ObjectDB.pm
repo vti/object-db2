@@ -1428,8 +1428,6 @@ sub _row_to_object {
                 push @{$args->{pk}}, $map_from_concat;
             }
 
-            ### TO DO: THIS PART IS CAUSING A MEMORY LEAK
-            ### (also see /t/stress_test )
             if (my $subwith = $args->{nested}) {
                 _execute_code_ref($code_ref, $object, $subwith);
             }
