@@ -1385,8 +1385,8 @@ sub _row_to_object {
 
     $with ||= [];
 
-    my $walker; $walker = sub {
-        my ($self, $with) = @_;
+    my $walker = sub {
+        my ($code_ref, $self, $with) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
@@ -1431,12 +1431,12 @@ sub _row_to_object {
             ### TO DO: THIS PART IS CAUSING A MEMORY LEAK
             ### (also see /t/stress_test )
             if (my $subwith = $args->{nested}) {
-                $walker->($object, $subwith);
+                _execute_code_ref($code_ref, $object, $subwith);
             }
         }
     };
 
-    $walker->($self, $with);
+    _execute_code_ref($walker, $self, $with);
 
     #use Data::Dumper;
     #warn Dumper $row;
@@ -1446,6 +1446,11 @@ sub _row_to_object {
     $self->is_modified(0);
 
     return $self;
+}
+
+sub _execute_code_ref {
+    my $code_ref = shift;
+    $code_ref->($code_ref,@_);
 }
 
 1;
