@@ -94,6 +94,19 @@ warn "find all:\n".timestr($b_diff)."\n\n";
 
 
 
+# Find using "with"
+$b_start = Benchmark->new;
+for ( my $i = 1; $i<=100; $i++ ){
+    my @authors =
+      Author->find( conn=>$conn, 
+        with => [qw/articles.comments/]);
+    warn "Memory:".memory();
+}
+$b_stop = Benchmark->new;
+$b_diff = timediff($b_stop, $b_start);
+warn "find all:\n".timestr($b_diff)."\n\n";
+
+
 ### Delete
 $b_start = Benchmark->new;
 Author->delete( conn=>$conn );

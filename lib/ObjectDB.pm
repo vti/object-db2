@@ -1199,9 +1199,8 @@ sub _resolve_with {
 
     return unless $with;
 
-    my $walker;
-    $walker = sub {
-        my ($class, $with, $passed_chain, $parent_with_args) = @_;
+    my $walker = sub {
+        my ($code_ref, $class, $with, $passed_chain, $parent_with_args) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
@@ -1268,7 +1267,7 @@ sub _resolve_with {
                 $sql->source($rel->to_source($args->{where}) );
 
                 if (my $subwith = $args->{nested}) {
-                    $walker->($rel->foreign_class, $subwith, $chain, $args);
+                    _execute_code_ref($code_ref, $rel->foreign_class, $subwith, $chain, $args);
                 }
 
                 # Switch back to right source
@@ -1278,7 +1277,7 @@ sub _resolve_with {
             }
         }
     };
-    $walker->($class, $with);
+    _execute_code_ref($walker, $class, $with);
 }
 
 sub _normalize_with {
