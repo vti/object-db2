@@ -1311,7 +1311,8 @@ sub _normalize_with {
     }
 
 
-    my $walker; $walker = sub {
+    my $walker = sub {
+        my $code_ref = shift;
         my $parts = shift;
 
         # Already normalized
@@ -1322,14 +1323,14 @@ sub _normalize_with {
             push @$rv, ($key => $parts->{$key});
 
             if (my $subparts = $parts->{$key}->{nested}) {
-                $rv->[-1]->{nested} = $walker->($subparts);
+                $rv->[-1]->{nested} = _execute_code_ref($code_ref, $subparts);
             }
         }
 
         return $rv;
     };
 
-    return $walker->($parts);
+    return _execute_code_ref($walker, $parts);
 }
 
 sub primary_keys_values {
