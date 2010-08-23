@@ -64,11 +64,14 @@ sub _build {
 
                 $driver || die 'no sql driver defined';
 
-                if ( $driver eq 'SQLite' ){
+                if ( $driver =~/SQLite/ ){
                     $key = join(' || "__" || ', @concat);
                 }
-                elsif ( $driver eq 'mysql' ){
+                elsif ( $driver =~/mysql/ ){
                     $key = 'CONCAT_WS("__",'.join(',', @concat).')';
+                }
+                else {
+                    die 'unknown driver (supported drivers: SQLite, mysql)';
                 }
             }
             else {
