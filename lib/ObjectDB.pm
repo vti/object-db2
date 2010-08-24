@@ -1440,7 +1440,7 @@ sub _row_to_object {
 
     #use Data::Dumper;
     #warn Dumper $row;
-    Carp::croak qq/Not all the rows are mapped to the object/ if @$row;
+    Carp::croak qq/Not all columns of current row could be mapped to the object/ if @$row;
 
     $self->is_in_db(1);
     $self->is_modified(0);
