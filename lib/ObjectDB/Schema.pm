@@ -10,7 +10,7 @@ __PACKAGE__->attr(columns       => sub { [] });
 __PACKAGE__->attr(primary_keys  => sub { [] });
 __PACKAGE__->attr(unique_keys   => sub { [] });
 __PACKAGE__->attr(relationships => sub { {} });
-__PACKAGE__->attr(is_built => 0);
+__PACKAGE__->attr(is_built      => 0);
 
 require Carp;
 use ObjectDB::Loader;
@@ -20,7 +20,8 @@ use ObjectDB::Util;
 sub new {
     my $self = shift->SUPER::new(@_);
 
-    $self->table(ObjectDB::Util->class_to_table($self->class)) unless $self->table;
+    $self->table(ObjectDB::Util->class_to_table($self->class))
+      unless $self->table;
 
     return $self;
 }
@@ -50,7 +51,7 @@ sub auto_discover {
 
     $conn->run(
         sub {
-            my $dbh = shift;
+            my $dbh        = shift;
             my $discoverer = ObjectDB::SchemaDiscoverer->build(
                 driver => $dbh->{'Driver'}->{'Name'},
                 table  => $self->table
@@ -119,9 +120,10 @@ sub relationship {
     my $self = shift;
     my $name = shift;
 
-    my $rel = $self->relationships->{$name};
+    my $rel   = $self->relationships->{$name};
     my $class = $self->class;
-    Carp::croak qq/Unknown relationship '$name' in class '$class'/ unless $rel;
+    Carp::croak qq/Unknown relationship '$name' in class '$class'/
+      unless $rel;
 
     return $rel;
 }

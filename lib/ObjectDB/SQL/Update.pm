@@ -52,7 +52,7 @@ sub to_string {
     }
 
     $query .= $self->where;
-    $self->bind( $self->where->bind ) unless $self->is_built;
+    $self->bind($self->where->bind) unless $self->is_built;
     $self->is_built(1);
 
     return $query;

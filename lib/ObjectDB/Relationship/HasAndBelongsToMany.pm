@@ -24,7 +24,7 @@ sub _build {
 
         # Because we have two points of view :)
         my @classes = ($self->class, $self->foreign_class);
-        my $map_class  = join('', sort(@classes)) . 'Map';
+        my $map_class = join('', sort(@classes)) . 'Map';
 
         unless ($map_class->can('new')) {
             my $map_table = ObjectDB::Util->class_to_table($map_class);
@@ -45,7 +45,8 @@ EOF
 
         $map_class->schema->build(@_);
 
-        while (my ($key, $value) = each %{$map_class->schema->relationships}) {
+        while (my ($key, $value) = each %{$map_class->schema->relationships})
+        {
             $value->build(@_);
         }
 
@@ -64,8 +65,7 @@ sub to_source {
     my $map_from = $self->map_from;
     my $map_to   = $self->map_to;
 
-    my ($from, $to) =
-      %{$self->map_schema->relationships->{$map_to}->map};
+    my ($from, $to) = %{$self->map_schema->relationships->{$map_to}->map};
 
     my $table     = $self->foreign_table;
     my $map_table = $self->map_table;
@@ -81,14 +81,13 @@ sub to_source {
 }
 
 sub to_map_source {
-    my $self = shift;
+    my $self   = shift;
     my %params = @_;
 
     my $map_from = $self->map_from;
     my $map_to   = $self->map_to;
 
-    my ($from, $to) =
-      %{$self->map_schema->relationships->{$map_from}->map};
+    my ($from, $to) = %{$self->map_schema->relationships->{$map_from}->map};
 
     my $table     = $self->table;
     my $map_table = $self->map_table;
@@ -106,8 +105,7 @@ sub to_self_map_source {
     my $map_from = $self->map_from;
     my $map_to   = $self->map_to;
 
-    my ($from, $to) =
-      %{$self->map_schema->relationships->{$map_to}->map};
+    my ($from, $to) = %{$self->map_schema->relationships->{$map_to}->map};
 
     my $table     = $self->foreign_table;
     my $map_table = $self->map_table;
@@ -125,8 +123,7 @@ sub to_self_source {
     my $map_from = $self->map_from;
     my $map_to   = $self->map_to;
 
-    my ($from, $to) =
-      %{$self->map_schema->relationships->{$map_from}->map};
+    my ($from, $to) = %{$self->map_schema->relationships->{$map_from}->map};
 
     my $table     = $self->table;
     my $map_table = $self->map_table;

@@ -15,16 +15,18 @@ sub _build {
 
     my $string = "";
 
-    my $condition = ref $params->{condition} ? $params->{condition}
+    my $condition =
+      ref $params->{condition}
+      ? $params->{condition}
       : [$params->{condition}];
-    my $prefix    = $params->{prefix};
-    my $driver    = $params->{driver};
+    my $prefix = $params->{prefix};
+    my $driver = $params->{driver};
 
     my $count = 0;
     while (my ($key, $value) = @{$condition}[$count, $count + 1]) {
         last unless $key;
 
-        $string .= " ".$self->logic." " unless $count == 0;
+        $string .= " " . $self->logic . " " unless $count == 0;
         if (ref $key eq 'SCALAR') {
             $string .= $$key;
 
@@ -34,7 +36,7 @@ sub _build {
             my $concat;
 
             # -concat(col1,col2...)
-            if ($key =~/^-concat\(([\w,]+)\)/){
+            if ($key =~ /^-concat\(([\w,]+)\)/) {
                 $concat = $1;
             }
 
@@ -42,41 +44,41 @@ sub _build {
             if ($key =~ s/^-//) {
                 if ($key eq 'or' || $key eq 'and') {
                     $self->logic(uc $key);
-                    $string .= $self->_build({
-                        condition => $value,
-                        prefix    => $prefix,
-                        driver    => $driver
-                    });
+                    $string .= $self->_build(
+                        {   condition => $value,
+                            prefix    => $prefix,
+                            driver    => $driver
+                        }
+                    );
                     last;
                 }
             }
 
             # Process key
-            if ( $concat ){
-                my @concat = split (/,/,$concat);
-                foreach my $concat (@concat){
-                    $concat = $self->escape( $concat );
+            if ($concat) {
+                my @concat = split(/,/, $concat);
+                foreach my $concat (@concat) {
+                    $concat = $self->escape($concat);
 
                     if ($prefix) {
-                        $concat = $self->escape($prefix).'.'.$concat;
+                        $concat = $self->escape($prefix) . '.' . $concat;
                     }
                 }
 
                 $driver || die 'no sql driver defined';
 
-                if ( $driver =~/SQLite/ ){
+                if ($driver =~ /SQLite/) {
                     $key = join(' || "__" || ', @concat);
                 }
-                elsif ( $driver =~/mysql/ ){
-                    $key = 'CONCAT_WS("__",'.join(',', @concat).')';
+                elsif ($driver =~ /mysql/) {
+                    $key = 'CONCAT_WS("__",' . join(',', @concat) . ')';
                 }
                 else {
                     die 'unknown driver (supported drivers: SQLite, mysql)';
                 }
             }
             else {
-                $key = ObjectDB::SQL::Select
-                  ->prepare_column($key,$prefix);
+                $key = ObjectDB::SQL::Select->prepare_column($key, $prefix);
             }
 
             # Process value
@@ -85,12 +87,12 @@ sub _build {
                     my ($op, $val) = %$value;
 
                     if (defined $val) {
-                        if ( ref $val ){
+                        if (ref $val) {
                             $string .= "$key $op $$val";
                         }
                         else {
                             $string .= "$key $op ?";
-                            $self->bind( $val );
+                            $self->bind($val);
                         }
                     }
                     else {
@@ -105,7 +107,7 @@ sub _build {
                         $string .= ', ' unless $first;
                         $string .= '?';
                         $first = 0;
-                        $self->bind( $v );
+                        $self->bind($v);
                     }
 
                     $string .= ")";
@@ -115,7 +117,7 @@ sub _build {
                 }
                 else {
                     $string .= "$key = ?";
-                    $self->bind( $value );
+                    $self->bind($value);
                 }
             }
             else {
@@ -133,7 +135,7 @@ sub _build {
 }
 
 sub escape {
-    my $self = shift;
+    my $self  = shift;
     my $value = shift;
 
     $value =~ s/`/\\`/g;

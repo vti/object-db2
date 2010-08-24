@@ -23,7 +23,7 @@ use ObjectDB::SQL::Update;
 use Data::Dumper;
 
 sub new {
-    my $self   = shift->SUPER::new;
+    my $self = shift->SUPER::new;
 
     $self->init(@_) if @_;
 
@@ -53,8 +53,9 @@ sub init {
         }
         else {
             Carp::croak qq/Unknown column '$key' in table: /
-              .ref($self)->schema->table
-              .qq/ or unknown relationship in class: /.ref($self);
+              . ref($self)->schema->table
+              . qq/ or unknown relationship in class: /
+              . ref($self);
         }
     }
 
@@ -73,7 +74,7 @@ sub schema {
       ||= ObjectDB::Schema->new(table => $table, class => $class_name, @_);
 }
 
-sub init_conn {}
+sub init_conn { }
 
 sub id {
     my $self = shift;
@@ -130,6 +131,7 @@ sub count {
     my $sql = ObjectDB::SQL::Select->new;
 
     my $table = $class->schema->table;
+
     #my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
     #my $pk    = join(' || ', @pk);
 
@@ -225,7 +227,7 @@ sub create_related {
     }
 
     my $wantarray = wantarray;
-    my $conn = $self->conn;
+    my $conn      = $self->conn;
     return $conn->txn(
         sub {
             if ($rel->is_has_many) {
@@ -253,7 +255,8 @@ sub create_related {
                   %{$rel->map_class->schema->relationship($map_to)->map};
 
                 foreach my $d (@$data) {
-                    my $object = $rel->foreign_class->find_or_create(conn => $conn, %$d);
+                    my $object =
+                      $rel->foreign_class->find_or_create(conn => $conn, %$d);
 
                     my $rel = $rel->map_class->create(
                         conn             => $conn,
@@ -278,7 +281,7 @@ sub delete_related {
     my $rel = $self->schema->relationship($name);
 
     my @where;
-    push @where, @{$rel->where} if $rel->where;
+    push @where, @{$rel->where}           if $rel->where;
     push @where, @{delete $params{where}} if $params{where};
 
     Carp::croak qq/Action on this relationship type is not supported/
@@ -352,70 +355,75 @@ sub _resolve_max_min_n_results_by_group {
 
     # Get params
     my $sql    = $params->{sql};
-    my $type   = uc ($params->{type});
+    my $type   = uc($params->{type});
     my $group  = $params->{group};
     my $column = $params->{column};
     my $top    = $params->{top};
     my $strict = $params->{strict};
 
-    $group = ref $group ? [@$group] : [$group];
-    $strict = defined $strict ? $strict : 1;
+    $group  = ref $group      ? [@$group] : [$group];
+    $strict = defined $strict ? $strict   : 1;
 
     my $op;
-    if ( $type eq 'MIN' ){
+    if ($type eq 'MIN') {
         $op = '>';
     }
-    if ( $type eq 'MAX' ){
+    if ($type eq 'MAX') {
         $op = '<';
     }
 
-    my $table = $class->schema->table;
-    my $join_table_alias = $class->schema->table.'_'.$type;
+    my $table            = $class->schema->table;
+    my $join_table_alias = $class->schema->table . '_' . $type;
 
     my @constraint1;
-    foreach my $column ( @$group ){
+    foreach my $column (@$group) {
+
         # generate a more complex query in case that grouping
         # depends on other tables
-        if ( $column =~/[.]/ ){
+        if ($column =~ /[.]/) {
             $class->_resolve_max_min_n_results_by_group_multi_table($params);
         }
 
-        push @constraint1, ("$table.$column" => \"`$join_table_alias`.`$column`");
+        push @constraint1,
+          ("$table.$column" => \"`$join_table_alias`.`$column`");
     }
 
     # Add main source
-    $sql->source( $class->schema->table );
+    $sql->source($class->schema->table);
 
     # join bigger/smaller entries
     my @constraint2;
-    push @constraint2, ("$table.$column" => { $op, \"`$join_table_alias`.`$column`" } );
+    push @constraint2,
+      ("$table.$column" => {$op, \"`$join_table_alias`.`$column`"});
 
     # or join entries with lower ids in case of same values
     my @constraint3;
-    push @constraint3, (
-        "$table.$column" => \"`$join_table_alias`.`$column`",
-        "$table.id"      => { '>', \"`$join_table_alias`.`id`"}
-    );
+    push @constraint3,
+      ( "$table.$column" => \"`$join_table_alias`.`$column`",
+        "$table.id"      => {'>', \"`$join_table_alias`.`id`"}
+      );
 
     my $constraint;
-    if ( !$strict) {
-        $constraint = [ @constraint1, @constraint2 ];
+    if (!$strict) {
+        $constraint = [@constraint1, @constraint2];
     }
     else {
-        $constraint = [ @constraint1, -or=>[ @constraint2, -and=>\@constraint3 ] ];
+        $constraint =
+          [@constraint1, -or => [@constraint2, -and => \@constraint3]];
     }
 
-    $sql->source({
-      name       => $class->schema->table,
-      as         => $join_table_alias,
-      join       => 'left',
-      constraint => $constraint
-    });
+    $sql->source(
+        {   name       => $class->schema->table,
+            as         => $join_table_alias,
+            join       => 'left',
+            constraint => $constraint
+        }
+    );
 
-    $sql->group_by( 'id' );
+    $sql->group_by('id');
 
-    if ( $top == 1 ) {
-        $sql->where( $join_table_alias.'.id' => undef );
+    if ($top == 1) {
+        $sql->where($join_table_alias . '.id' => undef);
     }
     else {
         $sql->having(\qq/COUNT(*) < $top/);
@@ -432,7 +440,7 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
     # Get params
     my $sql    = $params->{sql};
-    my $type   = uc ($params->{type});
+    my $type   = uc($params->{type});
     my $group  = $params->{group};
     my $column = $params->{column};
     my $top    = $params->{top};
@@ -441,33 +449,34 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
     my $op;
     my $order;
-    if ( $type eq 'MIN' ){
-        $op = '>';
+    if ($type eq 'MIN') {
+        $op    = '>';
         $order = 'asc';
     }
-    if ( $type eq 'MAX' ){
-        $op = '<';
+    if ($type eq 'MAX') {
+        $op    = '<';
         $order = 'desc';
     }
 
-    $group = ref $group ? [@$group] : [$group];
-    $strict = defined $strict ? $strict : 1;
+    $group  = ref $group      ? [@$group] : [$group];
+    $strict = defined $strict ? $strict   : 1;
 
 
     # Build first subrequest
     my $sub_sql_1 = ObjectDB::SQL::Select->new;
-    $sub_sql_1->source( $class->schema->table );
-    $sub_sql_1->columns( $class->schema->columns );
+    $sub_sql_1->source($class->schema->table);
+    $sub_sql_1->columns($class->schema->columns);
     $class->_resolve_multi_table(
         where     => $group,
         sql       => $sub_sql_1,
-        col_alias => 'OBJECTDB_COMPARE_1' );
+        col_alias => 'OBJECTDB_COMPARE_1'
+    );
 
 
     # Build second subrequest
     my $sub_sql_2 = ObjectDB::SQL::Select->new;
-    $sub_sql_2->source( $class->schema->table );
-    $sub_sql_2->columns( $class->schema->columns );
+    $sub_sql_2->source($class->schema->table);
+    $sub_sql_2->columns($class->schema->columns);
 
     $class->_resolve_multi_table(
         where     => $group,
@@ -477,44 +486,57 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
 
     # Build main request
-    $sql->source({
-        name    => $class->schema->table,
-        as      => $class->schema->table,
-        sub_req => $sub_sql_1->to_string
-    });
-    $sql->columns( $class->schema->columns );
+    $sql->source(
+        {   name    => $class->schema->table,
+            as      => $class->schema->table,
+            sub_req => $sub_sql_1->to_string
+        }
+    );
+    $sql->columns($class->schema->columns);
 
 
-    my $table = $class->schema->table;
-    my $join_table_alias = $class->schema->table.'_'.$type;
+    my $table            = $class->schema->table;
+    my $join_table_alias = $class->schema->table . '_' . $type;
 
     # join bigger/smaller entries
     my @constraint2;
-    push @constraint2, ("$table.$column" => { $op, \qq/`$join_table_alias`.`$column`/ } );
+    push @constraint2,
+      ("$table.$column" => {$op, \qq/`$join_table_alias`.`$column`/});
 
     # or join entries with lower ids in case of same values
     my @constraint3;
-    push @constraint3, (
-        "$table.$column" => \"`$join_table_alias`.`$column`",
-        "$table.id"      => { '>', \"`$join_table_alias`.`id`"}
-    );
+    push @constraint3,
+      ( "$table.$column" => \"`$join_table_alias`.`$column`",
+        "$table.id"      => {'>', \"`$join_table_alias`.`id`"}
+      );
 
     my $constraint;
-    if ( !$strict) {
-        $constraint = [ 'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/ , @constraint2 ];
+    if (!$strict) {
+        $constraint =
+          ['OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/, @constraint2];
     }
     else {
-        $constraint = [ 'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/ ,-or=>[ @constraint2, -and=>\@constraint3 ] ];
+        $constraint = [
+            'OBJECTDB_COMPARE_1' => \q/OBJECTDB_COMPARE_2/,
+            -or                  => [@constraint2, -and => \@constraint3]
+        ];
     }
 
-    $sql->source({ name=>$join_table_alias, as=>$join_table_alias, sub_req=>$sub_sql_2->to_string, join=>'left', constraint => $constraint });
+    $sql->source(
+        {   name       => $join_table_alias,
+            as         => $join_table_alias,
+            sub_req    => $sub_sql_2->to_string,
+            join       => 'left',
+            constraint => $constraint
+        }
+    );
 
 
-    $sql->group_by( 'id' );
-    $sql->order_by( "OBJECTDB_COMPARE_1 asc, $column $order, id asc" );
+    $sql->group_by('id');
+    $sql->order_by("OBJECTDB_COMPARE_1 asc, $column $order, id asc");
 
-    if ( $top == 1 ) {
-        $sql->where( $join_table_alias.'.id' => undef );
+    if ($top == 1) {
+        $sql->where($join_table_alias . '.id' => undef);
     }
     else {
         $sql->having(\qq/COUNT(*) < $top/);
@@ -529,8 +551,8 @@ sub _resolve_multi_table {
     my $class  = shift;
     my %params = @_;
 
-    my $where = $params{where};
-    my $sql   = $params{sql};
+    my $where     = $params{where};
+    my $sql       = $params{sql};
     my $col_alias = $params{col_alias};
 
     return unless $where && @$where;
@@ -547,7 +569,7 @@ sub _resolve_multi_table {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
 
-                if ( $rel->is_has_many ) {
+                if ($rel->is_has_many) {
                     $one_to_many = 1;
                 }
 
@@ -557,14 +579,11 @@ sub _resolve_multi_table {
                 $parent = $rel->foreign_class;
             }
             die 'only one to one allowed' if $one_to_many;
-            $sql->columns({ name=>$key, as=>$col_alias });
+            $sql->columns({name => $key, as => $col_alias});
         }
 
     }
 }
-
-
-
 
 
 sub find {
@@ -578,23 +597,25 @@ sub find {
 
     my $single = $params{first} || $params{single} ? 1 : 0;
 
-    my $sql = ObjectDB::SQL::Select->new({ driver=>$conn->driver });
+    my $sql = ObjectDB::SQL::Select->new({driver => $conn->driver});
 
     my $main = {};
 
 
-    if ( $params{max} || $params{min} ) {
+    if ($params{max} || $params{min}) {
         my $type = $params{max} ? 'max' : 'min';
-        $class->_resolve_max_min_n_results_by_group({
-            group   =>$params{$type}->{group},
-            column  =>$params{$type}->{column},
-            top     =>$params{$type}->{top} || 1,
-            strict  =>$params{$type}->{strict},
-            main    =>$main,
-            sql     =>$sql,
-            type    =>$type
-        });
+        $class->_resolve_max_min_n_results_by_group(
+            {   group  => $params{$type}->{group},
+                column => $params{$type}->{column},
+                top    => $params{$type}->{top} || 1,
+                strict => $params{$type}->{strict},
+                main   => $main,
+                sql    => $sql,
+                type   => $type
+            }
+        );
     }
+
     # Standard case
     else {
         $sql->source($class->schema->table);
@@ -612,10 +633,10 @@ sub find {
     }
 
     # Primary keys are always loaded
-    if ( $main->{columns} ){
-        foreach my $pk ( @{$class->schema->primary_keys} ){
+    if ($main->{columns}) {
+        foreach my $pk (@{$class->schema->primary_keys}) {
             my $add_pk_column = 1;
-            foreach my $passed_column ( @{$main->{columns}} ){
+            foreach my $passed_column (@{$main->{columns}}) {
                 $add_pk_column = 0 if $pk eq $passed_column;
             }
             unshift @{$main->{columns}}, $pk if $add_pk_column;
@@ -627,16 +648,21 @@ sub find {
     my $with;
     if ($with = $params{with}) {
         $with = $class->_normalize_with($with);
-        $class->_resolve_with( main=>$main, with => $with, sql => $sql, subreqs => $subreqs);
+        $class->_resolve_with(
+            main    => $main,
+            with    => $with,
+            sql     => $sql,
+            subreqs => $subreqs
+        );
     }
 
     # Load all columns in case that not columns have been passed
-    unless ( $main->{columns} ){
+    unless ($main->{columns}) {
         $main->{columns} = [@{$class->schema->columns}];
     }
 
 
-    $sql->source($class->schema->table); ### switch back to main source
+    $sql->source($class->schema->table);    ### switch back to main source
     $sql->columns([@{$main->{columns}}]);
 
     if (my $id = delete $params{id}) {
@@ -673,20 +699,21 @@ sub find {
                 my @result;
                 foreach my $row (@$rows) {
                     my $object = $class->_row_to_object(
-                        conn  => $conn,
+                        conn => $conn,
                         row  => $row,
                         sql  => $sql,
                         with => $with
-                      );
+                    );
                     push @result, $object;
-        
-                    if ( $main->{map_from} ){
+
+                    if ($main->{map_from}) {
                         my $map_from_concat = '';
-                        my $first = 1;
-                        foreach my $map_from_col ( @{$main->{map_from}} ) {
+                        my $first           = 1;
+                        foreach my $map_from_col (@{$main->{map_from}}) {
                             $map_from_concat .= '__' unless $first;
                             $first = 0;
-                            $map_from_concat .= $object->column( $map_from_col );
+                            $map_from_concat
+                              .= $object->column($map_from_col);
                         }
                         push @pk, $map_from_concat;
                     }
@@ -709,7 +736,10 @@ sub find {
                         my $map_to = $parent_args->{map_to}
                           || die('no map_to cols');
 
-                        my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
+                        my $ids =
+                          $parent_args->{pk}
+                          ? [@{$parent_args->{pk}}]
+                          : [@pk];
                         next unless @$ids;
 
                         my $nested = delete $args->{nested} || [];
@@ -717,22 +747,22 @@ sub find {
                         my $related = [
                             $subreq_class->find_related(
                                 $name,
-                                conn  => $conn,
-                                ids   => $ids,
-                                with  => $nested,
-                                map_to   => $map_to,
+                                conn   => $conn,
+                                ids    => $ids,
+                                with   => $nested,
+                                map_to => $map_to,
                                 %$args
                             )
                         ];
 
-                        # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
-                        #@$map_to = sort @$map_to;
-                        #@$map_from = sort @$map_from;
+                 # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
+                 #@$map_to = sort @$map_to;
+                 #@$map_from = sort @$map_from;
 
                         my $set;
                         foreach my $o (@$related) {
                             my $id;
-                            foreach my $map_to_col ( @$map_to ){
+                            foreach my $map_to_col (@$map_to) {
                                 $id .= $o->column($map_to_col);
                             }
                             $set->{$id} ||= [];
@@ -742,10 +772,10 @@ sub find {
                         #warn Dumper $set;
                         #$related = {map { $_->id => $_ } @$related};
 
-                        OUTER_LOOP: foreach my $o (@result) {
+                      OUTER_LOOP: foreach my $o (@result) {
                             my $parent = $o;
-                            foreach my $part ( @$chain ){
-                                if ( $parent->{related}->{$part} ){
+                            foreach my $part (@$chain) {
+                                if ($parent->{related}->{$part}) {
                                     $parent = $parent->{related}->{$part};
                                 }
                                 else {
@@ -758,12 +788,13 @@ sub find {
                             $parent->{related}->{$name} = [];
 
                             my $id;
-                            foreach my $map_from_col ( @$map_from ){
+                            foreach my $map_from_col (@$map_from) {
                                 $id .= $parent->column($map_from_col);
                             }
 
                             $set->{$id} ||= [];
-                            push @{$parent->{related}->{$name}}, @{$set->{$id}};
+                            push @{$parent->{related}->{$name}},
+                              @{$set->{$id}};
                         }
                     }
                 }
@@ -775,7 +806,7 @@ sub find {
                 return unless $rows && @$rows;
 
                 my $object = $class->_row_to_object(
-                    conn  => $conn,
+                    conn => $conn,
                     row  => $rows->[0],
                     sql  => $sql,
                     with => $with
@@ -783,31 +814,32 @@ sub find {
 
                 my @pk;
 
-                if ( $main->{map_from} ){
+                if ($main->{map_from}) {
                     my $map_from_concat = '';
-                    foreach my $map_from_col ( @{$main->{map_from}} ) {
-                        $map_from_concat .= $object->column( $map_from_col );
+                    foreach my $map_from_col (@{$main->{map_from}}) {
+                        $map_from_concat .= $object->column($map_from_col);
                     }
                     push @pk, $map_from_concat;
                 }
 
                 return $object unless $subreqs && @$subreqs;
 
-                SUB_REQ: foreach my $subreq (@$subreqs) {
+              SUB_REQ: foreach my $subreq (@$subreqs) {
                     my $name         = $subreq->[0];
                     my $args         = $subreq->[1];
                     my $subreq_class = $subreq->[2];
                     my $chain        = $subreq->[3];
                     my $parent_args  = $subreq->[4];
 
-                    my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
+                    my $ids =
+                      $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
 
                     my $map_to = $parent_args->{map_to}
                       || die('no map_to cols');
 
                     my $parent = $object;
-                    foreach my $part ( @$chain ){
-                        if ( $parent->{related}->{$part} ){
+                    foreach my $part (@$chain) {
+                        if ($parent->{related}->{$part}) {
                             $parent = $parent->{related}->{$part};
                         }
                         else {
@@ -817,14 +849,16 @@ sub find {
 
                     next SUB_REQ unless $parent->id;
 
-                    $parent->{related}->{$name} =
-                        [$subreq_class->find_related(
+                    $parent->{related}->{$name} = [
+                        $subreq_class->find_related(
                             $name,
                             conn   => $object->conn,
-                            ids    => $ids, with => delete $args->{nested},
+                            ids    => $ids,
+                            with   => delete $args->{nested},
                             map_to => $map_to,
                             %$args
-                        )];
+                        )
+                    ];
                 }
 
                 return $object;
@@ -836,10 +870,10 @@ sub find {
                         return unless @row;
 
                         return $class->_row_to_object(
-                            conn   => $conn,
-                            row    => [@row],
-                            sql    => $sql,
-                            with   => $with
+                            conn => $conn,
+                            row  => [@row],
+                            sql  => $sql,
+                            with => $with
                         );
                     }
                 );
@@ -849,7 +883,7 @@ sub find {
 }
 
 sub find_or_create {
-    my $class = shift;
+    my $class  = shift;
     my %params = @_;
 
     my $conn = delete $params{conn} || $class->init_conn;
@@ -885,7 +919,8 @@ sub find_related {
         else {
             my ($from, $to) = %{$rel->map};
 
-            Carp::croak qq/$from is required for find_related/ unless $self->column($from);
+            Carp::croak qq/$from is required for find_related/
+              unless $self->column($from);
 
             @where = ($to => $self->column($from));
 
@@ -901,16 +936,16 @@ sub find_related {
         }
         else {
 
-            if ( $params{map_to} ){
+            if ($params{map_to}) {
 
                 my @map_to = @{$params{map_to}};
-    
-                if ( @map_to> 1 ){
 
-                    my $concat = '-concat('.join(',', @map_to).')';
+                if (@map_to > 1) {
 
-                    @where = ( $concat => [@{delete $params{ids}}]);
-                    
+                    my $concat = '-concat(' . join(',', @map_to) . ')';
+
+                    @where = ($concat => [@{delete $params{ids}}]);
+
                 }
                 else {
                     @where = ($map_to[0] => [@{delete $params{ids}}]);
@@ -992,7 +1027,7 @@ sub update {
         my (@columns, @values);
         for (my $i = 0; $i < @$set; $i += 2) {
             push @columns, $set->[$i];
-            push @values, $set->[$i + 1];
+            push @values,  $set->[$i + 1];
         }
 
         my $sql = ObjectDB::SQL::Update->new;
@@ -1051,7 +1086,8 @@ sub delete {
                         my $map_from = $rel->map_from;
 
                         my ($to, $from) =
-                          %{$rel->map_class->schema->relationship($map_from)->map};
+                          %{$rel->map_class->schema->relationship($map_from)
+                              ->map};
 
                         $related = $rel->map_class->find(
                             conn  => $conn,
@@ -1157,7 +1193,7 @@ sub _resolve_where {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
 
-                if ( $rel->is_has_many ) {
+                if ($rel->is_has_many) {
                     $one_to_many = 1;
                 }
 
@@ -1175,7 +1211,8 @@ sub _resolve_where {
 
             $sql->where($source->{as} . '.' . $key => $value);
 
-            $sql->group_by( 'id' ) if $one_to_many;
+            $sql->group_by('id') if $one_to_many;
+
             # TO DO: group by primary key
 
         }
@@ -1194,9 +1231,9 @@ sub _resolve_with {
     my $class  = shift;
     my %params = @_;
 
-    my $main   = $params{main};
-    my $with   = $params{with};
-    my $sql    = $params{sql};
+    my $main    = $params{main};
+    my $with    = $params{with};
+    my $sql     = $params{sql};
     my $subreqs = $params{subreqs};
 
     return unless $with;
@@ -1216,22 +1253,25 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
                 if (delete $args->{auto} && !$args->{columns}) {
+
                     # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
 
                 # Load columns that are required for object mapping
-                if ($args->{columns}){
+                if ($args->{columns}) {
                     while (my ($from, $to) = each %{$rel->map}) {
-                        unless ( grep { $_ eq $to } @{$args->{columns}} ){
-                            push @{$args->{columns}}, $to;                 
+                        unless (grep { $_ eq $to } @{$args->{columns}}) {
+                            push @{$args->{columns}}, $to;
                         }
                     }
                 }
 
                 if ($parent_args->{columns}) {
                     while (my ($from, $to) = each %{$rel->map}) {
-                        unless ( grep { $_ eq $from } @{$parent_args->{columns}} ){
+                        unless (grep { $_ eq $from }
+                            @{$parent_args->{columns}})
+                        {
                             push @{$parent_args->{columns}}, $from;
                         }
                     }
@@ -1239,8 +1279,8 @@ sub _resolve_with {
 
                 # Save map-from-columns and map-to-columns in with or main
                 while (my ($from, $to) = each %{$rel->map}) {
-                    push @{$parent_args->{map_from}}, $from;                 
-                    push @{$parent_args->{map_to}}, $to;
+                    push @{$parent_args->{map_from}}, $from;
+                    push @{$parent_args->{map_to}},   $to;
                 }
 
                 # $chain for multi-level object-mapping
@@ -1252,29 +1292,35 @@ sub _resolve_with {
                 push @$chain, $name;
 
                 if ($args->{auto}) {
-                    $args->{columns} = [@{$rel->foreign_class->schema->primary_keys}];
+                    $args->{columns} =
+                      [@{$rel->foreign_class->schema->primary_keys}];
                 }
-                elsif ( $args->{columns} ) {
-                    $args->{columns} = ref $args->{columns} eq 'ARRAY' ?
-                      $args->{columns} : [$args->{columns}];
+                elsif ($args->{columns}) {
+                    $args->{columns} =
+                      ref $args->{columns} eq 'ARRAY'
+                      ? $args->{columns}
+                      : [$args->{columns}];
+
                     # Add primary keys
                     #$sql->columns($rel->foreign_class->schema->primary_keys);
                 }
                 else {
-                    $args->{columns} = [@{$rel->foreign_class->schema->columns}];
+                    $args->{columns} =
+                      [@{$rel->foreign_class->schema->columns}];
                 }
 
                 # Add source now to get correct order
                 # Add where constraint as join args
-                $sql->source($rel->to_source($args->{where}) );
+                $sql->source($rel->to_source($args->{where}));
 
                 if (my $subwith = $args->{nested}) {
-                    _execute_code_ref($code_ref, $rel->foreign_class, $subwith, $chain, $args);
+                    _execute_code_ref($code_ref, $rel->foreign_class,
+                        $subwith, $chain, $args);
                 }
 
                 # Switch back to right source
                 $sql->source($rel->to_source);
-                $sql->columns( [@{$args->{columns}}] );
+                $sql->columns([@{$args->{columns}}]);
 
             }
         }
@@ -1302,7 +1348,7 @@ sub _normalize_with {
 
     my $parts = {};
     foreach my $rel (keys %with) {
-        my $name = '';
+        my $name   = '';
         my $parent = $parts;
         while ($rel =~ s/^(\w+)\.?//) {
             $name .= $name ? '.' . $1 : $1;
@@ -1315,7 +1361,7 @@ sub _normalize_with {
 
     my $walker = sub {
         my $code_ref = shift;
-        my $parts = shift;
+        my $parts    = shift;
 
         # Already normalized
         return $parts if ref($parts) eq 'ARRAY';
@@ -1361,7 +1407,7 @@ sub _row_to_object {
     my $class  = shift;
     my %params = @_;
 
-    my $conn  = $params{conn};
+    my $conn = $params{conn};
     my $row  = $params{row};
     my $sql  = $params{sql};
     my $with = $params{with};
@@ -1410,7 +1456,7 @@ sub _row_to_object {
             }
 
             $object->is_modified(0);
-            if ( $object->id ){
+            if ($object->id) {
                 $self->{related}->{$name} = $object;
             }
             else {
@@ -1419,13 +1465,13 @@ sub _row_to_object {
 
             $args->{pk} ||= [];
 
-            if ( $args->{map_from} && $object->id ){
+            if ($args->{map_from} && $object->id) {
                 my $map_from_concat = '';
-                my $first = 1;
-                foreach my $map_from_col ( @{$args->{map_from}} ) {
+                my $first           = 1;
+                foreach my $map_from_col (@{$args->{map_from}}) {
                     $map_from_concat .= '__' unless $first;
                     $first = 0;
-                    $map_from_concat .= $object->column( $map_from_col );
+                    $map_from_concat .= $object->column($map_from_col);
                 }
                 push @{$args->{pk}}, $map_from_concat;
             }
@@ -1440,7 +1486,9 @@ sub _row_to_object {
 
     #use Data::Dumper;
     #warn Dumper $row;
-    Carp::croak qq/Not all columns of current row could be mapped to the object/ if @$row;
+    Carp::croak
+      qq/Not all columns of current row could be mapped to the object/
+      if @$row;
 
     $self->is_in_db(1);
     $self->is_modified(0);
@@ -1450,7 +1498,7 @@ sub _row_to_object {
 
 sub _execute_code_ref {
     my $code_ref = shift;
-    $code_ref->($code_ref,@_);
+    $code_ref->($code_ref, @_);
 }
 
 1;

@@ -13,7 +13,7 @@ sub to_string {
     $query .= 'DELETE FROM ';
     $query .= $self->escape($self->table);
     $query .= $self->where;
-    $self->bind( $self->where->bind );
+    $self->bind($self->where->bind);
 
     return $query;
 }

@@ -14,7 +14,7 @@ sub to_string {
     $query .= $self->escape($self->table);
     if (@{$self->columns}) {
         $query .= ' (';
-        $query .= join(', ', map {$self->escape($_)} @{$self->columns});
+        $query .= join(', ', map { $self->escape($_) } @{$self->columns});
         $query .= ')';
         $query .= ' VALUES (';
         $query .= '?, ' x (@{$self->columns} - 1);

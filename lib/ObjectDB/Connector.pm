@@ -87,7 +87,7 @@ sub connect {
 
 sub run {
     my $self = shift;
-    my $cb = pop;
+    my $cb   = pop;
 
     Carp::croak qw/Callback is required/ unless $cb && ref $cb eq 'CODE';
 

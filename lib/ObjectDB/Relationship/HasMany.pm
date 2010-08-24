@@ -11,8 +11,7 @@ sub _build {
     $self->_prepare_foreign(@_, 'single');
 
     unless (%{$self->map}) {
-        my $foreign_name =
-          ObjectDB::Util->plural_to_single($self->table);
+        my $foreign_name = ObjectDB::Util->plural_to_single($self->table);
 
         my $pk         = 'id';
         my $foreign_pk = $foreign_name . '_' . $pk;
@@ -24,7 +23,7 @@ sub _build {
 }
 
 sub to_source {
-    my $self = shift;
+    my $self             = shift;
     my $passed_join_args = shift;
 
     my $table         = $self->table;
@@ -55,7 +54,8 @@ sub to_source {
     if ($passed_join_args) {
         for (my $i = 0; $i < @{$passed_join_args}; $i += 2) {
             push @args,
-              $as . '.' . $passed_join_args->[$i] => $passed_join_args->[$i + 1];
+              $as . '.'
+              . $passed_join_args->[$i] => $passed_join_args->[$i + 1];
         }
     }
 

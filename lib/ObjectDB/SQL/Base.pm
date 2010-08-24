@@ -9,7 +9,7 @@ use ObjectDB::SQL::Where;
 
 __PACKAGE__->attr(is_built => 0);
 __PACKAGE__->attr([qw/driver table order_by limit offset/]);
-__PACKAGE__->attr(['columns'] => sub {[]});
+__PACKAGE__->attr(['columns'] => sub { [] });
 
 use overload '""' => sub { shift->to_string }, fallback => 1;
 use overload 'bool' => sub { shift; }, fallback => 1;
@@ -18,7 +18,7 @@ sub where {
     my $self = shift;
 
     # Lazy initialization
-    $self->{where} ||= ObjectDB::SQL::Where->new({ driver=>$self->driver });
+    $self->{where} ||= ObjectDB::SQL::Where->new({driver => $self->driver});
 
     # Get
     return $self->{where} unless @_;
@@ -53,7 +53,7 @@ sub bind {
 }
 
 sub escape {
-    my $self = shift;
+    my $self  = shift;
     my $value = shift;
 
     $value =~ s/`/\\`/g;

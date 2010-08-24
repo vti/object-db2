@@ -24,7 +24,7 @@ sub _build {
 }
 
 sub to_source {
-    my $self   = shift;
+    my $self             = shift;
     my $passed_join_args = shift;
 
     my $table         = $self->table;
@@ -61,7 +61,8 @@ sub to_source {
     if ($passed_join_args) {
         for (my $i = 0; $i < @{$passed_join_args}; $i += 2) {
             push @$constraint,
-              $as . '.' . $passed_join_args->[$i] => $passed_join_args->[$i + 1];
+              $as . '.'
+              . $passed_join_args->[$i] => $passed_join_args->[$i + 1];
         }
     }
 

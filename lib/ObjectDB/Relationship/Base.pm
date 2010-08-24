@@ -11,7 +11,7 @@ require ObjectDB::Util;
 __PACKAGE__->attr([qw/name foreign_class foreign_table/]);
 __PACKAGE__->attr([qw/map/]                  => sub { {} });
 __PACKAGE__->attr([qw/with where join_args/] => sub { [] });
-__PACKAGE__->attr(is_built => 0);
+__PACKAGE__->attr(is_built                   => 0);
 
 sub type { ObjectDB::Util->decamelize((split '::' => ref(shift))[-1]) }
 
@@ -43,8 +43,8 @@ sub build {
     unless ($self->class->can($self->name)) {
         no strict;
         my $class = $self->class;
-        my $name = $self->name;
-        my $code = "sub {shift->related('$name')}";
+        my $name  = $self->name;
+        my $code  = "sub {shift->related('$name')}";
         *{"${class}::$name"} = eval $code;
     }
 
@@ -59,7 +59,8 @@ sub _prepare_foreign {
 
     unless ($self->foreign_class) {
         my $foreign_class = ObjectDB::Util->camelize($self->name);
-        $foreign_class = ObjectDB::Util->plural_to_single($foreign_class) if $single;
+        $foreign_class = ObjectDB::Util->plural_to_single($foreign_class)
+          if $single;
 
         ObjectDB::Loader->load($foreign_class);
         $foreign_class->schema->build(@_);
@@ -83,6 +84,6 @@ sub is_type {
     return (grep { $_ eq $self->type } @_) ? 1 : 0;
 }
 
-sub _build {}
+sub _build { }
 
 1;

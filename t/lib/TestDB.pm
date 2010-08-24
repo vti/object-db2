@@ -17,7 +17,7 @@ sub db {
     return 'sqlite';
 }
 
-sub cleanup { 
+sub cleanup {
     $ENV{TEST_MYSQL} || unlink(_database()) && return;
 }
 

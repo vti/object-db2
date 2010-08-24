@@ -7,9 +7,9 @@ use base 'ObjectDB::Base';
 use ObjectDB::SQL::Condition;
 
 __PACKAGE__->attr(qw/driver/);
-__PACKAGE__->attr(is_built => 0);
-__PACKAGE__->attr(prefix => '');
-__PACKAGE__->attr( condition => sub { ObjectDB::SQL::Condition->new } );
+__PACKAGE__->attr(is_built  => 0);
+__PACKAGE__->attr(prefix    => '');
+__PACKAGE__->attr(condition => sub { ObjectDB::SQL::Condition->new });
 
 use overload '""' => sub { shift->to_string }, fallback => 1;
 use overload 'bool' => sub { shift; }, fallback => 1;
@@ -47,7 +47,7 @@ sub where {
 sub bind {
     my $self = shift;
 
-    if ( @_ ) {
+    if (@_) {
         $self->is_built(0);
         return $self->condition->bind(@_);
     }
@@ -64,12 +64,12 @@ sub _build {
 
     my $condition = $self->condition;
 
-    my $string =
-      $condition->_build({
-        condition => $params,
-        prefix    => $self->prefix,
-        driver    => $self->driver
-       });
+    my $string = $condition->_build(
+        {   condition => $params,
+            prefix    => $self->prefix,
+            driver    => $self->driver
+        }
+    );
 
     return $string;
 
@@ -86,7 +86,7 @@ sub build {
 }
 
 sub escape {
-    my $self = shift;
+    my $self  = shift;
     my $value = shift;
 
     $value =~ s/`/\\`/g;

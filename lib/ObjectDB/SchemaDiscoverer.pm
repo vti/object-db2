@@ -6,7 +6,7 @@ use warnings;
 require Carp;
 
 sub build {
-    my $class = shift;
+    my $class  = shift;
     my %params = @_;
 
     my $driver = delete $params{driver};

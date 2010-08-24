@@ -7,7 +7,7 @@ use base 'ObjectDB::SQL::Base';
 use ObjectDB::SQL::Condition;
 
 __PACKAGE__->attr([qw/group_by having/]);
-__PACKAGE__->attr([qw/sources/] => sub {[]});
+__PACKAGE__->attr([qw/sources/] => sub { [] });
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -27,12 +27,12 @@ sub prepare_column {
     if ($column =~ s/^(\w+)\.//) {
         $column = $class->escape($1) . '.' . $class->escape($column);
     }
+
     # Default prefix
     elsif ($default) {
-        $column =
-            $class->escape($default) . '.'
-          . $class->escape($column);
+        $column = $class->escape($default) . '.' . $class->escape($column);
     }
+
     # No Prefix
     else {
         $column = $class->escape($column);
@@ -161,10 +161,10 @@ sub to_string {
                         $col_full = $$col_full;
                     }
                     else {
-                        my $prefix = $need_prefix ? $source->{as}
-                          || $source->{name} : undef;
-                        $col_full =
-                          $self->prepare_column($col_full,$prefix);
+                        my $prefix = $need_prefix
+                          ? $source->{as} || $source->{name}
+                          : undef;
+                        $col_full = $self->prepare_column($col_full, $prefix);
                     }
 
                     push @columns, $as ? "$col_full AS $as" : $col_full;
@@ -189,19 +189,19 @@ sub to_string {
 
     $self->where->prefix($default_prefix) if $default_prefix;
     $query .= $self->where;
-    $self->bind( $self->where->bind );
+    $self->bind($self->where->bind);
 
     if (my $group_by = $self->group_by) {
-        $group_by = $self->prepare_column($group_by,$default_prefix);
+        $group_by = $self->prepare_column($group_by, $default_prefix);
         $query .= ' GROUP BY ' . $group_by;
     }
 
     # TO DO: REWRITE NECESSARY
-    if ( $self->having && ref $self->having eq 'SCALAR'){
+    if ($self->having && ref $self->having eq 'SCALAR') {
         $query .= ' HAVING ' . ${$self->having} if $self->having;
     }
     else {
-        $query .= ' HAVING ' . $self->escape( $self->having) if $self->having;
+        $query .= ' HAVING ' . $self->escape($self->having) if $self->having;
     }
 
     if (my $order_by = $self->order_by) {
@@ -216,7 +216,7 @@ sub to_string {
                 $order = $1;
             }
 
-            $col = $self->prepare_column($col,$default_prefix);
+            $col = $self->prepare_column($col, $default_prefix);
 
             $query .= ', ' unless $first;
 
@@ -235,7 +235,7 @@ sub to_string {
 }
 
 sub sources_to_string {
-    my $self = shift;
+    my $self           = shift;
     my $default_prefix = shift;
 
     my $string = "";
@@ -246,8 +246,8 @@ sub sources_to_string {
 
         $string .= ' ' . uc $source->{join} . ' JOIN ' if $source->{join};
 
-        if ( $source->{sub_req} ){
-            $string .= '('.$source->{sub_req}.')';
+        if ($source->{sub_req}) {
+            $string .= '(' . $source->{sub_req} . ')';
         }
         else {
             $string .= $self->escape($source->{name});
@@ -262,14 +262,14 @@ sub sources_to_string {
 
             my $condition = ObjectDB::SQL::Condition->new;
 
-            $string .=
-              $condition->_build({
-                condition => $source->{constraint},
-                prefix    => $default_prefix,
-                driver    => $self->driver
-               });
+            $string .= $condition->_build(
+                {   condition => $source->{constraint},
+                    prefix    => $default_prefix,
+                    driver    => $self->driver
+                }
+            );
 
-            $self->bind( $condition->bind );
+            $self->bind($condition->bind);
 
         }
         $first = 0;
