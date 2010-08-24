@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 242;
+use Test::More tests => 243;
 
 use lib 't/lib';
 
@@ -228,6 +228,17 @@ ok ( not defined $authors[0]->articles->[0]->main_category->column('title') );
     with => [qw/articles.special_report.main_category.admin_histories/]);
 is( $authors[0]->articles->[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 ok( not defined $authors[0]->articles->[2]->special_report->main_category->column('title') );
+
+
+
+# article with title article 2-1 has no main category, so subrequest
+# should not be performed (empty IN, does not execute in mysql)
+ok ( eval {     @articles =  Article->find( conn=>$conn, 
+                    with  => [qw/main_category.admin_histories/],
+                    where => [ title => 'article 2-1' ]
+                )
+          } 
+);
 
 
 

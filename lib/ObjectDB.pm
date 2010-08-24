@@ -663,7 +663,7 @@ sub find {
             return unless $sth;
 
             my $rv = $sth->execute(@{$sql->bind});
-            return unless $rv;
+            die 'execute failed' unless $rv;
 
             if (wantarray) {
                 my $rows = $sth->fetchall_arrayref;
@@ -710,6 +710,8 @@ sub find {
                           || die('no map_to cols');
 
                         my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
+                        next unless @$ids;
+
                         my $nested = delete $args->{nested} || [];
 
                         my $related = [
