@@ -52,36 +52,47 @@ sub source {
     my $self = shift;
     my ($source) = @_;
 
+    # Normalize
     $source = {name => $source} unless ref $source eq 'HASH';
 
     $source->{columns} ||= [];
 
-    if (my $as = $source->{as}) {
-
-        # Source already exists
-        for (my $i = 0; $i < @{$self->sources}; $i++) {
-            my $s = $self->sources->[$i];
-
-            if ($source->{as} eq $s->{name}
-                || ($s->{as} && $s->{as} eq $source->{as}))
-            {
-                $self->{_source} = $self->sources->[$i];
-                return $self;
-            }
-        }
-    }
-    else {
-
-        # Source already exists
-        for (my $i = 0; $i < @{$self->sources}; $i++) {
-            if ($source->{name} eq $self->sources->[$i]->{name}) {
-                $self->{_source} = $self->sources->[$i];
-                return $self;
-            }
-        }
-    }
+    return $self if $self->switch_to_source($source);
 
     # Create a new source
+    $self->add_source($source);
+
+    return $self;
+}
+
+sub switch_to_source {
+    my $self = shift;
+    my ($source) = @_;
+
+    my $name = $source->{name};
+    my $as   = $source->{as};
+
+    # Source already exists
+    for (my $i = 0; $i < @{$self->sources}; $i++) {
+        my $s = $self->sources->[$i];
+
+        if ($as) {
+            if ($as eq $s->{name} || ($s->{as} && $s->{as} eq $as)) {
+                $self->{_source} = $self->sources->[$i];
+                return $self;
+            }
+        }
+        elsif ($name eq $self->sources->[$i]->{name}) {
+            $self->{_source} = $self->sources->[$i];
+            return $self;
+        }
+    }
+}
+
+sub add_source {
+    my $self = shift;
+    my ($source) = @_;
+
     push @{$self->sources}, $source;
     $self->{_source} = $self->sources->[-1];
 
