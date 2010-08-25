@@ -115,9 +115,10 @@ $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
 $sql->columns('bar_2.foo');
 $sql->source(
-    {   join       => 'inner',
-        name       => 'table2',
-        constraint => ['table1.foo' => \'`table2`.`bar`', 'table1.bar' => 'hello']
+    {   join => 'inner',
+        name => 'table2',
+        constraint =>
+          ['table1.foo' => \'`table2`.`bar`', 'table1.bar' => 'hello']
     }
 );
 $sql->columns(qw/ bar baz/);
@@ -127,7 +128,7 @@ $sql->columns('bar_3.foo');
 is("$sql",
     "SELECT `bar_2`.`foo`, `bar_3`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar` AND `table1`.`bar` = ?)"
 );
-is_deeply( $sql->bind, [ 'hello' ]);
+is_deeply($sql->bind, ['hello']);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
@@ -172,7 +173,7 @@ $sql->where(['table3.foo' => 1]);
 is("$sql",
     "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) WHERE (`table3`.`foo` = ?)"
 );
-is_deeply( $sql->bind, [ 1 ]);
+is_deeply($sql->bind, [1]);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');
@@ -188,7 +189,7 @@ $sql->where(['foo' => 1]);
 is("$sql",
     "SELECT `table3`.`foo`, `table3`.`bar` FROM `table1`, `table2` INNER JOIN `table3` ON (`table1`.`foo` = `table2`.`bar`) WHERE (`table1`.`foo` = ?)"
 );
-is_deeply( $sql->bind, [ 1 ]);
+is_deeply($sql->bind, [1]);
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('table1');

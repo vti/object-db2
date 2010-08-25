@@ -3,7 +3,7 @@ package AuthorAdmin;
 use strict;
 use warnings;
 
-use base 'ObjectDB';
+use base 'TestDB';
 
 __PACKAGE__->schema->belongs_to('author');
 

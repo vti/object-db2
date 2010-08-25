@@ -1,11 +1,7 @@
-package ObjectDB::TestData::Author;
+package AuthorData;
 
 use strict;
 use warnings;
-
-use lib 't/lib';
-
-use Test::More;
 
 use Author;
 use MainCategory;
@@ -20,14 +16,11 @@ use MainCategory;
 ###### Using columns for mapping that are not primary key columns
 ###### Map tables using multiple columns
 
-sub load {
+sub populate {
     my $class = shift;
-    my $conn  = shift;
 
-    
     # Create data
     my $author = Author->create(
-        conn     => $conn,
         name     => 'author 1',
         articles => [
             {   title    => 'article 1-1',
@@ -75,7 +68,6 @@ sub load {
 
 
     my $author2 = Author->create(
-        conn     => $conn,
         name     => 'author 2',
         articles => [
             {   title    => 'article 2-1',
@@ -111,19 +103,15 @@ sub load {
     
     
     my $category_1 = MainCategory->create(
-        conn    => $conn,
         title   => 'main category 1'
     );
     my $category_2 = MainCategory->create(
-        conn    => $conn,
         title   => 'main category 2'
     );
     my $category_3 = MainCategory->create(
-        conn    =>$conn,
         title   => 'main category 3'
     );
     my $category_4 = MainCategory->create(
-        conn            => $conn,
         title           => 'main category 4',
         admin_histories => [
             {   admin_name => 'Andre1',
@@ -145,7 +133,7 @@ sub load {
     
     # 3rd article -> belongs to special report 1 -> belongs to main category 4
     my $special_report_1
-      = SpecialReport->create(conn=>$conn, title => 'special report 1');
+      = SpecialReport->create(title => 'special report 1');
     $author->articles->[2]
       ->column( 'special_report_id' => $special_report_1->column('id') )
       ->update;
@@ -157,13 +145,11 @@ sub load {
 
 }
 
-sub delete {
+sub cleanup {
     my $class = shift;
-    my $conn  = shift;
 
-    Author->delete(conn => $conn);
-    MainCategory->delete(conn => $conn);
-
+    Author->delete;
+    MainCategory->delete;
 }
 
 

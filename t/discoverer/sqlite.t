@@ -12,10 +12,13 @@ plan tests => 11;
 use lib 't/lib';
 
 use TestDB;
+use TestEnv;
 
 use_ok('ObjectDB::SchemaDiscoverer');
 
-my $dbh = TestDB->conn->dbh;
+TestEnv->setup;
+
+my $dbh = TestDB->init_conn->dbh;
 
 my $d;
 
@@ -42,3 +45,5 @@ $d->discover($dbh);
 is($d->table, 'article_tag_maps');
 is_deeply($d->columns,      [qw/article_id tag_id/]);
 is_deeply($d->primary_keys, [qw/article_id tag_id/]);
+
+TestEnv->teardown;

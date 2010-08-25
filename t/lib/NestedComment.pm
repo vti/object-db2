@@ -3,7 +3,7 @@ package NestedComment;
 use strict;
 use warnings;
 
-use base 'ObjectDB';
+use base 'TestDB';
 
 __PACKAGE__->schema('nested_comments')
   ->belongs_to(

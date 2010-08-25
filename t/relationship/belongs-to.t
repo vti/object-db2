@@ -21,7 +21,7 @@ ok($rel);
 is($rel->type, 'belongs_to');
 ok($rel->is_belongs_to);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->init_conn);
 
 is($rel->foreign_table, 'authors');
 

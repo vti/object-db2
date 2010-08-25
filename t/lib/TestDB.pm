@@ -3,30 +3,12 @@ package TestDB;
 use strict;
 use warnings;
 
-use DBI;
-use File::Spec;
+use base 'ObjectDB';
+
 use ObjectDB::Connector;
 
-my $dbi = 'dbi:SQLite';
-
-#sub _database { File::Spec->catfile(File::Spec->tmpdir, 'object_db.db') }
-sub _database {'object_db.db'}
-
-sub db {
-    return 'mysql' if $ENV{TEST_MYSQL};
-    return 'sqlite';
-}
-
-sub cleanup {
-    $ENV{TEST_MYSQL} || unlink(_database()) && return;
-}
-
-our $conn;
-
-sub conn {
-    my $self = shift;
-
-    return $conn if $conn;
+sub init_conn {
+    my $class = shift;
 
     my @args = ();
 
@@ -35,16 +17,17 @@ sub conn {
         push @args, 'dbi:mysql:' . shift @options, @options;
     }
     else {
-        push @args, 'dbi:SQLite:' . _database();
+        push @args, 'dbi:SQLite:' . 'object_db.db';
     }
 
-    $conn = ObjectDB::Connector->new(@args);
+    my $conn = ObjectDB::Connector->new(@args);
     die $DBI::errorstr unless $conn;
 
     unless ($ENV{TEST_MYSQL}) {
         $conn->run(sub { $_->do("PRAGMA default_synchronous = OFF") });
         $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
     }
+
     return $conn;
 }
 

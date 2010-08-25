@@ -12,20 +12,18 @@ plan tests => 36;
 
 use lib 't/lib';
 
-use TestDB;
+use TestEnv;
 use Article;
 use NestedComment;
 
-my $conn = TestDB->conn;
+TestEnv->setup;
 
 my $master;
 my ($c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9);
 
-$master =
-  Article->new(conn => $conn, category_id => 1, title => 'bar')->create;
+$master = Article->new(category_id => 1, title => 'bar')->create;
 
 $c1 = NestedComment->new(
-    conn => $conn,
     master_id   => $master->column('id'),
     master_type => 'article',
     content     => 1
@@ -35,7 +33,6 @@ is($c1->column('rgt'),   3);
 is($c1->column('level'), 0);
 
 $c2 = NestedComment->new(
-    conn => $conn,
     master_id   => $master->column('id'),
     master_type => 'article',
     content     => 2
@@ -45,7 +42,6 @@ is($c2->column('rgt'),   5);
 is($c2->column('level'), 0);
 
 $c3 = NestedComment->new(
-    conn => $conn,
     master_id   => $master->column('id'),
     master_type => 'article',
     content     => 3
@@ -85,7 +81,6 @@ is($c9->column('rgt'),   17);
 is($c9->column('level'), 2);
 
 my @comments = NestedComment->find(
-    conn => $conn,
     where => [
         master_type => 'article',
         master_id   => $master->column('id')
@@ -99,3 +94,5 @@ foreach my $content (qw/1 4 2 5 7 3 6 8 9/) {
 }
 
 $master->delete;
+
+TestEnv->teardown;

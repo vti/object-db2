@@ -15,8 +15,7 @@ use lib 't/lib';
 
 use TestDB;
 
-plan skip_all =>
-  'set TEST_MYSQL to "db,user,pass" to enable this test'
+plan skip_all => 'set TEST_MYSQL to "db,user,pass" to enable this test'
   unless $ENV{TEST_MYSQL};
 
 plan tests => 7;

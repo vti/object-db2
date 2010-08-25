@@ -20,7 +20,7 @@ ok($rel);
 is($rel->type, 'belongs_to_one');
 ok($rel->is_belongs_to_one);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->init_conn);
 
 is($rel->foreign_table, 'authors');
 

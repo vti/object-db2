@@ -3,7 +3,7 @@ package Article;
 use strict;
 use warnings;
 
-use base 'ObjectDB';
+use base 'TestDB';
 
 __PACKAGE__->schema->belongs_to('author')->has_and_belongs_to_many('tags')
   ->has_many('comments')->has_many('to_do_articles')

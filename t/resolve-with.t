@@ -31,23 +31,19 @@ is_deeply(
 );
 
 is_deeply(
-    ObjectDB->_normalize_with([qw/articles.comments.sub_comments articles.main_category/]),
-    [
-     'articles',
-      {
-        'auto' => 1,
-        'nested' => [
-                      'comments',
-                      {
-                        'auto' => 1,
-                        'nested' => [
-                                      'sub_comments',
-                                      {}
-                                    ]
-                      },
-                      'main_category',
-                      {}
-                    ]
-      }
+    ObjectDB->_normalize_with(
+        [qw/articles.comments.sub_comments articles.main_category/]
+    ),
+    [   'articles',
+        {   'auto'   => 1,
+            'nested' => [
+                'comments',
+                {   'auto'   => 1,
+                    'nested' => ['sub_comments', {}]
+                },
+                'main_category',
+                {}
+            ]
+        }
     ]
 );

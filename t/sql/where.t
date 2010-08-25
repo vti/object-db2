@@ -51,8 +51,16 @@ is("$where", " WHERE (`foo`.`id` = ?)");
 is_deeply($where->bind, [qw/ 2 /]);
 
 $where = ObjectDB::SQL::Where->new;
-$where->where([-or => ['foo.id' => undef, -and => ['foo.title' => 'boo', 'foo.content' => 'bar']]]);
-is("$where", " WHERE ((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
+$where->where(
+    [   -or => [
+            'foo.id' => undef,
+            -and     => ['foo.title' => 'boo', 'foo.content' => 'bar']
+        ]
+    ]
+);
+is("$where",
+    " WHERE ((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))"
+);
 is_deeply($where->bind, ['boo', 'bar']);
 
 $where = ObjectDB::SQL::Where->new;

@@ -7,13 +7,12 @@ use Test::More tests => 4;
 
 use lib 't/lib';
 
-use TestDB;
-
+use TestEnv;
 use ObjectDB::Manager;
 
-my $conn = TestDB->conn;
+TestEnv->setup;
 
-my $manager = ObjectDB::Manager->new(conn => $conn);
+my $manager = ObjectDB::Manager->new;
 
 my $author = $manager->create(Author => name => 'foo');
 ok($author);
@@ -28,3 +27,5 @@ isa_ok($article, 'Article');
 $article = $manager->find(articles => id => $article->id);
 ok($article);
 $article->delete;
+
+TestEnv->teardown;
