@@ -24,7 +24,7 @@ sub where {
     return $self->{where} unless @_;
 
     # Set
-    $self->{where}->where(@_);
+    $self->{where}->cond(@_);
 
     # Rebuild
     $self->is_built(0);
@@ -50,15 +50,6 @@ sub bind {
     }
 
     return $self;
-}
-
-sub escape {
-    my $self  = shift;
-    my $value = shift;
-
-    $value =~ s/`/\\`/g;
-
-    return "`$value`";
 }
 
 sub to_string {

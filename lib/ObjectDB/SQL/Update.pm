@@ -5,6 +5,8 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
+use ObjectDB::SQL::Utils 'escape';
+
 __PACKAGE__->attr(values => sub { [] });
 
 sub build {
@@ -31,7 +33,7 @@ sub to_string {
     my $query = "";
 
     $query .= 'UPDATE ';
-    $query .= $self->escape($self->table);
+    $query .= escape($self->table);
     $query .= ' SET ';
 
     my $i     = @{$self->columns} - 1;
@@ -40,10 +42,10 @@ sub to_string {
         my $value = $self->values->[$count];
 
         if (ref $value eq 'SCALAR') {
-            $query .= $self->escape($name) . " = $$value";
+            $query .= escape($name) . " = $$value";
         }
         else {
-            $query .= $self->escape($name) . " = ?";
+            $query .= escape($name) . " = ?";
         }
 
         $query .= ', ' if $i;

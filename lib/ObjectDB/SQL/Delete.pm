@@ -5,13 +5,15 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
+use ObjectDB::SQL::Utils 'escape';
+
 sub to_string {
     my $self = shift;
 
     my $query = "";
 
     $query .= 'DELETE FROM ';
-    $query .= $self->escape($self->table);
+    $query .= escape($self->table);
     $query .= $self->where;
     $self->bind($self->where->bind);
 

@@ -4,10 +4,12 @@ use strict;
 use warnings;
 
 use base 'ObjectDB::SQL::Base';
-use ObjectDB::SQL::Condition;
 
 __PACKAGE__->attr([qw/group_by having/]);
 __PACKAGE__->attr([qw/sources/] => sub { [] });
+
+use ObjectDB::SQL::Condition;
+use ObjectDB::SQL::Utils qw/escape prepare_column/;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -16,29 +18,6 @@ sub new {
     $self->{_source} = $self->{sources}->[0];
 
     return $self;
-}
-
-sub prepare_column {
-    my $class   = shift;
-    my $column  = shift;
-    my $default = shift;
-
-    # Prefixed
-    if ($column =~ s/^(\w+)\.//) {
-        $column = $class->escape($1) . '.' . $class->escape($column);
-    }
-
-    # Default prefix
-    elsif ($default) {
-        $column = $class->escape($default) . '.' . $class->escape($column);
-    }
-
-    # No Prefix
-    else {
-        $column = $class->escape($column);
-    }
-    return $column;
-
 }
 
 sub first_source {
@@ -175,7 +154,7 @@ sub to_string {
                         my $prefix = $need_prefix
                           ? $source->{as} || $source->{name}
                           : undef;
-                        $col_full = $self->prepare_column($col_full, $prefix);
+                        $col_full = prepare_column($col_full, $prefix);
                     }
 
                     push @columns, $as ? "$col_full AS $as" : $col_full;
@@ -203,7 +182,7 @@ sub to_string {
     $self->bind($self->where->bind);
 
     if (my $group_by = $self->group_by) {
-        $group_by = $self->prepare_column($group_by, $default_prefix);
+        $group_by = prepare_column($group_by, $default_prefix);
         $query .= ' GROUP BY ' . $group_by;
     }
 
@@ -212,7 +191,7 @@ sub to_string {
         $query .= ' HAVING ' . ${$self->having} if $self->having;
     }
     else {
-        $query .= ' HAVING ' . $self->escape($self->having) if $self->having;
+        $query .= ' HAVING ' . escape($self->having) if $self->having;
     }
 
     if (my $order_by = $self->order_by) {
@@ -227,7 +206,7 @@ sub to_string {
                 $order = $1;
             }
 
-            $col = $self->prepare_column($col, $default_prefix);
+            $col = prepare_column($col, $default_prefix);
 
             $query .= ', ' unless $first;
 
@@ -261,26 +240,24 @@ sub sources_to_string {
             $string .= '(' . $source->{sub_req} . ')';
         }
         else {
-            $string .= $self->escape($source->{name});
+            $string .= escape($source->{name});
         }
 
         if ($source->{as}) {
-            $string .= ' AS ' . $self->escape($source->{as});
+            $string .= ' AS ' . escape($source->{as});
         }
 
         if ($source->{constraint}) {
             $string .= ' ON ';
 
-            my $condition = ObjectDB::SQL::Condition->new;
+            my $cond = ObjectDB::SQL::Condition->new;
+            $cond->cond($source->{constraint});
+            $cond->prefix($default_prefix);
+            $cond->driver($self->driver);
 
-            $string .= $condition->_build(
-                {   condition => $source->{constraint},
-                    prefix    => $default_prefix,
-                    driver    => $self->driver
-                }
-            );
+            $string .= $cond->build;
 
-            $self->bind($condition->bind);
+            $self->bind($cond->bind);
 
         }
         $first = 0;
