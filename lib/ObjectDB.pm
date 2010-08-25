@@ -36,9 +36,6 @@ sub init {
     if (my $conn = delete $params{conn}) {
         $self->conn($conn);
     }
-    else {
-        $self->conn($self->init_conn);
-    }
 
     $self->schema->build($self->conn);
 
@@ -136,7 +133,7 @@ sub count {
     my $class  = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $class->init_conn;
+    my $conn = delete $params{conn} || $class->conn;
     Carp::croak qq/Connector is required/ unless $conn;
 
     $class->schema->build($conn);
@@ -600,7 +597,7 @@ sub find {
     my $class  = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $class->init_conn;
+    my $conn = delete $params{conn} || $class->conn;
     Carp::croak qq/Connector is required/ unless $conn;
 
     $class->schema->build($conn);
