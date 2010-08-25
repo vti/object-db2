@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 47;
+use Test::More tests => 48;
 
 use lib 't/lib';
 
@@ -71,6 +71,29 @@ $author = Author->find(id => $author->id, with => 'articles');
 is(@{$author->articles},                    2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
+is_deeply(
+    $author->to_hash,
+    {   id       => $author->id,
+        name     => 'foo',
+        password => '',
+        articles => [
+            {   id                => $articles[0]->id,
+                author_id         => $author->id,
+                special_report_id => undef,
+                main_category_id  => undef,
+                category_id       => undef,
+                title             => 'bar'
+            },
+            {   id                => $articles[1]->id,
+                author_id         => $author->id,
+                special_report_id => undef,
+                main_category_id  => undef,
+                category_id       => undef,
+                title             => 'baz'
+            }
+        ]
+    }
+);
 
 $author = Author->find(
     id   => $author->id,

@@ -6,7 +6,6 @@ use warnings;
 use base 'ObjectDB::Base';
 
 __PACKAGE__->attr([qw/is_modified is_in_db/] => 0);
-__PACKAGE__->attr('conn');
 
 use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 
@@ -60,6 +59,20 @@ sub init {
     }
 
     $self->column(%$columns);
+}
+
+sub conn {
+    my $self = shift;
+
+    return $self->{conn} = $_[0] if @_;
+
+    if (ref($self)) {
+        return $self->{conn} if $self->{conn};
+
+        return $self->{conn} = $self->init_conn;
+    }
+
+    return $self->init_conn;
 }
 
 sub schema {
@@ -327,9 +340,7 @@ sub related {
     return $related if $related;
     return undef if defined $related && $related == 0;
 
-    my $type = $rel->type;
-    if ($type eq 'has_one' || $type eq 'belongs_to') {
-
+    if ($rel->is_type(qw/has_one belongs_to/)) {
         #use Data::Dumper;
         #warn Dumper $self->find_related($name, first => 1);
         return $self->find_related($name, first => 1);
@@ -585,7 +596,6 @@ sub _resolve_multi_table {
     }
 }
 
-
 sub find {
     my $class  = shift;
     my %params = @_;
@@ -597,10 +607,9 @@ sub find {
 
     my $single = $params{first} || $params{single} ? 1 : 0;
 
-    my $sql = ObjectDB::SQL::Select->new({driver => $conn->driver});
+    my $sql = ObjectDB::SQL::Select->new(driver => $conn->driver);
 
     my $main = {};
-
 
     if ($params{max} || $params{min}) {
         my $type = $params{max} ? 'max' : 'min';
@@ -620,10 +629,6 @@ sub find {
     else {
         $sql->source($class->schema->table);
     }
-
-
-    # Default undef: load all columns
-    $main->{columns} = undef;
 
     # Load just passed columns
     if ($params{columns}) {
@@ -886,7 +891,7 @@ sub find_or_create {
     my $class  = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $class->init_conn;
+    my $conn = delete $params{conn} || $class->conn;
 
     my $self = $class->find(conn => $conn, where => [%params], single => 1);
     return $self if $self;
@@ -913,8 +918,6 @@ sub find_related {
         if ($rel->is_has_and_belongs_to_many) {
             my ($to, $from) =
               %{$rel->map_class->schema->relationship($rel->map_from)->map};
-
-            @where = ("articles.$from" => $self->id);
         }
         else {
             my ($from, $to) = %{$rel->map};
@@ -928,20 +931,17 @@ sub find_related {
         }
     }
     else {
-        $conn = $params{conn} || $class->init_conn;
+        $conn = $params{conn} || $class->conn;
         Carp::croak qq/Connector is required/ unless $conn;
 
         if ($rel->is_has_and_belongs_to_many) {
             die 'todo';
         }
         else {
-
             if ($params{map_to}) {
-
                 my @map_to = @{$params{map_to}};
 
                 if (@map_to > 1) {
-
                     my $concat = '-concat(' . join(',', @map_to) . ')';
 
                     @where = ($concat => [@{delete $params{ids}}]);
@@ -950,20 +950,15 @@ sub find_related {
                 else {
                     @where = ($map_to[0] => [@{delete $params{ids}}]);
                 }
-
             }
-
         }
     }
 
     push @where, @{$rel->where}           if $rel->where;
     push @where, @{delete $params{where}} if $params{where};
 
-    return $rel->foreign_class->find(
-        conn  => $conn,
-        where => [@where],
-        %params
-    );
+    return $rel->foreign_class->find(conn => $conn, where => [@where],
+        %params);
 }
 
 sub update_column {
@@ -978,7 +973,7 @@ sub update {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $self->conn || $self->init_conn;
+    my $conn = delete $params{conn} || $self->conn;
 
     if (ref($self)) {
         return $self unless $self->is_modified;
@@ -988,10 +983,9 @@ sub update {
         Carp::croak qq/Connector is required/ unless $conn;
 
         Carp::croak "->update: no primary or unique keys specified"
-          unless $self->_are_primary_keys_set;
+          unless $self->_primary_and_unique_key_columns;
 
-        my @columns =
-          grep { !$self->schema->is_primary_key($_) } $self->columns;
+        my @columns = $self->_regular_columns;
         my @values = map { $self->column($_) } @columns;
 
         my $sql = ObjectDB::SQL::Update->new;
@@ -1009,8 +1003,8 @@ sub update {
 
                 my $sth = $dbh->prepare("$sql");
                 return unless $sth;
-                my $rv = $sth->execute(@{$sql->bind});
 
+                my $rv = $sth->execute(@{$sql->bind});
                 return unless $rv && $rv eq '1';
 
                 $self->is_in_db(1);
@@ -1061,71 +1055,12 @@ sub delete {
     my $self   = shift;
     my %params = @_;
 
-    my $conn =
-         delete $params{conn}
-      || (ref($self) && $self->conn)
-      || $self->init_conn;
+    my $conn = delete $params{conn} || $self->conn;
 
     if (ref($self) && !%params) {
-        $self->conn($conn) unless $self->conn;
+        $self->conn($conn) if $conn;
 
-        Carp::croak "->delete: no primary or unique keys specified"
-          unless $self->_are_primary_keys_set;
-
-        return $conn->txn(
-            sub {
-                my $dbh = shift;
-
-                my @child_rel = $self->schema->child_relationships;
-                foreach my $name (@child_rel) {
-                    my $rel = $self->schema->relationship($name);
-
-                    my $related;
-
-                    if ($rel->is_has_and_belongs_to_many) {
-                        my $map_from = $rel->map_from;
-
-                        my ($to, $from) =
-                          %{$rel->map_class->schema->relationship($map_from)
-                              ->map};
-
-                        $related = $rel->map_class->find(
-                            conn  => $conn,
-                            where => [$to => $self->column($from)]
-                        );
-                    }
-                    else {
-                        $related = $self->find_related($name);
-                    }
-
-                    while (my $r = $related->next) {
-                        $r->delete(conn => $conn);
-                    }
-                }
-
-                my @columns = $self->columns;
-                my @keys =
-                  grep { $self->schema->is_primary_key($_) } @columns;
-                @keys = grep { $self->schema->is_unique_key($_) } @columns
-                  unless @keys;
-
-                my $sql = ObjectDB::SQL::Delete->new;
-                $sql->table($self->schema->table);
-                $sql->where([map { $_ => $self->column($_) } @keys]);
-
-                warn "$sql" if DEBUG;
-
-                my $sth = $dbh->prepare("$sql");
-                return unless $sth;
-
-                my $rv = $sth->execute(@{$sql->bind});
-                return unless $rv && $rv eq '1';
-
-                $self->is_in_db(0);
-
-                return $self;
-            }
-        );
+        return $self->_delete_instance;
     }
     else {
         return $conn->txn(
@@ -1143,6 +1078,94 @@ sub delete {
     }
 }
 
+sub _delete_instance {
+    my $self = shift;
+
+    Carp::croak "->delete: no primary or unique keys specified"
+      unless $self->_primary_and_unique_key_columns;
+
+    my $conn = $self->conn;
+
+    return $conn->txn(
+        sub {
+            my $dbh = shift;
+
+            my @child_rel = $self->schema->child_relationships;
+            foreach my $name (@child_rel) {
+                my $rel = $self->schema->relationship($name);
+
+                my $related;
+
+                if ($rel->is_has_and_belongs_to_many) {
+                    my $map_from = $rel->map_from;
+
+                    my ($to, $from) =
+                      %{$rel->map_class->schema->relationship($map_from)
+                          ->map};
+
+                    $related = $rel->map_class->find(
+                        conn  => $conn,
+                        where => [$to => $self->column($from)]
+                    );
+                }
+                else {
+                    $related = $self->find_related($name);
+                }
+
+                while (my $r = $related->next) {
+                    $r->delete(conn => $conn);
+                }
+            }
+
+            my @keys = $self->_primary_key_columns;
+            @keys = $self->_unique_key_columns unless @keys;
+
+            my $sql = ObjectDB::SQL::Delete->new;
+            $sql->table($self->schema->table);
+            $sql->where([map { $_ => $self->column($_) } @keys]);
+
+            warn "$sql" if DEBUG;
+
+            my $sth = $dbh->prepare("$sql");
+            return unless $sth;
+
+            my $rv = $sth->execute(@{$sql->bind});
+            return unless $rv && $rv eq '1';
+
+            $self->is_in_db(0);
+
+            return $self;
+        }
+    );
+}
+
+sub _primary_key_columns {
+    my $self = shift;
+
+    return grep { $self->schema->is_primary_key($_) } $self->columns;
+}
+
+sub _regular_columns {
+    my $self = shift;
+
+    return grep { !$self->schema->is_primary_key($_) } $self->columns;
+}
+
+sub _unique_key_columns {
+    my $self = shift;
+
+    return grep { $self->schema->is_unique_key($_) } $self->columns;
+}
+
+sub _primary_and_unique_key_columns {
+    my $self = shift;
+
+    return grep {
+             $self->schema->is_primary_key($_)
+          or $self->schema->is_unique_key($_)
+    } $self->columns;
+}
+
 sub to_hash {
     my $self = shift;
 
@@ -1153,21 +1176,21 @@ sub to_hash {
         $hash->{$key} = $self->column($key);
     }
 
-    #foreach my $name (keys %{$self->_related}) {
-    #my $rel = $self->_related->{$name};
+    foreach my $name (keys %{$self->{related}}) {
+        my $rel = $self->{related}->{$name};
 
-    #die "unknown '$name' relationship" unless $rel;
+        Carp::croak qw/Unknown '$name' relationship/ unless $rel;
 
-    #if (ref $rel eq 'ARRAY') {
-    #$hash->{$name} = [];
-    #foreach my $r (@$rel) {
-    #push @{$hash->{$name}}, $r->to_hash;
-    #}
-    #}
-    #else {
-    #$hash->{$name} = $rel->to_hash;
-    #}
-    #}
+        if (ref $rel eq 'ARRAY') {
+            $hash->{$name} = [];
+            foreach my $r (@$rel) {
+                push @{$hash->{$name}}, $r->to_hash;
+            }
+        }
+        else {
+            $hash->{$name} = $rel->to_hash;
+        }
+    }
 
     return $hash;
 }
@@ -1390,17 +1413,6 @@ sub primary_keys_values {
     }
 
     return $pk;
-}
-
-sub _are_primary_keys_set {
-    my $self = shift;
-
-    my @ok = grep {
-             $self->schema->is_primary_key($_)
-          or $self->schema->is_unique_key($_)
-    } $self->columns;
-
-    return @ok ? 1 : 0;
 }
 
 sub _row_to_object {

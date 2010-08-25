@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 30;
+use Test::More tests => 32;
 
 use lib 't/lib';
 
@@ -22,6 +22,9 @@ ok($author,               'create with related object');
 ok($author->author_admin, 'related object is saved after creation');
 is($author->author_admin->column('beard'),
     1, 'related object has right columns');
+is_deeply($author->to_hash,
+    {id => $author->id, name => 'foo', author_admin => {author_id => $author->id, beard => 1}}
+);
 
 $author = Author->find(id => $author->id, with => 'author_admin');
 ok($author, 'find with related object');
@@ -29,6 +32,14 @@ is($author->column('name'), 'foo', 'object loaded');
 ok($author->author_admin, 'related object loaded');
 is($author->author_admin->column('beard'),
     1, 'related object has right columns');
+is_deeply(
+    $author->to_hash,
+    {   id           => $author->id,
+        name         => 'foo',
+        password     => '',
+        author_admin => {author_id => $author->id, beard => 1}
+    }
+);
 
 $author->author_admin->column(beard => 0);
 ok($author->author_admin->is_modified, 'related object is modified');

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 32;
+use Test::More tests => 33;
 
 use lib 't/lib';
 
@@ -29,6 +29,17 @@ is($article->column('title'), 'bar', 'object loaded');
 ok($article->author, 'related object loaded');
 is($article->author->column('name'),
     'foo', 'related object has right columns');
+is_deeply(
+    $article->to_hash,
+    {   id                => $article->id,
+        author_id         => $author->id,
+        title             => 'bar',
+        main_category_id  => undef,
+        category_id       => undef,
+        special_report_id => undef,
+        author => {id => $author->id, name => 'foo', password => ''}
+    }
+);
 
 $article->author->column(name => 'baz');
 ok($article->author->is_modified, 'related object is modified');
