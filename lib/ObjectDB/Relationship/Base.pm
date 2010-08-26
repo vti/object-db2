@@ -62,11 +62,12 @@ sub _prepare_foreign {
         $foreign_class = ObjectDB::Util->plural_to_single($foreign_class)
           if $single;
 
-        ObjectDB::Loader->load($foreign_class);
-        $foreign_class->schema->build(@_);
-
         $self->foreign_class($foreign_class);
     }
+
+    ObjectDB::Loader->load($self->foreign_class);
+    $self->foreign_class->schema->build(@_);
+
     unless ($self->foreign_table) {
         $self->foreign_table($self->foreign_class->schema->table);
     }
