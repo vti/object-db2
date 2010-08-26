@@ -3,12 +3,15 @@
 package Dummy;
 use base 'ObjectDB';
 
+package Dummy::Deeper;
+use base 'ObjectDB';
+
 package main;
 
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 24;
 
 use lib 't/lib';
 
@@ -55,5 +58,9 @@ Dummy->schema->build(TestDB->init_conn);
 is(Dummy->schema->class,          'Dummy');
 is(Dummy->schema->table,          'dummies');
 is(Dummy->schema->auto_increment, 'id');
+
+Dummy::Deeper->schema->build(TestDB->init_conn);
+is(Dummy::Deeper->schema->class,          'Dummy::Deeper');
+is(Dummy::Deeper->schema->table,          'deepers');
 
 TestEnv->teardown;

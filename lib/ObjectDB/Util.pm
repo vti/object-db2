@@ -71,7 +71,11 @@ sub single_to_plural {
 
 sub class_to_table {
     my $class = shift;
-    my $name  = shift;
+    my $class_name  = shift;
+
+    my @class_name_parts = split('::', $class_name);
+
+    my $name = $class_name_parts[-1];
 
     $name = $class->decamelize($name);
     $name = $class->single_to_plural($name);
