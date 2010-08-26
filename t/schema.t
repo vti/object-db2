@@ -6,12 +6,21 @@ use base 'ObjectDB';
 package Dummy::Deeper;
 use base 'ObjectDB';
 
+package DummyParent;
+use base 'ObjectDB';
+__PACKAGE__->schema('passed_a_table_name');
+__PACKAGE__->schema->has_many('dummy_childs');
+
+package DummyChild;
+use base 'ObjectDB';
+
+
 package main;
 
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 27;
 
 use lib 't/lib';
 
@@ -62,5 +71,11 @@ is(Dummy->schema->auto_increment, 'id');
 Dummy::Deeper->schema->build(TestDB->init_conn);
 is(Dummy::Deeper->schema->class,          'Dummy::Deeper');
 is(Dummy::Deeper->schema->table,          'deepers');
+
+DummyParent->schema->build(TestDB->init_conn);
+is(DummyParent->schema->class,          'DummyParent');
+is(DummyParent->schema->table,          'passed_a_table_name');
+is(DummyParent->schema->relationship('dummy_childs')->table, 'passed_a_table_name');
+
 
 TestEnv->teardown;

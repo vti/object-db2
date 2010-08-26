@@ -185,6 +185,7 @@ sub _new_relationship {
         my $rel = $class->new(
             name  => $name,
             class => $self->class,
+            table => $self->table,
             %$args
         );
         $self->relationships->{$name} = $rel;
