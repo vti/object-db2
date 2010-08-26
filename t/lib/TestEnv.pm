@@ -6,21 +6,18 @@ use warnings;
 use FindBin;
 use TestDB;
 
-
 sub setup {
     shift;
-
-    $ENV{OBJECTDB_NO_DBIX_CONNECTOR} = 1;
 
     my $conn = TestDB->init_conn;
 
     my $driver = $conn->driver;
 
     my $filename;
-    if ($driver eq 'SQLite') {
+    if ($driver =~ m/SQLite/) {
         $filename = 'sqlite';
     }
-    elsif ($driver eq 'mysql') {
+    elsif ($driver =~ m/mysql/) {
         $filename = 'mysql';
     }
     else {
