@@ -32,9 +32,7 @@ sub build {
 
     $self->auto_discover(@_) unless @{$self->columns};
 
-    while (my ($key, $value) = each %{$self->relationships}) {
-        $value->build(@_);
-    }
+    $self->build_relationships(@_);
 
     $self->is_built(1);
 
@@ -68,6 +66,14 @@ sub auto_discover {
               if $discoverer->auto_increment;
         }
     );
+}
+
+sub build_relationships {
+    my $self = shift;
+
+    while (my ($key, $value) = each %{$self->relationships}) {
+        $value->build(@_);
+    }
 }
 
 sub primary_key {
@@ -119,10 +125,12 @@ sub relationship {
     my $self = shift;
     my $name = shift;
 
-    my $rel   = $self->relationships->{$name};
-    my $class = $self->class;
-    Carp::croak qq/Unknown relationship '$name' in class '$class'/
-      unless $rel;
+    my $rel = $self->relationships->{$name};
+
+    unless ($rel) {
+        my $class = $self->class;
+        Carp::croak qq/Unknown relationship '$name' in class '$class'/;
+    }
 
     return $rel;
 }
@@ -189,7 +197,6 @@ sub _new_relationship {
         );
         $self->relationships->{$name} = $rel;
     }
-
 
     return $self;
 }
