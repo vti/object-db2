@@ -5,7 +5,7 @@ use warnings;
 
 use FindBin;
 use TestDB;
-use TestDB;
+
 
 sub setup {
     shift;
