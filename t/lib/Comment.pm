@@ -11,7 +11,7 @@ __PACKAGE__->schema->belongs_to('article')->belongs_to('author')
 
 # Convention: inflator methods starts with "inflate_"
 sub inflate_us_date_format {
-    my $self       = shift;
+    my $self = shift;
 
     my $creation_date = $self->column('creation_date');
 
@@ -19,7 +19,8 @@ sub inflate_us_date_format {
     return unless @date;
 
     my @months = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-    $self->{columns}->{creation_date_formated} = $months[$date[1]-1].' '.int($date[2]).','.$date[0];
+    $self->{columns}->{creation_date_formated} =
+      $months[$date[1] - 1] . ' ' . int($date[2]) . ',' . $date[0];
 }
 
 1;

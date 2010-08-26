@@ -12,7 +12,7 @@ sub inflate_quote_title {
     my $self = shift;
 
     my $title = $self->column('title');
-    $title = '"'.$title.'"';
+    $title = '"' . $title . '"';
     $self->{columns}->{quoted_title} = $title;
 
 }

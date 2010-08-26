@@ -309,7 +309,7 @@ sub delete_related {
         }
 
         return $rel->map_class->delete(
-            conn  => $self->conn,
+            conn => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -320,7 +320,7 @@ sub delete_related {
         delete $self->{related}->{$name};
 
         return $rel->foreign_class->delete(
-            conn  => $self->conn,
+            conn => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -338,6 +338,7 @@ sub related {
     return undef if defined $related && $related == 0;
 
     if ($rel->is_type(qw/has_one belongs_to/)) {
+
         #use Data::Dumper;
         #warn Dumper $self->find_related($name, first => 1);
         return $self->find_related($name, first => 1);
@@ -701,7 +702,8 @@ sub find {
                 my @result;
 
                 # Prepare column inflation
-                my $inflation_method = $class->_inflate_columns($params{inflate});
+                my $inflation_method =
+                  $class->_inflate_columns($params{inflate});
 
                 foreach my $row (@$rows) {
                     my $object = $class->_row_to_object(
@@ -818,7 +820,8 @@ sub find {
                 return unless $rows && @$rows;
 
                 # Prepare column inflation
-                my $inflation_method = $class->_inflate_columns($params{inflate});
+                my $inflation_method =
+                  $class->_inflate_columns($params{inflate});
 
                 my $object = $class->_row_to_object(
                     conn    => $conn,
@@ -973,8 +976,11 @@ sub find_related {
     push @where, @{$rel->where}           if $rel->where;
     push @where, @{delete $params{where}} if $params{where};
 
-    return $rel->foreign_class->find(conn => $conn, where => [@where],
-        %params);
+    return $rel->foreign_class->find(
+        conn  => $conn,
+        where => [@where],
+        %params
+    );
 }
 
 sub update_column {
@@ -1120,7 +1126,7 @@ sub _delete_instance {
                           ->map};
 
                     $related = $rel->map_class->find(
-                        conn  => $conn,
+                        conn => $conn,
                         where => [$to => $self->column($from)]
                     );
                 }
@@ -1471,7 +1477,8 @@ sub _row_to_object {
 
             my $rel = $self->schema->relationship($name);
 
-            my $inflation_method = $rel->foreign_class->_inflate_columns($inflate);
+            my $inflation_method =
+              $rel->foreign_class->_inflate_columns($inflate);
 
             next if ($rel->is_type(qw/has_many has_and_belongs_to_many/));
 
@@ -1495,10 +1502,10 @@ sub _row_to_object {
             }
 
             # Prepare column inflation
-            if ( $object->id ){
+            if ($object->id) {
                 $object->$inflation_method if $inflation_method;
             }
-                
+
 
             $args->{pk} ||= [];
 
@@ -1553,13 +1560,13 @@ sub _inflate_columns {
         my $inflation_class  = $inflate->[$i];
         my $inflation_method = $inflate->[$i + 1];
 
-        if ($class eq $inflation_class){
+        if ($class eq $inflation_class) {
 
-            if ($inflation_method =~/^inflate_/){
+            if ($inflation_method =~ /^inflate_/) {
                 return $inflation_method;
             }
             else {
-                return 'inflate_'.$inflation_method;
+                return 'inflate_' . $inflation_method;
             }
             last;
         }
@@ -1569,7 +1576,6 @@ sub _inflate_columns {
 
 
 }
-
 
 
 1;
