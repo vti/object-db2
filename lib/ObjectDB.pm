@@ -699,13 +699,22 @@ sub find {
 
                 my @pk;
                 my @result;
+
+                # Prepare column inflation
+                my $inflation_method = $class->_inflate_columns($params{inflate});
+
                 foreach my $row (@$rows) {
                     my $object = $class->_row_to_object(
-                        conn => $conn,
-                        row  => $row,
-                        sql  => $sql,
-                        with => $with
+                        conn    => $conn,
+                        row     => $row,
+                        sql     => $sql,
+                        with    => $with,
+                        inflate => $params{inflate}
                     );
+
+                    # Column inflation
+                    $object->$inflation_method if $inflation_method;
+
                     push @result, $object;
 
                     if ($main->{map_from}) {
@@ -749,10 +758,11 @@ sub find {
                         my $related = [
                             $subreq_class->find_related(
                                 $name,
-                                conn   => $conn,
-                                ids    => $ids,
-                                with   => $nested,
-                                map_to => $map_to,
+                                conn    => $conn,
+                                ids     => $ids,
+                                with    => $nested,
+                                map_to  => $map_to,
+                                inflate => $params{inflate},
                                 %$args
                             )
                         ];
@@ -807,12 +817,20 @@ sub find {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
+                # Prepare column inflation
+                my $inflation_method = $class->_inflate_columns($params{inflate});
+
                 my $object = $class->_row_to_object(
-                    conn => $conn,
-                    row  => $rows->[0],
-                    sql  => $sql,
-                    with => $with
+                    conn    => $conn,
+                    row     => $rows->[0],
+                    sql     => $sql,
+                    with    => $with,
+                    inflate => $params{inflate}
                 );
+
+                # Column inflation
+                $object->$inflation_method if $inflation_method;
+
 
                 my @pk;
 
@@ -854,10 +872,11 @@ sub find {
                     $parent->{related}->{$name} = [
                         $subreq_class->find_related(
                             $name,
-                            conn   => $object->conn,
-                            ids    => $ids,
-                            with   => delete $args->{nested},
-                            map_to => $map_to,
+                            conn    => $object->conn,
+                            ids     => $ids,
+                            with    => delete $args->{nested},
+                            map_to  => $map_to,
+                            inflate => $params{inflate},
                             %$args
                         )
                     ];
@@ -1416,10 +1435,11 @@ sub _row_to_object {
     my $class  = shift;
     my %params = @_;
 
-    my $conn = $params{conn};
-    my $row  = $params{row};
-    my $sql  = $params{sql};
-    my $with = $params{with};
+    my $conn    = $params{conn};
+    my $row     = $params{row};
+    my $sql     = $params{sql};
+    my $with    = $params{with};
+    my $inflate = $params{inflate};
 
     my @columns = $sql->columns;
 
@@ -1443,13 +1463,15 @@ sub _row_to_object {
     $with ||= [];
 
     my $walker = sub {
-        my ($code_ref, $self, $with) = @_;
+        my ($code_ref, $self, $with, $inflate) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
             my $args = $with->[$i + 1];
 
             my $rel = $self->schema->relationship($name);
+
+            my $inflation_method = $rel->foreign_class->_inflate_columns($inflate);
 
             next if ($rel->is_type(qw/has_many has_and_belongs_to_many/));
 
@@ -1472,6 +1494,12 @@ sub _row_to_object {
                 $self->{related}->{$name} = 0;
             }
 
+            # Prepare column inflation
+            if ( $object->id ){
+                $object->$inflation_method if $inflation_method;
+            }
+                
+
             $args->{pk} ||= [];
 
             if ($args->{map_from} && $object->id) {
@@ -1491,7 +1519,7 @@ sub _row_to_object {
         }
     };
 
-    _execute_code_ref($walker, $self, $with);
+    _execute_code_ref($walker, $self, $with, $inflate);
 
     #use Data::Dumper;
     #warn Dumper $row;
@@ -1509,5 +1537,39 @@ sub _execute_code_ref {
     my $code_ref = shift;
     $code_ref->($code_ref, @_);
 }
+
+
+sub _inflate_columns {
+    my $self    = shift;
+    my $inflate = shift;
+
+    return unless $inflate;
+
+    my $class = ref $self ? ref $self : $self;
+
+    die 'inflate has to be array ref' unless ref $inflate eq 'ARRAY';
+
+    for (my $i = 0; $i < @$inflate; $i += 2) {
+        my $inflation_class  = $inflate->[$i];
+        my $inflation_method = $inflate->[$i + 1];
+
+        if ($class eq $inflation_class){
+
+            if ($inflation_method =~/^inflate_/){
+                return $inflation_method;
+            }
+            else {
+                return 'inflate_'.$inflation_method;
+            }
+            last;
+        }
+    }
+
+    return;
+
+
+}
+
+
 
 1;
