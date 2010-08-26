@@ -1,10 +1,22 @@
-package ObjectDB::Util;
+package ObjectDB::Utils;
 
 use strict;
 use warnings;
 
+sub import {
+    my $class     = shift;
+    my @functions = @_;
+
+    my $caller = caller;
+    no strict 'refs';
+    no warnings 'redefine';
+
+    foreach my $func (@functions) {
+        *{"${caller}::$func"} = \&{$func};
+    }
+}
+
 sub camelize {
-    shift;
     my $string = shift;
 
     return unless $string;
@@ -18,7 +30,6 @@ sub camelize {
 }
 
 sub decamelize {
-    shift;
     my $string = shift;
 
     my @parts;
@@ -43,7 +54,6 @@ sub decamelize {
 }
 
 sub plural_to_single {
-    shift;
     my $string = shift;
 
     if ($string =~ s/ies$//) {
@@ -57,7 +67,6 @@ sub plural_to_single {
 }
 
 sub single_to_plural {
-    shift;
     my $string = shift;
 
     if ($string =~ s/(?<!(?:a|e|o|i))y$//) {
@@ -70,25 +79,23 @@ sub single_to_plural {
 }
 
 sub class_to_table {
-    my $class = shift;
-    my $class_name  = shift;
+    my $class_name = shift;
 
     my @class_name_parts = split('::', $class_name);
 
     my $name = $class_name_parts[-1];
 
-    $name = $class->decamelize($name);
-    $name = $class->single_to_plural($name);
+    $name = decamelize($name);
+    $name = single_to_plural($name);
 
     return $name;
 }
 
 sub table_to_class {
-    my $class = shift;
-    my $name  = shift;
+    my $name = shift;
 
-    $name = $class->camelize($name);
-    $name = $class->plural_to_single($name);
+    $name = camelize($name);
+    $name = plural_to_single($name);
 
     return $name;
 }

@@ -5,13 +5,15 @@ use warnings;
 
 use base 'ObjectDB::Relationship::Base';
 
+use ObjectDB::Utils 'plural_to_single';
+
 sub _build {
     my $self = shift;
 
     $self->_prepare_foreign(@_, 'single');
 
     unless (%{$self->map}) {
-        my $foreign_name = ObjectDB::Util->plural_to_single($self->table);
+        my $foreign_name = plural_to_single($self->table);
 
         my $pk         = 'id';
         my $foreign_pk = $foreign_name . '_' . $pk;

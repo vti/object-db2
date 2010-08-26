@@ -8,7 +8,7 @@ use base 'ObjectDB::Base';
 __PACKAGE__->attr('conn');
 __PACKAGE__->attr('namespace');
 
-use ObjectDB::Util;
+use ObjectDB::Utils 'table_to_class';
 use ObjectDB::Loader;
 
 our $AUTOLOAD;
@@ -28,7 +28,7 @@ sub name_to_class {
         $class = $namespace . $name;
     }
     else {
-        $class = $namespace . ObjectDB::Util->table_to_class($name);
+        $class = $namespace . table_to_class($name);
 
         unless ($class->can('new')) {
             my $package = <<"EOF";

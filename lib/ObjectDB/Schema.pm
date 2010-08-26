@@ -15,13 +15,12 @@ __PACKAGE__->attr(is_built      => 0);
 require Carp;
 use ObjectDB::Loader;
 use ObjectDB::SchemaDiscoverer;
-use ObjectDB::Util;
+use ObjectDB::Utils qw/camelize class_to_table/;
 
 sub new {
     my $self = shift->SUPER::new(@_);
 
-    $self->table(ObjectDB::Util->class_to_table($self->class))
-      unless $self->table;
+    $self->table(class_to_table($self->class)) unless $self->table;
 
     return $self;
 }
@@ -176,7 +175,7 @@ sub _new_relationship {
     return $self
       if !ref($foreign) && $self->relationships->{$foreign};
 
-    my $class = 'ObjectDB::Relationship::' . ObjectDB::Util->camelize($type);
+    my $class = 'ObjectDB::Relationship::' . camelize($type);
     ObjectDB::Loader->load($class);
 
     my $args = @_ == 1 ? $_[0] : {@_};

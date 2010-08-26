@@ -7,17 +7,19 @@ use base 'ObjectDB::Relationship::Base';
 
 __PACKAGE__->attr([qw/map_class map_from map_to/]);
 
+use ObjectDB::Utils qw/plural_to_single class_to_table/;
+
 sub _build {
     my $self = shift;
 
     $self->_prepare_foreign(@_, 'single');
 
     unless ($self->map_from) {
-        $self->map_from(ObjectDB::Util->plural_to_single($self->table));
+        $self->map_from(plural_to_single($self->table));
     }
 
     unless ($self->map_to) {
-        $self->map_to(ObjectDB::Util->plural_to_single($self->name));
+        $self->map_to(plural_to_single($self->name));
     }
 
     unless ($self->map_class) {
@@ -27,7 +29,7 @@ sub _build {
         my $map_class = join('', sort(@classes)) . 'Map';
 
         unless ($map_class->can('new')) {
-            my $map_table = ObjectDB::Util->class_to_table($map_class);
+            my $map_table = class_to_table($map_class);
 
             my $from = $self->map_from;
             my $to   = $self->map_to;

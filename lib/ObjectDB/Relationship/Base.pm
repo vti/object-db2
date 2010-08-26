@@ -6,14 +6,14 @@ use warnings;
 use base 'ObjectDB::Base';
 
 require ObjectDB::Loader;
-require ObjectDB::Util;
+use ObjectDB::Utils qw/camelize decamelize class_to_table plural_to_single/;
 
 __PACKAGE__->attr([qw/name foreign_class foreign_table/]);
 __PACKAGE__->attr([qw/map/]                  => sub { {} });
 __PACKAGE__->attr([qw/with where join_args/] => sub { [] });
 __PACKAGE__->attr(is_built                   => 0);
 
-sub type { ObjectDB::Util->decamelize((split '::' => ref(shift))[-1]) }
+sub type { decamelize((split '::' => ref(shift))[-1]) }
 
 sub class {
     my $self = shift;
@@ -30,7 +30,7 @@ sub table {
 
     return $self->{table} if $self->{table};
 
-    $self->{table} = ObjectDB::Util->class_to_table($self->class);
+    $self->{table} = class_to_table($self->class);
 
     return $self->{table};
 }
@@ -58,8 +58,8 @@ sub _prepare_foreign {
     my $single = $_[$#_] eq 'single' ? pop : undef;
 
     unless ($self->foreign_class) {
-        my $foreign_class = ObjectDB::Util->camelize($self->name);
-        $foreign_class = ObjectDB::Util->plural_to_single($foreign_class)
+        my $foreign_class = camelize($self->name);
+        $foreign_class = plural_to_single($foreign_class)
           if $single;
 
         $self->foreign_class($foreign_class);
