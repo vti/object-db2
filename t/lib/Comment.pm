@@ -19,8 +19,10 @@ sub inflate_us_date_format {
     return unless @date;
 
     my @months = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-    $self->{columns}->{creation_date_formated} =
+    my $date_formated =
       $months[$date[1] - 1] . ' ' . int($date[2]) . ',' . $date[0];
+
+    $self->virtual_column(creation_date_formated => $date_formated);
 }
 
 1;

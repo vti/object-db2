@@ -13,7 +13,7 @@ sub inflate_quote_title {
 
     my $title = $self->column('title');
     $title = '"' . $title . '"';
-    $self->{columns}->{quoted_title} = $title;
+    $self->virtual_column(quoted_title => $title);
 
 }
 

@@ -129,6 +129,38 @@ sub columns {
     return @columns;
 }
 
+sub virtual_column {
+    my $self = shift;
+
+    $self->{virtual_columns} ||= {};
+
+    if (@_ == 1) {
+        return defined $_[0] ? $self->{virtual_columns}->{$_[0]} : undef;
+    }
+    elsif (@_ >= 2) {
+        my %columns = @_;
+        while (my ($key, $value) = each %columns) {
+            $self->{virtual_columns}->{$key} = $value;
+        }
+    }
+
+    return $self;
+}
+
+sub virtual_columns {
+    my $self = shift;
+
+    $self->{virtual_columns} ||= {};
+
+    my @columns;
+
+    foreach my $column (keys(%{$self->{virtual_columns}})) {
+        push @columns, $column;
+    }
+
+    return @columns;
+}
+
 sub count {
     my $class  = shift;
     my %params = @_;
