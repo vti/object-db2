@@ -5,7 +5,7 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr([qw/table class auto_increment/]);
+__PACKAGE__->attr([qw/table class auto_increment namespace/]);
 __PACKAGE__->attr(columns       => sub { [] });
 __PACKAGE__->attr(primary_keys  => sub { [] });
 __PACKAGE__->attr(unique_keys   => sub { [] });
@@ -190,9 +190,10 @@ sub _new_relationship {
 
     foreach my $name (@{ref($foreign) ? $foreign : [$foreign]}) {
         my $rel = $class->new(
-            name  => $name,
-            class => $self->class,
-            table => $self->table,
+            name      => $name,
+            class     => $self->class,
+            namespace => $self->namespace,
+            table     => $self->table,
             %$args
         );
         $self->relationships->{$name} = $rel;

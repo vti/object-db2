@@ -80,8 +80,20 @@ sub schema {
 
     my $class_name = ref $class ? ref $class : $class;
 
-    return $ObjectDB::Schema::objects{$class_name}
-      ||= ObjectDB::Schema->new(table => $table, class => $class_name, @_);
+    return $ObjectDB::Schema::objects{$class_name} ||= ObjectDB::Schema->new(
+        table     => $table,
+        class     => $class_name,
+        namespace => $class->namespace,
+        @_
+    );
+}
+
+sub namespace {
+
+    # Overwrite this method in subclass to allow use of short class names
+    # e.g. when defining foreign_class in relationship
+    # e.g. sub namespace { 'My::Schema::Path' }
+    return undef;
 }
 
 sub init_conn { }

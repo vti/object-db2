@@ -14,13 +14,29 @@ __PACKAGE__->schema->has_many('dummy_childs');
 package DummyChild;
 use base 'ObjectDB';
 
+# Pass short class name "Friend", which refers to "Best::Friend" as namespace
+# is defined in sub namespace {} (usually in subclass of ObjectDB)
+__PACKAGE__->schema->has_one('best_friend', foreign_class => 'Friend');
+sub namespace {'Best'}
+
+package DummyChild2;
+use base 'ObjectDB';
+
+# Define namespace just for a specific class (before defining any rel.!)
+__PACKAGE__->schema->namespace('Best');
+__PACKAGE__->schema->has_one('best_friend', foreign_class => 'Friend');
+
+
+package Best::Friend;
+use base 'ObjectDB';
+
 
 package main;
 
 use strict;
 use warnings;
 
-use Test::More tests => 27;
+use Test::More tests => 29;
 
 use lib 't/lib';
 
@@ -69,13 +85,21 @@ is(Dummy->schema->table,          'dummies');
 is(Dummy->schema->auto_increment, 'id');
 
 Dummy::Deeper->schema->build(TestDB->init_conn);
-is(Dummy::Deeper->schema->class,          'Dummy::Deeper');
-is(Dummy::Deeper->schema->table,          'deepers');
+is(Dummy::Deeper->schema->class, 'Dummy::Deeper');
+is(Dummy::Deeper->schema->table, 'deepers');
 
 DummyParent->schema->build(TestDB->init_conn);
-is(DummyParent->schema->class,          'DummyParent');
-is(DummyParent->schema->table,          'passed_a_table_name');
-is(DummyParent->schema->relationship('dummy_childs')->table, 'passed_a_table_name');
+is(DummyParent->schema->class, 'DummyParent');
+is(DummyParent->schema->table, 'passed_a_table_name');
+is(DummyParent->schema->relationship('dummy_childs')->table,
+    'passed_a_table_name');
 
+DummyChild->schema->build(TestDB->init_conn);
+is(DummyChild->schema->relationship('best_friend')->foreign_class,
+    'Best::Friend');
+
+DummyChild2->schema->build(TestDB->init_conn);
+is(DummyChild2->schema->relationship('best_friend')->foreign_class,
+    'Best::Friend');
 
 TestEnv->teardown;

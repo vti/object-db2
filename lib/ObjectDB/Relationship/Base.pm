@@ -8,7 +8,7 @@ use base 'ObjectDB::Base';
 require ObjectDB::Loader;
 use ObjectDB::Utils qw/camelize decamelize class_to_table plural_to_single/;
 
-__PACKAGE__->attr([qw/name foreign_class foreign_table/]);
+__PACKAGE__->attr([qw/name foreign_class foreign_table namespace/]);
 __PACKAGE__->attr([qw/map/]                  => sub { {} });
 __PACKAGE__->attr([qw/with where join_args/] => sub { [] });
 __PACKAGE__->attr(is_built                   => 0);
@@ -57,7 +57,14 @@ sub _prepare_foreign {
     my ($self) = shift;
     my $single = $_[$#_] eq 'single' ? pop : undef;
 
-    unless ($self->foreign_class) {
+    if (my $foreign_class = $self->foreign_class) {
+
+        # Check if short version has been passed
+        if (my $namespace = $self->namespace) {
+            $self->foreign_class($namespace . '::' . $foreign_class);
+        }
+    }
+    else {
         my $foreign_class = camelize($self->name);
         $foreign_class = plural_to_single($foreign_class)
           if $single;
