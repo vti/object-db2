@@ -1608,6 +1608,9 @@ sub _inflate_columns {
         my $inflation_class  = $inflate->[$i];
         my $inflation_method = $inflate->[$i + 1];
 
+        $inflation_class = $self->namespace . '::' . $inflation_class
+          if $self->namespace;
+
         if ($class eq $inflation_class) {
 
             if ($inflation_method =~ /^inflate_/) {
@@ -1621,8 +1624,6 @@ sub _inflate_columns {
     }
 
     return;
-
-
 }
 
 
