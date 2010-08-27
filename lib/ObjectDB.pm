@@ -1230,6 +1230,10 @@ sub to_hash {
         $hash->{$key} = $self->column($key);
     }
 
+    foreach my $key ($self->virtual_columns) {
+        $hash->{$key} = $self->virtual_column($key);
+    }
+
     foreach my $name (keys %{$self->{related}}) {
         my $rel = $self->{related}->{$name};
 

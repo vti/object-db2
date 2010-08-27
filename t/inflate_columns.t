@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 18;
 
 use lib 't/lib';
 
@@ -21,6 +21,7 @@ my @comments =
 is(@comments,                                              10);
 is($comments[0]->column('creation_date'),                  '2005-12-01');
 is($comments[0]->virtual_column('creation_date_formated'), 'Dec 1,2005');
+is($comments[0]->to_hash->{creation_date_formated},        'Dec 1,2005');
 
 
 # Pass short method name: us_date_format
@@ -48,6 +49,10 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
     '2005-12-01');
 is( $authors[0]->articles->[0]->comments->[0]
       ->virtual_column('creation_date_formated'),
+    'Dec 1,2005'
+);
+is( $authors[0]->to_hash->{articles}->[0]->{comments}->[0]
+      ->{creation_date_formated},
     'Dec 1,2005'
 );
 
