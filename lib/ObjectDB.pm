@@ -353,7 +353,7 @@ sub delete_related {
         }
 
         return $rel->map_class->delete(
-            conn => $self->conn,
+            conn  => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -364,7 +364,7 @@ sub delete_related {
         delete $self->{related}->{$name};
 
         return $rel->foreign_class->delete(
-            conn => $self->conn,
+            conn  => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -382,20 +382,10 @@ sub related {
     return undef if defined $related && $related == 0;
 
     if ($rel->is_type(qw/has_one belongs_to/)) {
-
-        #use Data::Dumper;
-        #warn Dumper $self->find_related($name, first => 1);
         return $self->find_related($name, first => 1);
     }
-    else {
-        my @objects = $self->find_related($name);
-        if (wantarray) {
-            return @objects;
-        }
-        else {
-            return \@objects;
-        }
-    }
+    my @objects = $self->find_related($name);
+    return wantarray ? @objects : \@objects;
 }
 
 
@@ -599,7 +589,6 @@ sub _resolve_max_min_n_results_by_group_multi_table {
 
 }
 
-
 sub _resolve_multi_table {
     my $class  = shift;
     my %params = @_;
@@ -708,7 +697,6 @@ sub find {
         $main->{columns} = [@{$class->schema->columns}];
     }
 
-
     $sql->source($class->schema->table);    ### switch back to main source
     $sql->columns([@{$main->{columns}}]);
 
@@ -716,10 +704,8 @@ sub find {
         $sql->where($class->schema->primary_keys->[0] => $id);
         $single = 1;
     }
-    else {
-        if (my $where = $params{where}) {
-            $class->_resolve_where(where => $where, sql => $sql);
-        }
+    elsif (my $where = $params{where}) {
+        $class->_resolve_where(where => $where, sql => $sql);
     }
 
     $sql->limit($params{limit}) if $params{limit};
@@ -774,88 +760,17 @@ sub find {
                         }
                         push @pk, $map_from_concat;
                     }
-
                 }
 
                 #warn Dumper \@pk;
 
-                if ($subreqs && @$subreqs) {
-                    foreach my $subreq (@$subreqs) {
-                        my $name         = $subreq->[0];
-                        my $args         = $subreq->[1];
-                        my $subreq_class = $subreq->[2];
-                        my $chain        = $subreq->[3];
-                        my $parent_args  = $subreq->[4];
-
-                        my $map_from = $parent_args->{map_from}
-                          || die('no map_from cols');
-
-                        my $map_to = $parent_args->{map_to}
-                          || die('no map_to cols');
-
-                        my $ids =
-                          $parent_args->{pk}
-                          ? [@{$parent_args->{pk}}]
-                          : [@pk];
-                        next unless @$ids;
-
-                        my $nested = delete $args->{nested} || [];
-
-                        my $related = [
-                            $subreq_class->find_related(
-                                $name,
-                                conn    => $conn,
-                                ids     => $ids,
-                                with    => $nested,
-                                map_to  => $map_to,
-                                inflate => $params{inflate},
-                                %$args
-                            )
-                        ];
-
-                 # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
-                 #@$map_to = sort @$map_to;
-                 #@$map_from = sort @$map_from;
-
-                        my $set;
-                        foreach my $o (@$related) {
-                            my $id;
-                            foreach my $map_to_col (@$map_to) {
-                                $id .= $o->column($map_to_col);
-                            }
-                            $set->{$id} ||= [];
-                            push @{$set->{$id}}, $o;
-                        }
-
-                        #warn Dumper $set;
-                        #$related = {map { $_->id => $_ } @$related};
-
-                      OUTER_LOOP: foreach my $o (@result) {
-                            my $parent = $o;
-                            foreach my $part (@$chain) {
-                                if ($parent->{related}->{$part}) {
-                                    $parent = $parent->{related}->{$part};
-                                }
-                                else {
-                                    next OUTER_LOOP;
-                                }
-                            }
-
-                            next unless $parent->column($map_from->[0]);
-
-                            $parent->{related}->{$name} = [];
-
-                            my $id;
-                            foreach my $map_from_col (@$map_from) {
-                                $id .= $parent->column($map_from_col);
-                            }
-
-                            $set->{$id} ||= [];
-                            push @{$parent->{related}->{$name}},
-                              @{$set->{$id}};
-                        }
-                    }
-                }
+                $class->_fetch_subrequests(
+                    result => \@result,
+                    pk => \@pk,
+                    conn    => $conn,
+                    subreqs => $subreqs,
+                    inflate => $params{inflate}
+                ) if $subreqs && @$subreqs;
 
                 return @result;
             }
@@ -891,43 +806,13 @@ sub find {
 
                 return $object unless $subreqs && @$subreqs;
 
-              SUB_REQ: foreach my $subreq (@$subreqs) {
-                    my $name         = $subreq->[0];
-                    my $args         = $subreq->[1];
-                    my $subreq_class = $subreq->[2];
-                    my $chain        = $subreq->[3];
-                    my $parent_args  = $subreq->[4];
-
-                    my $ids =
-                      $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
-
-                    my $map_to = $parent_args->{map_to}
-                      || die('no map_to cols');
-
-                    my $parent = $object;
-                    foreach my $part (@$chain) {
-                        if ($parent->{related}->{$part}) {
-                            $parent = $parent->{related}->{$part};
-                        }
-                        else {
-                            next SUB_REQ;
-                        }
-                    }
-
-                    next SUB_REQ unless $parent->id;
-
-                    $parent->{related}->{$name} = [
-                        $subreq_class->find_related(
-                            $name,
-                            conn    => $object->conn,
-                            ids     => $ids,
-                            with    => delete $args->{nested},
-                            map_to  => $map_to,
-                            inflate => $params{inflate},
-                            %$args
-                        )
-                    ];
-                }
+                $class->_fetch_subrequests(
+                    result => [$object],
+                    pk => \@pk,
+                    conn    => $conn,
+                    subreqs => $subreqs,
+                    inflate => $params{inflate}
+                ) if $subreqs && @$subreqs;
 
                 return $object;
             }
@@ -948,6 +833,88 @@ sub find {
             }
         }
     );
+}
+
+sub _fetch_subrequests {
+    my $class   = shift;
+    my %params = @_;
+
+    my $conn    = $params{conn};
+    my $subreqs = $params{subreqs};
+    my @pk      = @{$params{pk}};
+    my @result  = @{$params{result}};
+
+    foreach my $subreq (@$subreqs) {
+        my $name         = $subreq->[0];
+        my $args         = $subreq->[1];
+        my $subreq_class = $subreq->[2];
+        my $chain        = $subreq->[3];
+        my $parent_args  = $subreq->[4];
+
+        my $map_from = $parent_args->{map_from}
+          || die('no map_from cols');
+
+        my $map_to = $parent_args->{map_to}
+          || die('no map_to cols');
+
+        my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
+        next unless @$ids;
+
+        my $nested = delete $args->{nested} || [];
+
+        my $related = [
+            $subreq_class->find_related(
+                $name,
+                conn    => $conn,
+                ids     => $ids,
+                with    => $nested,
+                map_to  => $map_to,
+                inflate => $params{inflate},
+                %$args
+            )
+        ];
+
+        # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
+        #@$map_to = sort @$map_to;
+        #@$map_from = sort @$map_from;
+
+        my $set;
+        foreach my $o (@$related) {
+            my $id;
+            foreach my $map_to_col (@$map_to) {
+                $id .= $o->column($map_to_col);
+            }
+            $set->{$id} ||= [];
+            push @{$set->{$id}}, $o;
+        }
+
+        #warn Dumper $set;
+        #$related = {map { $_->id => $_ } @$related};
+
+      OUTER_LOOP: foreach my $o (@result) {
+            my $parent = $o;
+            foreach my $part (@$chain) {
+                if ($parent->{related}->{$part}) {
+                    $parent = $parent->{related}->{$part};
+                }
+                else {
+                    next OUTER_LOOP;
+                }
+            }
+
+            next unless $parent->column($map_from->[0]);
+
+            $parent->{related}->{$name} = [];
+
+            my $id;
+            foreach my $map_from_col (@$map_from) {
+                $id .= $parent->column($map_from_col);
+            }
+
+            $set->{$id} ||= [];
+            push @{$parent->{related}->{$name}}, @{$set->{$id}};
+        }
+    }
 }
 
 sub find_or_create {
