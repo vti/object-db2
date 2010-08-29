@@ -764,13 +764,15 @@ sub find {
 
                 #warn Dumper \@pk;
 
+                return @result unless $subreqs && @$subreqs;
+
                 $class->_fetch_subrequests(
                     result => \@result,
                     pk => \@pk,
                     conn    => $conn,
                     subreqs => $subreqs,
                     inflate => $params{inflate}
-                ) if $subreqs && @$subreqs;
+                );
 
                 return @result;
             }
@@ -812,7 +814,7 @@ sub find {
                     conn    => $conn,
                     subreqs => $subreqs,
                     inflate => $params{inflate}
-                ) if $subreqs && @$subreqs;
+                );
 
                 return $object;
             }
@@ -873,10 +875,6 @@ sub _fetch_subrequests {
                 %$args
             )
         ];
-
-        # DO NOT SORT, WRITE FAILING TEST FOR CASE THAT ORDER CHANGES
-        #@$map_to = sort @$map_to;
-        #@$map_from = sort @$map_from;
 
         my $set;
         foreach my $o (@$related) {
