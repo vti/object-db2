@@ -26,6 +26,14 @@ use base 'ObjectDB';
 __PACKAGE__->schema->namespace('Best');
 __PACKAGE__->schema->has_one('best_friend', foreign_class => 'Friend');
 
+package Dummy::InNamespace;
+use base 'ObjectDB';
+__PACKAGE__->namespace('Dummy');
+
+package Dummy::InNamespace::Item;
+use base 'ObjectDB';
+__PACKAGE__->schema('in_namespace-items');
+__PACKAGE__->namespace('Dummy::InNamespace');
 
 package Best::Friend;
 use base 'ObjectDB';
@@ -36,7 +44,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 29;
+use Test::More tests => 33;
 
 use lib 't/lib';
 
@@ -101,5 +109,14 @@ is(DummyChild->schema->relationship('best_friend')->foreign_class,
 DummyChild2->schema->build(TestDB->init_conn);
 is(DummyChild2->schema->relationship('best_friend')->foreign_class,
     'Best::Friend');
+
+Dummy::InNamespace->schema->build(TestDB->init_conn);
+is(Dummy::InNamespace->schema->class, 'Dummy::InNamespace');
+is(Dummy::InNamespace->schema->table, 'in_namespaces');
+
+Dummy::InNamespace::Item->schema->build(TestDB->init_conn);
+is(Dummy::InNamespace::Item->schema->class, 'Dummy::InNamespace::Item');
+is(Dummy::InNamespace::Item->schema->table, 'in_namespace-items');
+
 
 TestEnv->teardown;
