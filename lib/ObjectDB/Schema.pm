@@ -29,12 +29,14 @@ sub build {
     my $self = shift;
 
     return if $self->is_built;
-
     $self->auto_discover(@_) unless @{$self->columns};
 
-    $self->build_relationships(@_);
-
+    # as related schemas are be built during the next step, which might
+    # try to build the current schema again, flag current schmema as built
+    # before build_relationships
     $self->is_built(1);
+
+    $self->build_relationships(@_);
 
     return $self;
 }

@@ -13,7 +13,6 @@ sub load {
 
         unless ($name->can('isa')) {
             eval "require $name";
-
             Carp::croak qq/Error while loading $name: $@/ if $@;
         }
     }

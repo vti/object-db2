@@ -26,7 +26,15 @@ sub _build {
 
         # Because we have two points of view :)
         my @classes = ($self->class, $self->foreign_class);
+
+        if ($self->namespace) {
+            @classes = grep { s/^\Q$self->{namespace}::\E// } @classes;
+        }
+
         my $map_class = join('', sort(@classes)) . 'Map';
+
+        $map_class = join '::', $self->namespace, $map_class
+          if $self->namespace;
 
         unless ($map_class->can('new')) {
             my $map_table = class_to_table($map_class);
@@ -34,22 +42,17 @@ sub _build {
             my $from = $self->map_from;
             my $to   = $self->map_to;
 
+            my $ns = $self->{namespace} || '';
             my $package = <<"EOF";
 package $map_class;
 use base 'ObjectDB';
+sub namespace { '$ns' }
 __PACKAGE__->schema('$map_table')->belongs_to('$from')->belongs_to('$to');
 1;
 EOF
-
             eval $package;
-            die qq/Couldn't initialize class "$map_class": $@/ if $@;
-        }
 
-        $map_class->schema->build(@_);
-
-        while (my ($key, $value) = each %{$map_class->schema->relationships})
-        {
-            $value->build(@_);
+            die qq/Couldnt initialize class "$map_class": $@/ if $@;
         }
 
         $self->map_class($map_class);

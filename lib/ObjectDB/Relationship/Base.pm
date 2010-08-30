@@ -51,6 +51,12 @@ sub build {
     $self->_build(@_);
 
     $self->is_built(1);
+
+    # Now build other schemas (and other relationships) after
+    # current rel is flaged as build
+    $self->foreign_class->schema->build(@_) if $self->foreign_class;
+    $self->map_class->schema->build(@_) if $self->can("map_class");
+
 }
 
 sub _prepare_foreign {
@@ -58,7 +64,6 @@ sub _prepare_foreign {
     my $single = $_[$#_] eq 'single' ? pop : undef;
 
     if (my $foreign_class = $self->foreign_class) {
-
         # Check if short version has been passed
         if (my $namespace = $self->namespace) {
             $self->foreign_class($namespace . '::' . $foreign_class);
@@ -66,14 +71,18 @@ sub _prepare_foreign {
     }
     else {
         my $foreign_class = camelize($self->name);
+
         $foreign_class = plural_to_single($foreign_class)
           if $single;
+
+        if (my $namespace = $self->namespace) {
+            $foreign_class = $namespace . '::' . $foreign_class;
+        }
 
         $self->foreign_class($foreign_class);
     }
 
     ObjectDB::Loader->load($self->foreign_class);
-    $self->foreign_class->schema->build(@_);
 
     unless ($self->foreign_table) {
         $self->foreign_table($self->foreign_class->schema->table);
