@@ -7,10 +7,8 @@ use base 'ObjectDB::Relationship::Base';
 
 use ObjectDB::Utils 'plural_to_single';
 
-sub _build {
+sub _detect_column_mapping {
     my $self = shift;
-
-    $self->_prepare_foreign(@_, 'single');
 
     unless (%{$self->map}) {
         my $foreign_name = plural_to_single($self->table);

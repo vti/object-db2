@@ -9,10 +9,8 @@ __PACKAGE__->attr([qw/map_class map_from map_to/]);
 
 use ObjectDB::Utils qw/plural_to_single class_to_table/;
 
-sub _build {
+sub _detect_column_mapping {
     my $self = shift;
-
-    $self->_prepare_foreign(@_, 'single');
 
     unless ($self->map_from) {
         $self->map_from(plural_to_single($self->table));

@@ -40,6 +40,27 @@ sub build {
 
     return if $self->is_built;
 
+    # Create alias for parent class to access related data
+    $self->_create_alias_for_related_data;
+
+    $self->_detect_and_load_foreign_class;
+
+    $self->_detect_foreign_table(@_);
+
+    $self->_detect_column_mapping(@_);
+
+    $self->is_built(1);
+
+    # Now build other schemas (and other relationships) AFTER
+    # current rel is flaged as build
+    $self->foreign_class->schema->build(@_) if $self->foreign_class;
+    $self->map_class->schema->build(@_) if $self->can('map_class');
+
+}
+
+sub _create_alias_for_related_data {
+    my $self = shift;
+
     unless ($self->class->can($self->name)) {
         no strict;
         my $class = $self->class;
@@ -47,24 +68,14 @@ sub build {
         my $code  = "sub {shift->related('$name')}";
         *{"${class}::$name"} = eval $code;
     }
-
-    $self->_build(@_);
-
-    $self->is_built(1);
-
-    # Now build other schemas (and other relationships) after
-    # current rel is flaged as build
-    $self->foreign_class->schema->build(@_) if $self->foreign_class;
-    $self->map_class->schema->build(@_) if $self->can("map_class");
-
 }
 
-sub _prepare_foreign {
-    my ($self) = shift;
-    my $single = $_[$#_] eq 'single' ? pop : undef;
+sub _detect_and_load_foreign_class {
+    my $self = shift;
+
+    return if $self->is_type('proxy');
 
     if (my $foreign_class = $self->foreign_class) {
-        # Check if short version has been passed
         if (my $namespace = $self->namespace) {
             $self->foreign_class($namespace . '::' . $foreign_class);
         }
@@ -73,7 +84,7 @@ sub _prepare_foreign {
         my $foreign_class = camelize($self->name);
 
         $foreign_class = plural_to_single($foreign_class)
-          if $single;
+          if ($self->is_type(qw/has_many has_and_belongs_to_many/));
 
         if (my $namespace = $self->namespace) {
             $foreign_class = $namespace . '::' . $foreign_class;
@@ -83,6 +94,13 @@ sub _prepare_foreign {
     }
 
     ObjectDB::Loader->load($self->foreign_class);
+
+}
+
+sub _detect_foreign_table {
+    my ($self) = shift;
+
+    return if $self->is_type('proxy');
 
     unless ($self->foreign_table) {
         $self->foreign_table($self->foreign_class->schema->table);
@@ -101,6 +119,6 @@ sub is_type {
     return (grep { $_ eq $self->type } @_) ? 1 : 0;
 }
 
-sub _build { }
+sub _detect_column_mapping { }
 
 1;
