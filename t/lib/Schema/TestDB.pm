@@ -31,7 +31,7 @@ sub init_conn {
     return $conn;
 }
 
-sub rows_as_objects {
+sub rows_as_object {
     1;
 }
 

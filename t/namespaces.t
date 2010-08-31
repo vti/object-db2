@@ -15,11 +15,12 @@ TestEnv->setup;
 Schema::AuthorData->populate;
 
 
-my @authors = Schema::Author->find(
-    with    => ['articles.comments']
+my $authors = Schema::Author->find(
+    rows_as_object => 1,
+    with          => ['articles.comments']
 );
-is(ref $authors[0]->articles->[0], 'Schema::Article');
-is(ref $authors[0]->articles->[0]->comments->[0], 'Schema::Comment');
+is(ref $authors->row(0)->articles->row(0), 'Schema::Article');
+is(ref $authors->row(0)->articles->row(0)->comments->row(0), 'Schema::Comment');
 
 
 # one-to-many

@@ -13,6 +13,7 @@ our $VERSION = '0.990201';
 
 require Carp;
 use ObjectDB::Iterator;
+use ObjectDB::Rows;
 use ObjectDB::Schema;
 use ObjectDB::SQL::Delete;
 use ObjectDB::SQL::Insert;
@@ -93,6 +94,13 @@ sub namespace {
     # Overwrite this method in subclass to allow use of short class names
     # e.g. when defining foreign_class in relationship
     # e.g. sub namespace { 'My::Schema::Path' }
+    return undef;
+}
+
+
+sub rows_as_object {
+    # Overwrite this method to turn rows_as_object on
+    # sub rows_as_object {1;}
     return undef;
 }
 
@@ -378,6 +386,17 @@ sub related {
     my $rel = $self->schema->relationship($name);
 
     my $related = $self->{related}->{$name};
+
+    # Rows as objects (optional - when method rows_as_object
+    # returns true, lazy - objects created only when method related
+    # or aliases are called)
+    if ($self->rows_as_object && $related && ref $related eq 'ARRAY'){
+        my $rows = ObjectDB::Rows->new;
+        $rows->rows($related);
+        $related = $rows;
+        $self->{related}->{$name} = $related;
+    }
+
     return $related if $related;
     return undef if defined $related && $related == 0;
 
@@ -724,7 +743,9 @@ sub find {
             my $rv = $sth->execute(@{$sql->bind});
             die 'execute failed' unless $rv;
 
-            if (wantarray) {
+            my $wantarray = wantarray;
+
+            if ($wantarray || $params{rows_as_object}) {
                 my $rows = $sth->fetchall_arrayref;
                 return () unless $rows && @$rows;
 
@@ -774,7 +795,11 @@ sub find {
                     inflate => $params{inflate}
                 );
 
-                return @result;
+                return @result if $wantarray;
+
+                my $rows_object = ObjectDB::Rows->new;
+                return $rows_object->rows(\@result);
+
             }
             elsif ($single) {
                 my $rows = $sth->fetchall_arrayref;
