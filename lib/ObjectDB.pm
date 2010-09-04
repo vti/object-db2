@@ -110,7 +110,9 @@ sub init_conn { }
 sub id {
     my $self = shift;
 
-    return $self->column($self->schema->primary_keys->[0]);
+    my @values = map { $self->column($_) } $self->schema->primary_key;
+
+    return wantarray ? @values : $values[0];
 }
 
 sub column {
@@ -143,7 +145,7 @@ sub columns {
 
     my @columns;
 
-    foreach my $column (@{$self->schema->columns}) {
+    foreach my $column ($self->schema->columns) {
         push @columns, $column if exists $self->{columns}->{$column};
     }
 
@@ -194,9 +196,6 @@ sub count {
     my $sql = ObjectDB::SQL::Select->new;
 
     my $table = $class->schema->table;
-
-    #my @pk    = map {"`$table`.`$_`"} @{$class->schema->primary_keys};
-    #my $pk    = join(' || ', @pk);
 
     $sql->source($table);
     $sql->columns(\qq/COUNT(*)/);
@@ -690,7 +689,7 @@ sub find {
 
     # Primary keys are always loaded
     if ($main->{columns}) {
-        foreach my $pk (@{$class->schema->primary_keys}) {
+        foreach my $pk ($class->schema->primary_key) {
             my $add_pk_column = 1;
             foreach my $passed_column (@{$main->{columns}}) {
                 $add_pk_column = 0 if $pk eq $passed_column;
@@ -714,14 +713,19 @@ sub find {
 
     # Load all columns in case that not columns have been passed
     unless ($main->{columns}) {
-        $main->{columns} = [@{$class->schema->columns}];
+        $main->{columns} = [$class->schema->columns];
     }
 
     $sql->source($class->schema->table);    ### switch back to main source
     $sql->columns([@{$main->{columns}}]);
 
     if (my $id = delete $params{id}) {
-        $sql->where($class->schema->primary_keys->[0] => $id);
+        $id = [$id] if ref $id ne 'ARRAY';
+
+        my %where; @where{$class->schema->primary_key} = @$id;
+
+        $sql->where(%where);
+
         $single = 1;
     }
     elsif (my $where = $params{where}) {
@@ -1050,7 +1054,7 @@ sub update {
         $sql->columns(\@columns);
         $sql->values(\@values);
         $sql->where(map { $_ => $self->column($_) }
-              @{$self->schema->primary_keys});
+              $self->schema->primary_key);
 
         warn "$sql" if DEBUG;
 
@@ -1377,7 +1381,7 @@ sub _resolve_with {
 
                 if ($args->{auto}) {
                     $args->{columns} =
-                      [@{$rel->foreign_class->schema->primary_keys}];
+                      [$rel->foreign_class->schema->primary_key];
                 }
                 elsif ($args->{columns}) {
                     $args->{columns} =
@@ -1390,7 +1394,7 @@ sub _resolve_with {
                 }
                 else {
                     $args->{columns} =
-                      [@{$rel->foreign_class->schema->columns}];
+                      [$rel->foreign_class->schema->columns];
                 }
 
                 # Add source now to get correct order
@@ -1465,15 +1469,15 @@ sub _normalize_with {
     return _execute_code_ref($walker, $parts);
 }
 
-sub primary_keys_values {
+sub primary_key_values {
     my $self = shift;
 
-    my $pk;
-    foreach my $name (@{$self->schema->primary_keys}) {
-        push @$pk, $self->column($name);
+    my @values;
+    foreach my $name ($self->schema->primary_key) {
+        push @values, $self->column($name);
     }
 
-    return $pk;
+    return @values;
 }
 
 sub _row_to_object {

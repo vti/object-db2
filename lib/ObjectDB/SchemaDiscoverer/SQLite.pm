@@ -43,12 +43,12 @@ sub discover {
     }
     $self->columns([sort @columns]);
 
-    my @primary_keys;
+    my @primary_key;
     $sth = $dbh->primary_key_info(undef, undef, $self->table);
     while (my $col_info = $sth->fetchrow_hashref) {
-        push @primary_keys, $self->unquote($col_info->{COLUMN_NAME});
+        push @primary_key, $self->unquote($col_info->{COLUMN_NAME});
     }
-    $self->primary_keys([@primary_keys]);
+    $self->primary_key([@primary_key]);
 }
 
 1;

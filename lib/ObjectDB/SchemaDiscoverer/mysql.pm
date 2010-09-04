@@ -30,11 +30,11 @@ sub discover {
       map $_->{'Column_name'},
       grep { !$_->{'Non_unique'} && $_->{'Key_name'} ne 'PRIMARY' } @$result;
 
-    my @primary_keys =
+    my @primary_key =
       map $_->{'Column_name'},
       grep { $_->{'Key_name'} eq 'PRIMARY' } @$result;
 
-    $self->primary_keys(\@primary_keys);
+    $self->primary_key(\@primary_key);
     $self->unique_keys(\@unique_keys);
 }
 

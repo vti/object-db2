@@ -6,7 +6,7 @@ use warnings;
 use base 'ObjectDB::Base';
 
 __PACKAGE__->attr([qw/table/]);
-__PACKAGE__->attr([qw/columns primary_keys unique_keys/] => sub { [] });
+__PACKAGE__->attr([qw/columns primary_key unique_keys/] => sub { [] });
 __PACKAGE__->attr('auto_increment');
 
 sub unquote {

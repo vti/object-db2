@@ -64,9 +64,9 @@ $schema->belongs_to('bar');
 is($schema->class,          'Author');
 is($schema->table,          'authors');
 is($schema->auto_increment, 'id');
-is_deeply($schema->columns,      [qw/id name password/]);
-is_deeply($schema->primary_keys, [qw/id/]);
-is_deeply($schema->unique_keys,  [qw/name/]);
+is_deeply([$schema->columns],      [qw/id name password/]);
+is_deeply([$schema->primary_key], [qw/id/]);
+is_deeply([$schema->unique_keys],  [qw/name/]);
 
 ok($schema->is_primary_key('id'));
 ok(!$schema->is_primary_key('foo'));
