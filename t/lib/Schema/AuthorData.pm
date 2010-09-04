@@ -39,12 +39,9 @@ sub populate {
                     }
 
                 ],
-                tags => [
-                    {name => 'bar'},
-                    {name => 'baz'}
-                ]
+                tags => [{name => 'bar'}, {name => 'baz'}]
             },
-            {   title    => 'article 1-2' },
+            {title => 'article 1-2'},
             {   title    => 'article 1-3',
                 comments => [
                     {   content       => 'comment 1-3-1',
@@ -52,12 +49,11 @@ sub populate {
                     }
                 ]
             },
-            {   title    => 'article 1-4'
-            }
+            {title => 'article 1-4'}
         ]
     );
 
-    return ( $author );
+    return ($author);
 
 }
 
@@ -66,7 +62,6 @@ sub cleanup {
 
     Schema::Author->delete;
 }
-
 
 
 1;

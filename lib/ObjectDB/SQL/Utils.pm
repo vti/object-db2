@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 sub import {
-    my $class = shift;
+    my $class     = shift;
     my @functions = @_;
 
     my $caller = caller;

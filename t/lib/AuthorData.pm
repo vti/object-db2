@@ -27,9 +27,9 @@ sub populate {
                 comments => [
                     {   content       => 'comment 1-1-1',
                         creation_date => '2005-12-01',
-                        sub_comments => [
-                            {   content => 'sub comment 1-1-1-1' },
-                            {   content => 'sub comment 1-1-1-2' }
+                        sub_comments  => [
+                            {content => 'sub comment 1-1-1-1'},
+                            {content => 'sub comment 1-1-1-2'}
                         ],
                     },
                     {   content       => 'comment 1-1-2',
@@ -50,7 +50,7 @@ sub populate {
 
                 ]
             },
-            {   title    => 'article 1-2' },
+            {title => 'article 1-2'},
             {   title    => 'article 1-3',
                 comments => [
                     {   content       => 'comment 1-3-1',
@@ -58,10 +58,8 @@ sub populate {
                     }
                 ]
             },
-            {   title    => 'article 1-4',
-                to_do_articles => [
-                    {   to_do => 'to do 4' }
-                ]
+            {   title          => 'article 1-4',
+                to_do_articles => [{to_do => 'to do 4'}]
             }
         ]
     );
@@ -74,9 +72,9 @@ sub populate {
                 comments => [
                     {   content       => 'comment 2-1-1',
                         creation_date => '2005-07-31',
-                        sub_comments => [
-                            {   content => 'sub comment 2-1-1-1' },
-                            {   content => 'sub comment 2-1-1-2' }
+                        sub_comments  => [
+                            {content => 'sub comment 2-1-1-1'},
+                            {content => 'sub comment 2-1-1-2'}
                         ]
                     },
                     {   content       => 'comment 2-1-2',
@@ -84,7 +82,7 @@ sub populate {
                     }
                 ]
             },
-            {   title    => 'article 2-2' },
+            {title => 'article 2-2'},
             {   title    => 'article 2-3',
                 comments => [
                     {   content       => 'comment 2-3-1',
@@ -92,25 +90,16 @@ sub populate {
                     }
                 ]
             },
-            {   title    => 'article 2-4',
-                to_do_articles => [
-                    {   to_do => 'to do 4' }
-                ]
+            {   title          => 'article 2-4',
+                to_do_articles => [{to_do => 'to do 4'}]
             }
         ]
     );
 
-    
-    
-    my $category_1 = MainCategory->create(
-        title   => 'main category 1'
-    );
-    my $category_2 = MainCategory->create(
-        title   => 'main category 2'
-    );
-    my $category_3 = MainCategory->create(
-        title   => 'main category 3'
-    );
+
+    my $category_1 = MainCategory->create(title => 'main category 1');
+    my $category_2 = MainCategory->create(title => 'main category 2');
+    my $category_3 = MainCategory->create(title => 'main category 3');
     my $category_4 = MainCategory->create(
         title           => 'main category 4',
         admin_histories => [
@@ -127,21 +116,18 @@ sub populate {
     );
 
     $author->articles->[0]
-      ->column( 'main_category_id' => $category_4->column('id') )
-      ->update;
+      ->column('main_category_id' => $category_4->column('id'))->update;
 
-    
+
     # 3rd article -> belongs to special report 1 -> belongs to main category 4
-    my $special_report_1
-      = SpecialReport->create(title => 'special report 1');
+    my $special_report_1 = SpecialReport->create(title => 'special report 1');
     $author->articles->[2]
-      ->column( 'special_report_id' => $special_report_1->column('id') )
+      ->column('special_report_id' => $special_report_1->column('id'))
       ->update;
-    $special_report_1
-      ->column( main_category_id => $category_4->column('id') )
+    $special_report_1->column(main_category_id => $category_4->column('id'))
       ->update;
 
-    return ( $author, $author2 );
+    return ($author, $author2);
 
 }
 
@@ -151,7 +137,6 @@ sub cleanup {
     Author->delete;
     MainCategory->delete;
 }
-
 
 
 1;

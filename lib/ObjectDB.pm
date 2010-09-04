@@ -99,6 +99,7 @@ sub namespace {
 
 
 sub rows_as_object {
+
     # Overwrite this method to turn rows_as_object on
     # sub rows_as_object {1;}
     return undef;
@@ -361,7 +362,7 @@ sub delete_related {
         }
 
         return $rel->map_class->delete(
-            conn  => $self->conn,
+            conn => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -372,7 +373,7 @@ sub delete_related {
         delete $self->{related}->{$name};
 
         return $rel->foreign_class->delete(
-            conn  => $self->conn,
+            conn => $self->conn,
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -390,7 +391,7 @@ sub related {
     # Rows as objects (optional - when method rows_as_object
     # returns true, lazy - objects created only when method related
     # or aliases are called)
-    if ($self->rows_as_object && $related && ref $related eq 'ARRAY'){
+    if ($self->rows_as_object && $related && ref $related eq 'ARRAY') {
         my $rows = ObjectDB::Rows->new;
         $rows->rows($related);
         $related = $rows;
@@ -788,8 +789,8 @@ sub find {
                 return @result unless $subreqs && @$subreqs;
 
                 $class->_fetch_subrequests(
-                    result => \@result,
-                    pk => \@pk,
+                    result  => \@result,
+                    pk      => \@pk,
                     conn    => $conn,
                     subreqs => $subreqs,
                     inflate => $params{inflate}
@@ -834,8 +835,8 @@ sub find {
                 return $object unless $subreqs && @$subreqs;
 
                 $class->_fetch_subrequests(
-                    result => [$object],
-                    pk => \@pk,
+                    result  => [$object],
+                    pk      => \@pk,
                     conn    => $conn,
                     subreqs => $subreqs,
                     inflate => $params{inflate}
@@ -863,7 +864,7 @@ sub find {
 }
 
 sub _fetch_subrequests {
-    my $class   = shift;
+    my $class  = shift;
     my %params = @_;
 
     my $conn    = $params{conn};

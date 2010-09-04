@@ -151,7 +151,8 @@ sub to_string {
                         $col_full = $$col_full;
                     }
                     else {
-                        my $prefix = $need_prefix
+                        my $prefix =
+                            $need_prefix
                           ? $source->{as} || $source->{name}
                           : undef;
                         $col_full = prepare_column($col_full, $prefix);

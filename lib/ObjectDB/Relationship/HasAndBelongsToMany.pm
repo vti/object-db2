@@ -26,7 +26,7 @@ sub _detect_column_mapping {
         my @classes = ($self->class, $self->foreign_class);
 
         if ($self->namespace) {
-            @classes = grep { s/^\Q$self->{namespace}::\E// } @classes;
+            @classes = grep {s/^\Q$self->{namespace}::\E//} @classes;
         }
 
         my $map_class = join('', sort(@classes)) . 'Map';

@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More;
 
-BEGIN { $ENV{OBJECTDB_NO_DBIX_CONNECTOR} = 1; };
+BEGIN { $ENV{OBJECTDB_NO_DBIX_CONNECTOR} = 1; }
 
 plan skip_all => 'TEST_MYSQL disables this test' if $ENV{TEST_MYSQL};
 

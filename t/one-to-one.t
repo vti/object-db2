@@ -22,8 +22,12 @@ ok($author,               'create with related object');
 ok($author->author_admin, 'related object is saved after creation');
 is($author->author_admin->column('beard'),
     1, 'related object has right columns');
-is_deeply($author->to_hash,
-    {id => $author->id, name => 'foo', author_admin => {author_id => $author->id, beard => 1}}
+is_deeply(
+    $author->to_hash,
+    {   id           => $author->id,
+        name         => 'foo',
+        author_admin => {author_id => $author->id, beard => 1}
+    }
 );
 
 $author = Author->find(id => $author->id, with => 'author_admin');

@@ -59,8 +59,7 @@ $cond->cond(
     ]
 );
 is($cond->to_string,
-    "((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))"
-);
+    "((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
 is_deeply($cond->bind, ['boo', 'bar']);
 
 $cond = ObjectDB::SQL::Condition->new;

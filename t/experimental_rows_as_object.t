@@ -16,10 +16,7 @@ Schema::AuthorData->populate;
 
 
 # Classic iterator
-my $authors = Schema::Author->find(
-    with     => ['articles.comments'],
-);
-
+my $authors = Schema::Author->find(with => ['articles.comments'],);
 
 
 # Now with rows_as_object option (for highest level) and
@@ -31,7 +28,6 @@ $authors = Schema::Author->find(
 );
 
 
-
 # row(0) instead of ->[0]
 is($authors->row(0)->articles->row(0)->comments->row(0)->column('content'),
     'comment 1-1-1');
@@ -41,25 +37,34 @@ is($authors->row(0)->articles->row(0)->comments->row(0)->column('content'),
 is($authors->row(0)->articles->row(0)->comments->number_of_rows, 6);
 
 
-
 # ->next
-for (my $i=1; $i<=$authors->row(0)->articles->row(0)->comments->number_of_rows; $i++){
+for (
+    my $i = 1;
+    $i <= $authors->row(0)->articles->row(0)->comments->number_of_rows;
+    $i++
+  )
+{
     is($authors->row(0)->articles->row(0)->comments->next->column('content'),
-        'comment 1-1-'.$i);
+        'comment 1-1-' . $i);
 }
 is($authors->row(0)->articles->row(0)->comments->next, undef);
 
 
-
 # Different way to loop
 my @test;
-while (my $row = $authors->row(0)->articles->row(0)->comments->next){
+while (my $row = $authors->row(0)->articles->row(0)->comments->next) {
     push @test, $row->column('content');
 }
-is_deeply( \@test, ['comment 1-1-1', 'comment 1-1-2', 'comment 1-1-3', 'comment 1-1-4', 'comment 1-1-5', 'comment 1-1-6'] );
-
-
-
+is_deeply(
+    \@test,
+    [   'comment 1-1-1',
+        'comment 1-1-2',
+        'comment 1-1-3',
+        'comment 1-1-4',
+        'comment 1-1-5',
+        'comment 1-1-6'
+    ]
+);
 
 
 # Rows are not deleted by next in prefetch mode
