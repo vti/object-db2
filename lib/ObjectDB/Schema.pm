@@ -12,7 +12,7 @@ __PACKAGE__->attr(is_built => 0);
 require Carp;
 use ObjectDB::Loader;
 use ObjectDB::SchemaDiscoverer;
-use ObjectDB::Utils qw/camelize class_to_table/;
+use ObjectDB::Utils qw/camelize decamelize class_to_table/;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -21,7 +21,15 @@ sub new {
     $self->{primary_key} ||= [];
     $self->{unique_keys} ||= [];
 
-    $self->table(class_to_table($self->class)) unless $self->table;
+    unless ($self->table) {
+        my $class = $self->class;
+
+        ObjectDB::Loader->load($class);
+
+        my $table = class_to_table($class, $class->plural_class_name);
+
+        $self->table($table);
+    }
 
     return $self;
 }
@@ -29,13 +37,15 @@ sub new {
 sub build {
     my $self = shift;
 
+    # Cache
     return if $self->is_built;
 
     $self->auto_discover(@_) unless $self->columns;
 
-    # as related schemas are be built during the next step, which might
-    # try to build the current schema again, flag current schmema as built
-    # before build_relationships
+    my $class = $self->class;
+    Carp::croak qq/No primary key defined in class $class/ unless $self->primary_key;
+
+    # Prevent recursive discovery
     $self->is_built(1);
 
     $self->build_relationships(@_);
@@ -80,17 +90,48 @@ sub build_relationships {
     }
 }
 
-sub columns { @{shift->{columns} || []} }
+sub columns {
+    my $self = shift;
+
+    return @{$self->{columns} || []} unless @_;
+
+    $self->{columns} = @_ == 1 && ref $_[0] eq 'ARRAY' ? [@{$_[0]}] : [@_];
+
+    return $self;
+}
+
+sub regular_columns {
+    my $self = shift;
+
+    my @primary_key = $self->primary_key;
+    my @regular_columns;
+
+    foreach my $column ($self->columns) {
+        push @regular_columns, $column unless $self->is_in_primary_key($column);
+    }
+
+    return @regular_columns;
+}
 
 sub primary_key {
     my $self = shift;
 
-    return wantarray ? @{$self->{primary_key}} : $self->{primary_key}->[0];
+    return wantarray ? @{$self->{primary_key}} : $self->{primary_key}->[0]
+      unless @_;
+
+    $self->{primary_key} = [];
+
+    my @columns = @_ == 1 && ref $_[0] eq 'ARRAY' ? @{$_[0]} : @_;
+    $self->add_to_primary_key($_) for @columns;
+
+    return $self;
 }
 
 sub add_to_primary_key {
     my $self = shift;
     my $name = shift;
+
+    $self->_check_column($name);
 
     push @{$self->{primary_key}}, $name;
 }
@@ -98,22 +139,55 @@ sub add_to_primary_key {
 sub unique_keys {
     my $self = shift;
 
-    return wantarray ? @{$self->{unique_keys}} : $self->{unique_keys}->[0];
+    return wantarray ? @{$self->{unique_keys}} : $self->{unique_keys}->[0]
+      unless @_;
+
+    $self->{unique_keys} = [];
+
+    my @columns = @_ == 1 && ref $_[0] eq 'ARRAY' ? @{$_[0]} : @_;
+    $self->add_unique_key($_) for @columns;
+
+    return $self;
 }
 
 sub add_unique_key {
     my $self = shift;
     my $name = shift;
 
+    $self->_check_column($name);
+
     push @{$self->{unique_keys}}, $name;
+}
+
+sub _check_column {
+    my $self = shift;
+    my $name = shift;
+
+    my $class = $self->class;
+    Carp::croak qq/Unknown column '$name' in class $class/
+      unless $self->is_column($name);
 }
 
 sub is_primary_key {
     my $self = shift;
+
+    my @possible    = sort @_;
+    my @primary_key = sort $self->primary_key;
+
+    return unless @primary_key == @possible;
+
+    while (@primary_key) {
+        return unless shift @primary_key eq shift @possible;
+    }
+
+    return 1;
+}
+
+sub is_in_primary_key {
+    my $self = shift;
     my $name = shift;
 
-    my @ok = grep { $name eq $_ } $self->primary_key;
-    return @ok ? 1 : 0;
+    return (grep { $name eq $_ } $self->primary_key) ? 1 : 0;
 }
 
 sub is_unique_key {

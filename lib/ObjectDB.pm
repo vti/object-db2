@@ -19,6 +19,7 @@ use ObjectDB::SQL::Delete;
 use ObjectDB::SQL::Insert;
 use ObjectDB::SQL::Select;
 use ObjectDB::SQL::Update;
+use ObjectDB::Utils 'single_to_plural';
 
 use Data::Dumper;
 
@@ -28,6 +29,13 @@ sub new {
     $self->init(@_) if @_;
 
     return $self;
+}
+
+sub plural_class_name {
+    my $class = shift;
+    $class = ref $class ? ref $class : $class;
+
+    return single_to_plural($class);
 }
 
 sub init {
@@ -1043,7 +1051,7 @@ sub update {
 
         Carp::croak qq/Connector is required/ unless $conn;
 
-        Carp::croak "->update: no primary or unique keys specified"
+        Carp::croak q/->update: no primary or unique keys specified/
           unless $self->_primary_and_unique_key_columns;
 
         my @columns = $self->_regular_columns;
@@ -1142,7 +1150,7 @@ sub delete {
 sub _delete_instance {
     my $self = shift;
 
-    Carp::croak "->delete: no primary or unique keys specified"
+    Carp::croak /->delete: no primary or unique keys specified/
       unless $self->_primary_and_unique_key_columns;
 
     my $conn = $self->conn;
@@ -1203,13 +1211,24 @@ sub _delete_instance {
 sub _primary_key_columns {
     my $self = shift;
 
-    return grep { $self->schema->is_primary_key($_) } $self->columns;
+    my @primary_key = $self->schema->primary_key;
+    foreach my $column (@primary_key) {
+        return () unless exists $self->{columns}->{$column};
+    }
+
+    return @primary_key;
 }
 
 sub _regular_columns {
     my $self = shift;
 
-    return grep { !$self->schema->is_primary_key($_) } $self->columns;
+    my @columns;
+
+    foreach my $column ($self->schema->regular_columns) {
+        push @columns, $column if exists $self->{columns}->{$column};
+    }
+
+    return @columns;
 }
 
 sub _unique_key_columns {
@@ -1221,10 +1240,10 @@ sub _unique_key_columns {
 sub _primary_and_unique_key_columns {
     my $self = shift;
 
-    return grep {
-             $self->schema->is_primary_key($_)
-          or $self->schema->is_unique_key($_)
-    } $self->columns;
+    my @columns = $self->_primary_key_columns;
+    push @columns, $self->_unique_key_columns;
+
+    return @columns;
 }
 
 sub to_hash {

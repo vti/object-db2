@@ -80,13 +80,23 @@ sub single_to_plural {
 
 sub class_to_table {
     my $class_name = shift;
+    my $plural_class_name = shift;
 
-    my @class_name_parts = split('::', $class_name);
+    unless ($plural_class_name) {
+        $plural_class_name = single_to_plural($class_name);
+    }
+
+    return plural_class_to_table($plural_class_name);
+}
+
+sub plural_class_to_table {
+    my $plural_class_name = shift;
+
+    my @class_name_parts = split('::', $plural_class_name);
 
     my $name = $class_name_parts[-1];
 
     $name = decamelize($name);
-    $name = single_to_plural($name);
 
     return $name;
 }
