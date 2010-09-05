@@ -105,7 +105,6 @@ sub namespace {
     return undef;
 }
 
-
 sub rows_as_object {
 
     # Overwrite this method to turn rows_as_object on
@@ -185,7 +184,7 @@ sub virtual_columns {
 
     my @columns;
 
-    foreach my $column (keys(%{$self->{virtual_columns}})) {
+    foreach my $column (keys %{$self->{virtual_columns}}) {
         push @columns, $column;
     }
 
@@ -197,7 +196,7 @@ sub count {
     my %params = @_;
 
     my $conn = delete $params{conn} || $class->conn;
-    Carp::croak qq/Connector is required/ unless $conn;
+    Carp::croak q/Connector is required/ unless $conn;
 
     $class->schema->build($conn);
 
@@ -206,7 +205,7 @@ sub count {
     my $table = $class->schema->table;
 
     $sql->source($table);
-    $sql->columns(\qq/COUNT(*)/);
+    $sql->columns(\q/COUNT(*)/);
 
     $sql->where(%params);
 
@@ -231,7 +230,7 @@ sub create {
 
     my $self = ref($class) ? $class : $class->new(%params);
 
-    Carp::croak qq/Connector required/ unless $self->conn;
+    Carp::croak q/Connector required/ unless $self->conn;
 
     my $sql = ObjectDB::SQL::Insert->new;
     $sql->table($class->schema->table);
@@ -293,7 +292,7 @@ sub create_related {
     if (ref $data eq 'ARRAY'
         && (!$rel->is_has_many && !$rel->is_has_and_belongs_to_many))
     {
-        Carp::croak qq/Relationship is not multiple/;
+        Carp::croak q/Relationship is not multiple/;
     }
 
     my $wantarray = wantarray;
@@ -354,7 +353,7 @@ sub delete_related {
     push @where, @{$rel->where}           if $rel->where;
     push @where, @{delete $params{where}} if $params{where};
 
-    Carp::croak qq/Action on this relationship type is not supported/
+    Carp::croak q/Action on this relationship type is not supported/
       unless $rel->is_type(qw/has_one has_many has_and_belongs_to_many/);
 
     if ($rel->is_has_and_belongs_to_many) {
@@ -659,7 +658,7 @@ sub find {
     my %params = @_;
 
     my $conn = delete $params{conn} || $class->conn;
-    Carp::croak qq/Connector is required/ unless $conn;
+    Carp::croak q/Connector is required/ unless $conn;
 
     $class->schema->build($conn);
 
@@ -998,7 +997,7 @@ sub find_related {
     }
     else {
         $conn = $params{conn} || $class->conn;
-        Carp::croak qq/Connector is required/ unless $conn;
+        Carp::croak q/Connector is required/ unless $conn;
 
         if ($rel->is_has_and_belongs_to_many) {
             die 'todo';
@@ -1049,7 +1048,7 @@ sub update {
 
         $self->conn($conn);
 
-        Carp::croak qq/Connector is required/ unless $conn;
+        Carp::croak q/Connector is required/ unless $conn;
 
         Carp::croak q/->update: no primary or unique keys specified/
           unless $self->_primary_and_unique_key_columns;
@@ -1542,14 +1541,14 @@ sub _row_to_object {
             my $inflation_method =
               $rel->foreign_class->_inflate_columns($inflate);
 
-            next if ($rel->is_type(qw/has_many has_and_belongs_to_many/));
+            next if $rel->is_type(qw/has_many has_and_belongs_to_many/);
 
             my $object = $rel->foreign_class->new;
             $object->conn($conn);
 
             my $source = shift @$sources;
 
-            Carp::croak qq/No more columns left for mapping/ unless @$row;
+            Carp::croak q/No more columns left for mapping/ unless @$row;
 
             foreach my $column (@{$source->{columns}}) {
                 $object->column($column => shift @$row);
@@ -1593,7 +1592,7 @@ sub _row_to_object {
     #use Data::Dumper;
     #warn Dumper $row;
     Carp::croak
-      qq/Not all columns of current row could be mapped to the object/
+      q/Not all columns of current row could be mapped to the object/
       if @$row;
 
     $self->is_in_db(1);
