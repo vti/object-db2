@@ -729,7 +729,8 @@ sub find {
     if (my $id = delete $params{id}) {
         $id = [$id] if ref $id ne 'ARRAY';
 
-        my %where; @where{$class->schema->primary_key} = @$id;
+        my %where;
+        @where{$class->schema->primary_key} = @$id;
 
         $sql->where(%where);
 
@@ -1039,84 +1040,90 @@ sub update_column {
 
 sub update {
     my $self   = shift;
+
+    return $self->_update_instance(@_) if ref $self;
+
+    return $self->_update_objects(@_);
+}
+
+sub _update_instance {
+    my $self   = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $self->conn;
+    return $self unless $self->is_modified;
 
-    if (ref($self)) {
-        return $self unless $self->is_modified;
+    my $conn = $params{conn} || $self->conn;
 
-        $self->conn($conn);
+    Carp::croak q/Connector is required/ unless $conn;
 
-        Carp::croak q/Connector is required/ unless $conn;
+    $self->conn($conn);
 
-        Carp::croak q/->update: no primary or unique keys specified/
-          unless $self->_primary_and_unique_key_columns;
+    Carp::croak q/->update: no primary or unique keys specified/
+      unless $self->_primary_and_unique_key_columns;
 
-        my @columns = $self->_regular_columns;
-        my @values = map { $self->column($_) } @columns;
+    my @columns = $self->_regular_columns;
+    my @values = map { $self->column($_) } @columns;
 
-        my $sql = ObjectDB::SQL::Update->new;
-        $sql->table($self->schema->table);
-        $sql->columns(\@columns);
-        $sql->values(\@values);
-        $sql->where(map { $_ => $self->column($_) }
-              $self->schema->primary_key);
+    my $sql = ObjectDB::SQL::Update->new;
+    $sql->table($self->schema->table);
+    $sql->columns(\@columns);
+    $sql->values(\@values);
+    $sql->where(map { $_ => $self->column($_) } $self->schema->primary_key);
 
-        warn "$sql" if DEBUG;
+    warn "$sql" if DEBUG;
 
-        $self->conn->run(
-            sub {
-                my $dbh = shift;
+    $self->conn->run(
+        sub {
+            my $dbh = shift;
 
-                my $sth = $dbh->prepare("$sql");
-                return unless $sth;
+            my $sth = $dbh->prepare("$sql");
+            return unless $sth;
 
-                my $rv = $sth->execute(@{$sql->bind});
-                return unless $rv && $rv eq '1';
+            my $rv = $sth->execute(@{$sql->bind});
+            return unless $rv && $rv eq '1';
 
-                $self->is_in_db(1);
-                $self->is_modified(0);
-            }
-        );
-
-        return $self;
-    }
-    else {
-        my $class = $self;
-
-        my $set = $params{set};
-        my (@columns, @values);
-        for (my $i = 0; $i < @$set; $i += 2) {
-            push @columns, $set->[$i];
-            push @values,  $set->[$i + 1];
+            $self->is_in_db(1);
+            $self->is_modified(0);
         }
+    );
 
-        my $sql = ObjectDB::SQL::Update->new;
-        $sql->table($class->schema->table);
-        $sql->columns(\@columns);
-        $sql->values(\@values);
-        $sql->where($params{where});
+    return $self;
+}
 
-        if ($ENV{OBJECTDB_DEBUG}) {
-            warn "$sql";
-            warn join(', ', @{$sql->bind});
-        }
+sub _update_objects {
+    my $class  = shift;
+    my %params = @_;
 
-        $conn->run(
-            sub {
-                my $dbh = shift;
+    my $conn = $params{conn} || $class->conn;
 
-                my $sth = $dbh->prepare("$sql");
-                return unless $sth;
+    my %set     = @{$params{set}};
+    my @columns = keys %set;
+    my @values  = values %set;
 
-                my $rv = $sth->execute(@{$sql->bind});
-                return unless $rv;
-            }
-        );
+    my $sql = ObjectDB::SQL::Update->new;
+    $sql->table($class->schema->table);
+    $sql->columns(\@columns);
+    $sql->values(\@values);
+    $sql->where($params{where});
 
-        return 1;
+    if ($ENV{OBJECTDB_DEBUG}) {
+        warn "$sql";
+        warn join(', ', @{$sql->bind});
     }
+
+    $conn->run(
+        sub {
+            my $dbh = shift;
+
+            my $sth = $dbh->prepare("$sql");
+            return unless $sth;
+
+            my $rv = $sth->execute(@{$sql->bind});
+            return unless $rv;
+        }
+    );
+
+    return 1;
 }
 
 sub delete {
@@ -1411,8 +1418,7 @@ sub _resolve_with {
                     #$sql->columns($rel->foreign_class->schema->primary_keys);
                 }
                 else {
-                    $args->{columns} =
-                      [$rel->foreign_class->schema->columns];
+                    $args->{columns} = [$rel->foreign_class->schema->columns];
                 }
 
                 # Add source now to get correct order
@@ -1431,6 +1437,7 @@ sub _resolve_with {
             }
         }
     };
+
     _execute_code_ref($walker, $class, $with);
 }
 
