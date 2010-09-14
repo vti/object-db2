@@ -1124,7 +1124,7 @@ sub delete {
 sub _delete_instance {
     my $self = shift;
 
-    Carp::croak /->delete: no primary or unique keys specified/
+    Carp::croak q/->delete: no primary or unique keys specified/
       unless $self->_primary_and_unique_key_columns;
 
     my $conn = $self->conn;
