@@ -254,15 +254,9 @@ sub create {
             my $rv = $sth->execute(@values);
             return unless $rv && $rv eq '1';
 
+            $self->_set_auto_increment_column($dbh);
+
             $self->is_in_db(1);
-
-            if (my $auto_increment = $class->schema->auto_increment) {
-                my $id =
-                  $dbh->last_insert_id(undef, undef, $class->schema->table,
-                    $auto_increment);
-                $self->column($auto_increment => $id);
-            }
-
             $self->is_modified(0);
 
             while (my ($key, $value) = each %{$self->{related}}) {
@@ -273,6 +267,18 @@ sub create {
             return $self;
         }
     );
+}
+
+sub _set_auto_increment_column {
+    my $self = shift;
+    my $dbh  = shift;
+
+    if (my $auto_increment = $self->schema->auto_increment) {
+        my $id =
+          $dbh->last_insert_id(undef, undef, $self->schema->table,
+            $auto_increment);
+        $self->column($auto_increment => $id);
+    }
 }
 
 sub create_related {
