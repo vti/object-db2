@@ -750,9 +750,9 @@ sub find {
 
             my $wantarray = wantarray;
 
-            if ($wantarray || $params{rows_as_object}) {
+            if ($wantarray || $params{rows_as_object} || $single) {
                 my $rows = $sth->fetchall_arrayref;
-                return () unless $rows && @$rows;
+                return unless $rows && @$rows;
 
                 my @pk;
                 my @result;
@@ -788,65 +788,27 @@ sub find {
                     }
                 }
 
-                #warn Dumper \@pk;
-
-                return @result unless $subreqs && @$subreqs;
-
-                $class->_fetch_subrequests(
-                    result  => \@result,
-                    pk      => \@pk,
-                    conn    => $conn,
-                    subreqs => $subreqs,
-                    inflate => $params{inflate}
-                );
-
-                return @result if $wantarray;
-
-                my $rows_object = ObjectDB::Rows->new;
-                return $rows_object->rows(\@result);
-
-            }
-            elsif ($single) {
-                my $rows = $sth->fetchall_arrayref;
-                return unless $rows && @$rows;
-
-                # Prepare column inflation
-                my $inflation_method =
-                  $class->_inflate_columns($params{inflate});
-
-                my $object = $class->_row_to_object(
-                    conn    => $conn,
-                    row     => $rows->[0],
-                    sql     => $sql,
-                    with    => $with,
-                    inflate => $params{inflate}
-                );
-
-                # Column inflation
-                $object->$inflation_method if $inflation_method;
-
-
-                my @pk;
-
-                if ($main->{map_from}) {
-                    my $map_from_concat = '';
-                    foreach my $map_from_col (@{$main->{map_from}}) {
-                        $map_from_concat .= $object->column($map_from_col);
-                    }
-                    push @pk, $map_from_concat;
+                if ($subreqs && @$subreqs){
+                    $class->_fetch_subrequests(
+                        result  => \@result,
+                        pk      => \@pk,
+                        conn    => $conn,
+                        subreqs => $subreqs,
+                        inflate => $params{inflate}
+                    );
                 }
 
-                return $object unless $subreqs && @$subreqs;
 
-                $class->_fetch_subrequests(
-                    result  => [$object],
-                    pk      => \@pk,
-                    conn    => $conn,
-                    subreqs => $subreqs,
-                    inflate => $params{inflate}
-                );
-
-                return $object;
+                if ($wantarray){
+                    return @result;
+                }
+                elsif ($params{rows_as_object}){
+                    my $rows_object = ObjectDB::Rows->new;
+                    return $rows_object->rows(\@result);
+                }
+                elsif ($single) {
+                    $result[0];
+                }
             }
             else {
                 return ObjectDB::Iterator->new(
