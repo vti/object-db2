@@ -59,7 +59,7 @@ __PACKAGE__->schema->columns(qw/id foo/)->primary_key('id');
 
 sub plural_class_name {'BigMen'}
 
-package DummyWithMultiUniqueKey;
+package MultiUnique;
 use base 'ObjectDB';
 __PACKAGE__->schema->columns(qw/id first_name last_name age city street/)
   ->primary_key(qw/id/)
@@ -154,54 +154,49 @@ ok(DummyWithMultiPrimaryKey->schema->is_primary_key(qw/bar foo/));
 is_deeply([DummyWithMultiPrimaryKey->schema->columns], [qw/foo bar/]);
 
 
+
 ### Multiple unique keys with multiple columns
 
 # unique_keys
-is_deeply(
-    DummyWithMultiUniqueKey->schema->unique_keys,
-    [[qw/first_name last_name/], [qw/city street/]]
-);
+is_deeply(MultiUnique->schema->unique_keys,
+    [[qw/first_name last_name/], [qw/city street/]]);
 
 # columns
-is_deeply(
-    [DummyWithMultiUniqueKey->schema->columns],
-    [qw/id first_name last_name age city street/]
-);
+is_deeply([MultiUnique->schema->columns],
+    [qw/id first_name last_name age city street/]);
 
 # ... now method _unique_key_columns
 
 # no values
-my $muli_unique_keys = DummyWithMultiUniqueKey->new;
+my $muli_unique_keys = MultiUnique->new;
 is($muli_unique_keys->_unique_key_columns, undef);
 
 # unique key
 $muli_unique_keys =
-  DummyWithMultiUniqueKey->new->column(first_name => '', last_name => '');
+  MultiUnique->new->column(first_name => '', last_name => '');
 is_deeply([$muli_unique_keys->_unique_key_columns],
     [qw/first_name last_name/]);
 
 # unique key
-$muli_unique_keys =
-  DummyWithMultiUniqueKey->new->column(city => '', street => '');
+$muli_unique_keys = MultiUnique->new->column(city => '', street => '');
 is_deeply([$muli_unique_keys->_unique_key_columns], [qw/city street/]);
 
 # unique key
-$muli_unique_keys =
-  DummyWithMultiUniqueKey->new->column(street => '', city => '');
+$muli_unique_keys = MultiUnique->new->column(street => '', city => '');
 is_deeply([$muli_unique_keys->_unique_key_columns], [qw/city street/]);
 
 # missing value
-$muli_unique_keys = DummyWithMultiUniqueKey->new->column(first_name => '');
+$muli_unique_keys = MultiUnique->new->column(first_name => '');
 is($muli_unique_keys->_unique_key_columns, undef);
 
 # NULL/undef allowed
 $muli_unique_keys =
-  DummyWithMultiUniqueKey->new->column(first_name => '', last_name => undef);
+  MultiUnique->new->column(first_name => '', last_name => undef);
 is_deeply([$muli_unique_keys->_unique_key_columns],
     [qw/first_name last_name/]);
 
 # too many values, still unique key
-$muli_unique_keys = DummyWithMultiUniqueKey->new->column(
+$muli_unique_keys = MultiUnique->new->column(
     first_name => '',
     last_name  => '',
     city       => ''
@@ -210,43 +205,39 @@ is_deeply([$muli_unique_keys->_unique_key_columns],
     [qw/first_name last_name/]);
 
 # wrong values
-$muli_unique_keys =
-  DummyWithMultiUniqueKey->new->column(first_name => '', city => '');
+$muli_unique_keys = MultiUnique->new->column(first_name => '', city => '');
 is($muli_unique_keys->_unique_key_columns, undef);
 
 # primary key value
-$muli_unique_keys = DummyWithMultiUniqueKey->new->column(id => '');
+$muli_unique_keys = MultiUnique->new->column(id => '');
 is($muli_unique_keys->_unique_key_columns, undef);
 
 # ... now method is_unique_key
 
 # no values
-is(DummyWithMultiUniqueKey->schema->is_unique_key('first_name'), 0);
+is(MultiUnique->schema->is_unique_key('first_name'), 0);
 
 # is unique key
-is(DummyWithMultiUniqueKey->schema->is_unique_key(qw/first_name last_name/),
-    1);
+is(MultiUnique->schema->is_unique_key(qw/first_name last_name/), 1);
 
 # is unique key
-is(DummyWithMultiUniqueKey->schema->is_unique_key(qw/city street/), 1);
+is(MultiUnique->schema->is_unique_key(qw/city street/), 1);
 
 # is unique key
-is(DummyWithMultiUniqueKey->schema->is_unique_key(qw/street city/), 1);
+is(MultiUnique->schema->is_unique_key(qw/street city/), 1);
 
 # missing value
-is(DummyWithMultiUniqueKey->schema->is_unique_key('first_name'), 0);
+is(MultiUnique->schema->is_unique_key('first_name'), 0);
 
 # too many values
-is( DummyWithMultiUniqueKey->schema->is_unique_key(
-        qw/first_name last_name city/),
-    0
-);
+is(MultiUnique->schema->is_unique_key(qw/first_name last_name city/), 0);
 
 # wrong values
-is(DummyWithMultiUniqueKey->schema->is_unique_key(qw/first_name city/), 0);
+is(MultiUnique->schema->is_unique_key(qw/first_name city/), 0);
 
 # primary key value
-is(DummyWithMultiUniqueKey->schema->is_unique_key(qw/id/), 0);
+is(MultiUnique->schema->is_unique_key(qw/id/), 0);
+
 
 
 Dummy::InNamespace->schema->build(TestDB->init_conn);
