@@ -34,9 +34,9 @@ package DummyWithTable;
 use base 'ObjectDB';
 __PACKAGE__->schema('foo')->columns(qw/foo bar/)->primary_key(qw/foo bar/);
 
-package DummyWithMultiPrimaryKey;
+package MultiPrimary;
 use base 'ObjectDB';
-__PACKAGE__->schema->columns(qw/foo bar/)->primary_key(qw/foo bar/);
+__PACKAGE__->schema->columns(qw/foo bar other/)->primary_key(qw/foo bar/);
 
 package Dummy::InNamespace;
 use base 'ObjectDB';
@@ -71,7 +71,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 70;
+use Test::More tests => 78;
 
 use lib 't/lib';
 
@@ -145,18 +145,73 @@ is(DummyWithTable->schema->table, 'foo');
 is_deeply([DummyWithTable->schema->primary_key], [qw/foo bar/]);
 is_deeply([DummyWithTable->schema->columns],     [qw/foo bar/]);
 
-DummyWithMultiPrimaryKey->schema->build(TestDB->init_conn);
-is(DummyWithMultiPrimaryKey->schema->table, 'dummy_with_multi_primary_keys');
-is_deeply([DummyWithMultiPrimaryKey->schema->primary_key], [qw/foo bar/]);
-ok(!DummyWithMultiPrimaryKey->schema->is_primary_key('foo'));
-ok(DummyWithMultiPrimaryKey->schema->is_primary_key(qw/foo bar/));
-ok(DummyWithMultiPrimaryKey->schema->is_primary_key(qw/bar foo/));
-is_deeply([DummyWithMultiPrimaryKey->schema->columns], [qw/foo bar/]);
+
+### Primary key with multiple columns
+
+# table
+is(MultiPrimary->schema->table, 'multi_primaries');
+
+# columns
+is_deeply([MultiPrimary->schema->columns], [qw/foo bar other/]);
+
+# get primary key
+is_deeply([MultiPrimary->schema->primary_key], [qw/foo bar/]);
+
+# ... now method _primary_key_columns
+
+# no values
+my $multi_primary = MultiPrimary->new;
+is($multi_primary->_primary_key_columns, undef);
+
+# primary key
+$multi_primary = MultiPrimary->new->column(foo => '', bar => '');
+is_deeply([$multi_primary->_primary_key_columns], [qw/foo bar/]);
+
+# primary key
+$multi_primary = MultiPrimary->new->column(bar => '', foo => '');
+is_deeply([$multi_primary->_primary_key_columns], [qw/foo bar/]);
+
+# missing value
+$multi_primary = MultiPrimary->new->column(foo => '');
+is($multi_primary->_primary_key_columns, undef);
+
+# NULL/undef NOT allowed
+$multi_primary = MultiPrimary->new->column(foo => '', bar => undef);
+is($multi_primary->_primary_key_columns, undef);
+
+# too many values, still primary key
+$multi_primary = MultiPrimary->new->column(
+    foo   => '',
+    bar   => '',
+    other => ''
+);
+is_deeply([$multi_primary->_primary_key_columns], [qw/foo bar/]);
+
+# wrong values
+$multi_primary = MultiPrimary->new->column(foo => '', other => '');
+is($multi_primary->_primary_key_columns, undef);
+
+# ... now method is_primary_key
+
+# is primary key
+is(MultiPrimary->schema->is_primary_key(qw/foo bar/), 1);
+
+# is primary key
+is(MultiPrimary->schema->is_primary_key(qw/bar foo/), 1);
+
+# missing value
+is(MultiPrimary->schema->is_primary_key('foo'), 0);
+
+# to many values
+is(MultiPrimary->schema->is_primary_key(qw/foo bar other/), 0);
+
+# wrong values
+is(MultiPrimary->schema->is_primary_key(qw/foo other/), 0);
 
 
 ### Multiple unique keys with multiple columns
 
-# unique_keys
+# get unique_keys
 is_deeply(MultiUnique->schema->unique_keys,
     [[qw/first_name last_name/], [qw/city street/]]);
 
@@ -167,54 +222,47 @@ is_deeply([MultiUnique->schema->columns],
 # ... now method _unique_key_columns
 
 # no values
-my $muli_unique_keys = MultiUnique->new;
-is($muli_unique_keys->_unique_key_columns, undef);
+my $multi_unique = MultiUnique->new;
+is($multi_unique->_unique_key_columns, undef);
 
 # unique key
-$muli_unique_keys =
-  MultiUnique->new->column(first_name => '', last_name => '');
-is_deeply([$muli_unique_keys->_unique_key_columns],
-    [qw/first_name last_name/]);
+$multi_unique = MultiUnique->new->column(first_name => '', last_name => '');
+is_deeply([$multi_unique->_unique_key_columns], [qw/first_name last_name/]);
 
 # unique key
-$muli_unique_keys = MultiUnique->new->column(city => '', street => '');
-is_deeply([$muli_unique_keys->_unique_key_columns], [qw/city street/]);
+$multi_unique = MultiUnique->new->column(city => '', street => '');
+is_deeply([$multi_unique->_unique_key_columns], [qw/city street/]);
 
 # unique key
-$muli_unique_keys = MultiUnique->new->column(street => '', city => '');
-is_deeply([$muli_unique_keys->_unique_key_columns], [qw/city street/]);
+$multi_unique = MultiUnique->new->column(street => '', city => '');
+is_deeply([$multi_unique->_unique_key_columns], [qw/city street/]);
 
 # missing value
-$muli_unique_keys = MultiUnique->new->column(first_name => '');
-is($muli_unique_keys->_unique_key_columns, undef);
+$multi_unique = MultiUnique->new->column(first_name => '');
+is($multi_unique->_unique_key_columns, undef);
 
 # NULL/undef allowed
-$muli_unique_keys =
+$multi_unique =
   MultiUnique->new->column(first_name => '', last_name => undef);
-is_deeply([$muli_unique_keys->_unique_key_columns],
-    [qw/first_name last_name/]);
+is_deeply([$multi_unique->_unique_key_columns], [qw/first_name last_name/]);
 
 # too many values, still unique key
-$muli_unique_keys = MultiUnique->new->column(
+$multi_unique = MultiUnique->new->column(
     first_name => '',
     last_name  => '',
     city       => ''
 );
-is_deeply([$muli_unique_keys->_unique_key_columns],
-    [qw/first_name last_name/]);
+is_deeply([$multi_unique->_unique_key_columns], [qw/first_name last_name/]);
 
 # wrong values
-$muli_unique_keys = MultiUnique->new->column(first_name => '', city => '');
-is($muli_unique_keys->_unique_key_columns, undef);
+$multi_unique = MultiUnique->new->column(first_name => '', city => '');
+is($multi_unique->_unique_key_columns, undef);
 
 # primary key value
-$muli_unique_keys = MultiUnique->new->column(id => '');
-is($muli_unique_keys->_unique_key_columns, undef);
+$multi_unique = MultiUnique->new->column(id => '');
+is($multi_unique->_unique_key_columns, undef);
 
 # ... now method is_unique_key
-
-# no values
-is(MultiUnique->schema->is_unique_key('first_name'), 0);
 
 # is unique key
 is(MultiUnique->schema->is_unique_key(qw/first_name last_name/), 1);
@@ -241,22 +289,21 @@ is(MultiUnique->schema->is_unique_key(qw/id/), 0);
 ### Method _primary_or_unique_key_columns
 
 # return 0
-$muli_unique_keys = MultiUnique->new;
-is($muli_unique_keys->_primary_or_unique_key_columns, 0);
+$multi_unique = MultiUnique->new;
+is($multi_unique->_primary_or_unique_key_columns, 0);
 
 # return primary key
-$muli_unique_keys = MultiUnique->new->column(id => '');
-is_deeply([$muli_unique_keys->_primary_or_unique_key_columns], [qw/id/]);
+$multi_unique = MultiUnique->new->column(id => '');
+is_deeply([$multi_unique->_primary_or_unique_key_columns], [qw/id/]);
 
 # return primary key
-$muli_unique_keys =
+$multi_unique =
   MultiUnique->new->column(id => '', first_name => '', last_name => '');
-is_deeply([$muli_unique_keys->_primary_or_unique_key_columns], [qw/id/]);
+is_deeply([$multi_unique->_primary_or_unique_key_columns], [qw/id/]);
 
 # return unique key
-$muli_unique_keys =
-  MultiUnique->new->column(first_name => '', last_name => '');
-is_deeply([$muli_unique_keys->_primary_or_unique_key_columns],
+$multi_unique = MultiUnique->new->column(first_name => '', last_name => '');
+is_deeply([$multi_unique->_primary_or_unique_key_columns],
     [qw/first_name last_name/]);
 
 

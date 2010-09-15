@@ -1187,7 +1187,7 @@ sub _primary_key_columns {
 
     my @primary_key = $self->schema->primary_key;
     foreach my $column (@primary_key) {
-        return () unless exists $self->{columns}->{$column};
+        return () unless defined $self->{columns}->{$column};
     }
 
     return @primary_key;

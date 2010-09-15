@@ -186,10 +186,10 @@ sub is_primary_key {
     my @possible    = sort @_;
     my @primary_key = sort $self->primary_key;
 
-    return unless @primary_key == @possible;
+    return 0 unless @primary_key == @possible;
 
     while (@primary_key) {
-        return unless shift @primary_key eq shift @possible;
+        return 0 unless shift @primary_key eq shift @possible;
     }
 
     return 1;
