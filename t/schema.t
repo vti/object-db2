@@ -71,7 +71,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 66;
+use Test::More tests => 70;
 
 use lib 't/lib';
 
@@ -152,7 +152,6 @@ ok(!DummyWithMultiPrimaryKey->schema->is_primary_key('foo'));
 ok(DummyWithMultiPrimaryKey->schema->is_primary_key(qw/foo bar/));
 ok(DummyWithMultiPrimaryKey->schema->is_primary_key(qw/bar foo/));
 is_deeply([DummyWithMultiPrimaryKey->schema->columns], [qw/foo bar/]);
-
 
 
 ### Multiple unique keys with multiple columns
@@ -238,6 +237,27 @@ is(MultiUnique->schema->is_unique_key(qw/first_name city/), 0);
 # primary key value
 is(MultiUnique->schema->is_unique_key(qw/id/), 0);
 
+
+### Method _primary_or_unique_key_columns
+
+# return 0
+$muli_unique_keys = MultiUnique->new;
+is($muli_unique_keys->_primary_or_unique_key_columns, 0);
+
+# return primary key
+$muli_unique_keys = MultiUnique->new->column(id => '');
+is_deeply([$muli_unique_keys->_primary_or_unique_key_columns], [qw/id/]);
+
+# return primary key
+$muli_unique_keys =
+  MultiUnique->new->column(id => '', first_name => '', last_name => '');
+is_deeply([$muli_unique_keys->_primary_or_unique_key_columns], [qw/id/]);
+
+# return unique key
+$muli_unique_keys =
+  MultiUnique->new->column(first_name => '', last_name => '');
+is_deeply([$muli_unique_keys->_primary_or_unique_key_columns],
+    [qw/first_name last_name/]);
 
 
 Dummy::InNamespace->schema->build(TestDB->init_conn);

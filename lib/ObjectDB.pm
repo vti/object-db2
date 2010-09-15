@@ -1027,7 +1027,7 @@ sub _update_instance {
     $self->conn($conn);
 
     Carp::croak q/->update: no primary or unique keys specified/
-      unless $self->_primary_and_unique_key_columns;
+      unless $self->_primary_or_unique_key_columns;
 
     my @columns = $self->_regular_columns;
     my @values = map { $self->column($_) } @columns;
@@ -1125,7 +1125,7 @@ sub _delete_instance {
     my $self = shift;
 
     Carp::croak q/->delete: no primary or unique keys specified/
-      unless $self->_primary_and_unique_key_columns;
+      unless $self->_primary_or_unique_key_columns;
 
     my $conn = $self->conn;
 
@@ -1224,10 +1224,13 @@ sub _unique_key_columns {
 
 }
 
-sub _primary_and_unique_key_columns {
+sub _primary_or_unique_key_columns {
     my $self = shift;
 
     my @columns = $self->_primary_key_columns;
+
+    return @columns if @columns;
+
     push @columns, $self->_unique_key_columns;
 
     return @columns;
