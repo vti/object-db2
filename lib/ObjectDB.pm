@@ -1026,8 +1026,10 @@ sub _update_instance {
 
     $self->conn($conn);
 
+    my @primary_or_unique_key = $self->_primary_or_unique_key_columns;
+
     Carp::croak q/->update: no primary or unique keys specified/
-      unless $self->_primary_or_unique_key_columns;
+      unless @primary_or_unique_key;
 
     my @columns = $self->_regular_columns;
     my @values = map { $self->column($_) } @columns;
@@ -1036,7 +1038,7 @@ sub _update_instance {
     $sql->table($self->schema->table);
     $sql->columns(\@columns);
     $sql->values(\@values);
-    $sql->where(map { $_ => $self->column($_) } $self->schema->primary_key);
+    $sql->where(map { $_ => $self->column($_) } @primary_or_unique_key);
 
     warn "$sql" if DEBUG;
 
@@ -1124,8 +1126,10 @@ sub delete {
 sub _delete_instance {
     my $self = shift;
 
+    my @primary_or_unique_key = $self->_primary_or_unique_key_columns;
+
     Carp::croak q/->delete: no primary or unique keys specified/
-      unless $self->_primary_or_unique_key_columns;
+      unless @primary_or_unique_key;
 
     my $conn = $self->conn;
 
@@ -1160,12 +1164,9 @@ sub _delete_instance {
                 }
             }
 
-            my @keys = $self->_primary_key_columns;
-            @keys = $self->_unique_key_columns unless @keys;
-
             my $sql = ObjectDB::SQL::Delete->new;
             $sql->table($self->schema->table);
-            $sql->where([map { $_ => $self->column($_) } @keys]);
+            $sql->where([map { $_ => $self->column($_) } @primary_or_unique_key]);
 
             warn "$sql" if DEBUG;
 
