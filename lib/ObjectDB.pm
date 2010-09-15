@@ -802,7 +802,7 @@ sub find {
                     }
                 }
 
-                if ($subreqs && @$subreqs){
+                if ($subreqs && @$subreqs) {
                     $class->_fetch_subrequests(
                         result  => \@result,
                         pk      => \@pk,
@@ -813,10 +813,10 @@ sub find {
                 }
 
 
-                if ($wantarray){
+                if ($wantarray) {
                     return @result;
                 }
-                elsif ($params{rows_as_object}){
+                elsif ($params{rows_as_object}) {
                     my $rows_object = ObjectDB::Rows->new;
                     return $rows_object->rows(\@result);
                 }
@@ -1007,7 +1007,7 @@ sub update_column {
 }
 
 sub update {
-    my $self   = shift;
+    my $self = shift;
 
     return $self->_update_instance(@_) if ref $self;
 
@@ -1208,7 +1208,20 @@ sub _regular_columns {
 sub _unique_key_columns {
     my $self = shift;
 
-    return grep { $self->schema->is_unique_key($_) } $self->columns;
+    my $unique_keys = $self->schema->unique_keys;
+
+  OUTER_LOOP: foreach my $unique_key (@$unique_keys) {
+
+        foreach my $column (@$unique_key) {
+            next OUTER_LOOP unless exists $self->{columns}->{$column};
+        }
+
+        return @$unique_key;
+
+    }
+
+    return ();
+
 }
 
 sub _primary_and_unique_key_columns {

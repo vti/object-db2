@@ -26,6 +26,9 @@ sub discover {
         'SHOW INDEX FROM ' . $dbh->quote_identifier($self->table),
         {Slice => {}});
 
+    ### TO DO: Support for multiple unique keys
+    ### TO DO: cache data in schema files for better cgi performance
+    ### Temporary hack:
     my @unique_keys =
       map $_->{'Column_name'},
       grep { !$_->{'Non_unique'} && $_->{'Key_name'} ne 'PRIMARY' } @$result;
@@ -35,7 +38,7 @@ sub discover {
       grep { $_->{'Key_name'} eq 'PRIMARY' } @$result;
 
     $self->primary_key(\@primary_key);
-    $self->unique_keys(\@unique_keys);
+    $self->{unique_keys}->[0] = \@unique_keys;
 }
 
 1;

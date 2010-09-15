@@ -19,12 +19,16 @@ sub discover {
     if ($sql) {
         my @unique_keys;
         if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
+            ### TO DO: Support for multiple unique keys
+            ### TO DO: Support for unique keys created by "create unique index"
+            ### TO DO: cache data in schema files for better cgi performance
+            ### PRAGMAs index_list and index_info
+            ### Temporary hack:
             my @uk = split ',' => $unique;
             foreach my $uk (@uk) {
                 push @unique_keys, $self->unquote($uk);
             }
-
-            $self->unique_keys([@unique_keys]);
+            $self->{unique_keys}->[0] = [@unique_keys];
         }
 
         foreach my $part (split '\n' => $sql) {

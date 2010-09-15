@@ -43,7 +43,8 @@ sub build {
     $self->auto_discover(@_) unless $self->columns;
 
     my $class = $self->class;
-    Carp::croak qq/No primary key defined in class $class/ unless $self->primary_key;
+    Carp::croak qq/No primary key defined in class $class/
+      unless $self->primary_key;
 
     # Prevent recursive discovery
     $self->is_built(1);
@@ -74,7 +75,7 @@ sub auto_discover {
 
             $self->add_to_primary_key($_) for @{$discoverer->primary_key};
 
-            $self->add_unique_key($_) for @{$discoverer->unique_keys};
+            $self->unique_keys($_) for @{$discoverer->unique_keys};
 
             $self->auto_increment($discoverer->auto_increment)
               if $discoverer->auto_increment;
@@ -107,7 +108,8 @@ sub regular_columns {
     my @regular_columns;
 
     foreach my $column ($self->columns) {
-        push @regular_columns, $column unless $self->is_in_primary_key($column);
+        push @regular_columns, $column
+          unless $self->is_in_primary_key($column);
     }
 
     return @regular_columns;
@@ -139,24 +141,33 @@ sub add_to_primary_key {
 sub unique_keys {
     my $self = shift;
 
-    return wantarray ? @{$self->{unique_keys}} : $self->{unique_keys}->[0]
-      unless @_;
+    return $self->{unique_keys} unless @_;
 
-    $self->{unique_keys} = [];
-
-    my @columns = @_ == 1 && ref $_[0] eq 'ARRAY' ? @{$_[0]} : @_;
-    $self->add_unique_key($_) for @columns;
+    foreach my $unique_key (@_) {
+        die 'no array ref' unless ref $unique_key eq 'ARRAY';
+        $self->add_unique_key($unique_key);
+    }
 
     return $self;
 }
 
 sub add_unique_key {
     my $self = shift;
-    my $name = shift;
 
-    $self->_check_column($name);
+    push @{$self->{unique_keys}}, [];
 
-    push @{$self->{unique_keys}}, $name;
+    my @columns = @_ == 1 && ref $_[0] eq 'ARRAY' ? @{$_[0]} : @_;
+    $self->add_unique_key_column($_) for @columns;
+
+}
+
+sub add_unique_key_column {
+    my $self        = shift;
+    my $column_name = shift;
+
+    $self->_check_column($column_name);
+
+    push @{$self->{unique_keys}->[-1]}, $column_name;
 }
 
 sub _check_column {
@@ -168,6 +179,7 @@ sub _check_column {
       unless $self->is_column($name);
 }
 
+# NOTE: method not in use anywhere riqht now
 sub is_primary_key {
     my $self = shift;
 
@@ -190,12 +202,30 @@ sub is_in_primary_key {
     return (grep { $name eq $_ } $self->primary_key) ? 1 : 0;
 }
 
+# NOTE: method not in use anywhere riqht now
 sub is_unique_key {
     my $self = shift;
-    my $name = shift;
 
-    my @ok = grep { $name eq $_ } $self->unique_keys;
-    return @ok ? 1 : 0;
+    my @columns_to_check = @_;
+
+    return 0 unless @{$self->unique_keys};
+
+  OUTER_LOOP: foreach my $unique_key (@{$self->unique_keys}) {
+
+        my @unique_key = sort @$unique_key;
+        my @possible   = sort @columns_to_check;
+
+        next OUTER_LOOP unless @unique_key == @possible;
+
+        while (@unique_key) {
+            next OUTER_LOOP unless shift @unique_key eq shift @possible;
+        }
+
+        return 1;
+
+    }
+
+    return 0;
 }
 
 sub is_column {

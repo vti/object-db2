@@ -33,6 +33,6 @@ $conn->run(sub { $d->discover(shift); });
 
 is($d->table,          'authors');
 is($d->auto_increment, 'id');
-is_deeply($d->columns,      [qw/id name password/]);
-is_deeply($d->primary_keys, [qw/id/]);
-is_deeply($d->unique_keys,  [qw/name/]);
+is_deeply($d->columns,          [qw/id name password/]);
+is_deeply($d->primary_key,      [qw/id/]);
+is_deeply($d->unique_keys->[0], [qw/name/]);
