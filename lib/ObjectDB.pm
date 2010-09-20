@@ -1367,7 +1367,7 @@ sub _resolve_with {
             my $parent_args = $parent_with_args || $main;
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
-                if (delete $args->{no_cols} && !$args->{columns}) {
+                if (delete $args->{no_cols}) {
                     # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
