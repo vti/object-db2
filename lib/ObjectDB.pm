@@ -1367,7 +1367,7 @@ sub _resolve_with {
             my $parent_args = $parent_with_args || $main;
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
-                if (delete $args->{auto} && !$args->{columns}) {
+                if (delete $args->{no_cols} && !$args->{columns}) {
                     # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
@@ -1405,7 +1405,7 @@ sub _resolve_with {
             else {
                 push @$chain, $name;
 
-                if ($args->{auto}) {
+                if ($args->{no_cols}) {
                     $args->{columns} =
                       [$rel->foreign_class->schema->primary_key];
                 }
@@ -1470,7 +1470,7 @@ sub _normalize_with {
         my $parent = $parts;
         while ($rel =~ s/^(\w+)\.?//) {
             $name .= $name ? '.' . $1 : $1;
-            $parent->{$1} ||= $with{$name} || {auto => 1};
+            $parent->{$1} ||= $with{$name} || {no_cols => 1};
             $parent->{$1}->{nested} ||= {} if $rel;
             $parent = $parent->{$1}->{nested} if $rel;
         }
