@@ -1371,6 +1371,13 @@ sub _resolve_with {
                     # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
+                elsif ($args->{columns}) {
+                    $args->{columns} =
+                      ref $args->{columns} eq 'ARRAY'
+                      ? $args->{columns}
+                      : [$args->{columns}];
+                }
+
 
                 ### Load columns that are required for object mapping
                 # add "to" values to target class
