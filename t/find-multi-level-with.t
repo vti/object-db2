@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 250;
+use Test::More tests => 251;
 
 use lib 't/lib';
 
@@ -57,8 +57,14 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
 
 # Same test, passing related data in wrong format
 # format is not supported by Perl
-eval { Author->find(with => [qw/articles.comments {columns=>['content']}/]); 1; };
+eval { Author->find(with => [qw/articles.comments {columns=>['content']}/]); };
 my $err_msg = 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]';
+ok( $@ =~m/\Q$err_msg/ );
+
+
+# Pass options first
+eval {@authors = Author->find(with => [{columns=>['content']}, 'articles.comments']) };
+$err_msg = 'pass relationship before passing any further options as hashref';
 ok( $@ =~m/\Q$err_msg/ );
 
 

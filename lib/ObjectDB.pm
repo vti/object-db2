@@ -1452,6 +1452,8 @@ sub _normalize_with {
     my $last_key;
     foreach my $name (@$with) {
         if (ref $name eq 'HASH') {
+            die 'pass relationship before passing any further options as hashref'
+              unless $last_key;
             $with{$last_key} = {%{$with{$last_key}}, %$name};
         }
         else {
