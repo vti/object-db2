@@ -702,13 +702,11 @@ sub find {
 
     # Primary keys are always loaded
     if ($main->{columns}) {
-        foreach my $pk ($class->schema->primary_key) {
-            my $add_pk_column = 1;
-            foreach my $passed_column (@{$main->{columns}}) {
-                $add_pk_column = 0 if $pk eq $passed_column;
+        $class->_add_new_values_to_array(
+            {   old_values => $main->{columns},
+                new_values => [$class->schema->primary_key]
             }
-            unshift @{$main->{columns}}, $pk if $add_pk_column;
-        }
+        );
     }
 
     # Resolve "with" here to add columns needed to map related objects
@@ -842,6 +840,24 @@ sub find {
         }
     );
 }
+
+
+sub _add_new_values_to_array {
+    my $self   = shift;
+    my $params = shift;
+
+    my $old_values = $params->{old_values};
+    my $new_values = $params->{new_values};
+
+    # Only add new values (if they do not already exist in array)
+    foreach my $new_value (@$new_values) {
+        unless (grep { $_ eq $new_value } @$old_values) {
+            unshift @{$old_values}, $new_value;
+        }
+    }
+    return $self;
+}
+
 
 sub _fetch_subrequests {
     my $class  = shift;
@@ -1166,7 +1182,8 @@ sub _delete_instance {
 
             my $sql = ObjectDB::SQL::Delete->new;
             $sql->table($self->schema->table);
-            $sql->where([map { $_ => $self->column($_) } @primary_or_unique_key]);
+            $sql->where(
+                [map { $_ => $self->column($_) } @primary_or_unique_key]);
 
             warn "$sql" if DEBUG;
 
@@ -1356,23 +1373,23 @@ sub _resolve_with {
                     $args->{columns} = [];
                 }
 
-                # Load columns that are required for object mapping
+                ### Load columns that are required for object mapping
+                # add "to" values to target class
                 if ($args->{columns}) {
-                    while (my ($from, $to) = each %{$rel->map}) {
-                        unless (grep { $_ eq $to } @{$args->{columns}}) {
-                            push @{$args->{columns}}, $to;
+                    $class->_add_new_values_to_array(
+                        {   old_values => $args->{columns},
+                            new_values => [values %{$rel->map}]
                         }
-                    }
+                    );
                 }
 
+                # add "from" keys to parent class
                 if ($parent_args->{columns}) {
-                    while (my ($from, $to) = each %{$rel->map}) {
-                        unless (grep { $_ eq $from }
-                            @{$parent_args->{columns}})
-                        {
-                            push @{$parent_args->{columns}}, $from;
+                    $class->_add_new_values_to_array(
+                        {   old_values => $parent_args->{columns},
+                            new_values => [keys %{$rel->map}]
                         }
-                    }
+                    );
                 }
 
                 # Save map-from-columns and map-to-columns in with or main
