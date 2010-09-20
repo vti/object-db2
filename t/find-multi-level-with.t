@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 249;
+use Test::More tests => 250;
 
 use lib 't/lib';
 
@@ -53,6 +53,13 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment 1-1-1');
 is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
     undef);
+
+
+# Same test, passing related data in wrong format
+# format is not supported by Perl
+eval { Author->find(with => [qw/articles.comments {columns=>['content']}/]); 1; };
+my $err_msg = 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]';
+ok( $@ =~m/\Q$err_msg/ );
 
 
 # Mixing the order of relationship chains a bit
