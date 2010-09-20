@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 243;
+use Test::More tests => 249;
 
 use lib 't/lib';
 
@@ -40,6 +40,19 @@ ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment 1-1-1');
+is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
+    '2005-12-01');
+
+
+# Same test, but only with selected columns
+@authors = Author->find(with => ['articles.comments', {columns=>['content']} ]);
+is(@authors, 2);
+ok(!defined $authors[0]->articles->[0]->column('title'));
+ok(!defined $authors[0]->articles->[1]->column('title'));
+is($authors[0]->articles->[0]->comments->[0]->column('content'),
+    'comment 1-1-1');
+is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
+    undef);
 
 
 # Mixing the order of relationship chains a bit

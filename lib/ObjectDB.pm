@@ -1367,8 +1367,8 @@ sub _resolve_with {
             my $parent_args = $parent_with_args || $main;
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
-                if (delete $args->{auto} && !$args->{columns}) {
 
+                if (delete $args->{auto} && !$args->{columns}) {
                     # Make sure that no columns are loaded
                     $args->{columns} = [];
                 }
@@ -1452,10 +1452,12 @@ sub _normalize_with {
     my %with;
     my $last_key;
     foreach my $name (@$with) {
-        if (ref($name) eq 'HASH') {
+        if (ref $name eq 'HASH') {
             $with{$last_key} = {%{$with{$last_key}}, %$name};
         }
         else {
+            die 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]'
+              if $name =~m/^\{/;
             $with{$name} = {};
             $last_key = $name;
         }
