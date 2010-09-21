@@ -14,17 +14,17 @@ is_deeply(ObjectDB->_normalize_with([qw/foo foo.bar/]),
     [foo => {nested => [bar => {}]}]);
 is_deeply(
     ObjectDB->_normalize_with([qw/foo.bar/]),
-    [foo => {no_cols => 1, nested => [bar => {}]}]
+    [foo => {columns => [], nested => [bar => {}]}]
 );
 is_deeply(
     ObjectDB->_normalize_with([qw/hello foo.bar/]),
-    [foo => {no_cols => 1, nested => [bar => {}]}, hello => {}]
+    [foo => {columns => [], nested => [bar => {}]}, hello => {}]
 );
 is_deeply(
     ObjectDB->_normalize_with([hello => {a => 'b'}, qw/foo.bar.baz/]),
     [   foo => {
-            no_cols   => 1,
-            nested => [bar => {no_cols => 1, nested => [baz => {}]}]
+            columns   => [],
+            nested => [bar => {columns => [], nested => [baz => {}]}]
         },
         hello => {a => 'b'}
     ]
@@ -35,10 +35,10 @@ is_deeply(
         [qw/articles.comments.sub_comments articles.main_category/]
     ),
     [   'articles',
-        {   'no_cols'   => 1,
+        {   'columns'   => [],
             'nested' => [
                 'comments',
-                {   'no_cols'   => 1,
+                {   'columns'   => [],
                     'nested' => ['sub_comments', {}]
                 },
                 'main_category',

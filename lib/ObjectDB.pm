@@ -1355,8 +1355,8 @@ sub _resolve_with {
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
 
                 $args->{columns} = $rel->foreign_class->_resolve_columns({
-                    no_cols => $args->{no_cols},
-                    columns => $args->{columns}
+                    columns    => $args->{columns},
+                    map_values => [values %{$rel->map}]
                 });
 
 
@@ -1394,7 +1394,6 @@ sub _resolve_with {
                 push @$chain, $name;
 
                 $args->{columns} = $rel->foreign_class->_resolve_columns({
-                    no_cols => $args->{no_cols},
                     columns => $args->{columns}
                 });
 
@@ -1425,20 +1424,13 @@ sub _resolve_columns {
 
     my $class = ref $self ? ref $self : $self;
 
-    my $load_no_columns       = $params->{no_cols};
     my $load_selected_columns = $params->{columns};
 
-    my $load_all_columns;
-    unless ($load_selected_columns || $load_no_columns) {
-        $load_all_columns = 1;
-    }
+    my $load_all_columns = 1 unless ($load_selected_columns);
 
     my $columns = [];
 
-    if ($load_no_columns) {
-        # Do nothing
-    }
-    elsif ($load_selected_columns) {
+    if ($load_selected_columns) {
         $columns = ref $load_selected_columns eq 'ARRAY'
             ? [@$load_selected_columns]
             : [$load_selected_columns];
@@ -1487,7 +1479,7 @@ sub _normalize_with {
         my $parent = $parts;
         while ($rel =~ s/^(\w+)\.?//) {
             $name .= $name ? '.' . $1 : $1;
-            $parent->{$1} ||= $with{$name} || {no_cols => 1};
+            $parent->{$1} ||= $with{$name} || {columns => []};
             $parent->{$1}->{nested} ||= {} if $rel;
             $parent = $parent->{$1}->{nested} if $rel;
         }
