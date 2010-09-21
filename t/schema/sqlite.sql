@@ -17,9 +17,16 @@ CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `category_id` INTEGER,
  `author_id` INTEGER,
+ `img_number` INTEGER,
  `title` varchar(40) default '',
  `special_report_id` INTEGER,
  `main_category_id` INTEGER
+);
+CREATE TABLE `images` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `img_num` INTEGER,
+ `width` INTEGER,
+ `height` INTEGER
 );
 CREATE TABLE `special_reports` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

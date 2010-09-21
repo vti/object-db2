@@ -962,8 +962,7 @@ sub find_related {
         else {
             my ($from, $to) = %{$rel->map};
 
-            Carp::croak qq/$from is required for find_related/
-              unless $self->column($from);
+            return unless $self->column($from);
 
             @where = ($to => $self->column($from));
 
@@ -1164,6 +1163,8 @@ sub _delete_instance {
                 else {
                     $related = $self->find_related($name);
                 }
+
+                next unless $related;
 
                 while (my $r = $related->next) {
                     $r->delete(conn => $conn);

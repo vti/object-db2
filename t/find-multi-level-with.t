@@ -240,7 +240,7 @@ ok(not defined $authors[0]->articles->[0]->main_category->column('title'));
 
 
 ######################################################################
-###### 1.3 TWO one-to-one/many-to-one --> One-to-many
+###### 1.4 TWO one-to-one/many-to-one --> One-to-many
 @authors =
   Author->find(
     with => [qw/articles.special_report.main_category.admin_histories/]);
@@ -319,6 +319,13 @@ is($article->to_do_articles->[0]->column('to_do'), 'to do 4');
 
 # related object should not exist if no data exists for this object (empty objects not allowed)
 ok(not defined $article->special_report);
+
+
+######################################################################
+###### 1.5 Main -> One-to-many -> One-to-many
+######                         -> One-to-many
+
+
 
 
 ######################################################################

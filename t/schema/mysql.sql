@@ -15,9 +15,16 @@ CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `category_id` INTEGER,
  `author_id` INTEGER,
+ `img_number` INTEGER,
  `title` varchar(40) default '',
  `special_report_id` INTEGER,
  `main_category_id` INTEGER
+) TYPE=innodb;
+CREATE TABLE `images` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `img_num` INTEGER,
+ `width` INTEGER,
+ `height` INTEGER
 ) TYPE=innodb;
 CREATE TABLE `special_reports` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
