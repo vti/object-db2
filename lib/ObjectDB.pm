@@ -763,7 +763,7 @@ sub find {
                 my $inflation_method =
                   $class->_inflate_columns($params{inflate});
 
-                foreach my $row (@$rows) {
+                OUTER_LOOP: foreach my $row (@$rows) {
                     my $object = $class->_row_to_object(
                         conn    => $conn,
                         row     => $row,
@@ -783,6 +783,8 @@ sub find {
                         foreach my $map_from_col (@{$main->{map_from}}) {
                             $map_from_concat .= '__' unless $first;
                             $first = 0;
+                            next OUTER_LOOP
+                              unless $object->column($map_from_col);
                             $map_from_concat
                               .= $object->column($map_from_col);
                         }

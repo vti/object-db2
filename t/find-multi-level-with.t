@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 256;
+use Test::More tests => 258;
 
 use lib 't/lib';
 
@@ -325,6 +325,9 @@ ok(not defined $article->special_report);
 ###### 1.5 Main -> One-to-many -> One-to-many
 ######                         -> One-to-many
 
+@authors = Author->find(with => [qw/articles.images/]);
+is(@authors, 2);
+is($authors[0]->articles->[2]->images->[0]->column('width'), 30);
 
 
 
