@@ -693,12 +693,6 @@ sub find {
         $sql->source($class->schema->table);
     }
 
-    # Resolve columns
-    $main->{columns} = $class->_resolve_columns({
-        columns => $params{columns}
-    });
-
-
     # Resolve "with" here to add columns needed to map related objects
     my $subreqs = [];
     my $with;
@@ -711,6 +705,12 @@ sub find {
             subreqs => $subreqs
         );
     }
+
+    # Resolve columns
+    $main->{columns} = $class->_resolve_columns({
+        columns => $params{columns},
+        _mapping_columns => [@{$main->{_mapping_columns} || []}, @{$params{_mapping_columns} || []}]
+    });
 
 
     $sql->source($class->schema->table);    ### switch back to main source
@@ -1354,30 +1354,9 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
 
-                $args->{columns} = $rel->foreign_class->_resolve_columns({
-                    columns    => $args->{columns},
-                    map_values => [values %{$rel->map}]
-                });
-
-
                 ### Load columns that are required for object mapping
-                # add "to" values to target class
-                ### TO DO: not necessary if all cols loaded
-                $class->_add_new_values_to_array(
-                    {   old_values => $args->{columns},
-                        new_values => [values %{$rel->map}]
-                    }
-                );
-
-
-                # add "from" keys to parent class
-                ### TO DO: not necessary if all cols loaded
-                $class->_add_new_values_to_array(
-                    {   old_values => $parent_args->{columns},
-                        new_values => [keys %{$rel->map}]
-                    }
-                );
-
+                $args->{_mapping_columns}        = [values %{$rel->map}];
+                $parent_args->{_mapping_columns} = [keys %{$rel->map}];
 
                 # Save map-from-columns and map-to-columns in with or main
                 while (my ($from, $to) = each %{$rel->map}) {
@@ -1393,11 +1372,6 @@ sub _resolve_with {
             else {
                 push @$chain, $name;
 
-                $args->{columns} = $rel->foreign_class->_resolve_columns({
-                    columns => $args->{columns}
-                });
-
-
                 # Add source now to get correct order
                 # Add where constraint as join args
                 $sql->source($rel->to_source($args->{where}));
@@ -1406,6 +1380,11 @@ sub _resolve_with {
                     _execute_code_ref($code_ref, $rel->foreign_class,
                         $subwith, $chain, $args);
                 }
+
+                $args->{columns} = $rel->foreign_class->_resolve_columns({
+                    columns => $args->{columns},
+                    _mapping_columns => $args->{_mapping_columns}
+                });
 
                 # Switch back to right source
                 $sql->source($rel->to_source);
@@ -1428,6 +1407,8 @@ sub _resolve_columns {
 
     my $load_all_columns = 1 unless ($load_selected_columns);
 
+    my $mapping_columns = $params->{_mapping_columns};
+
     my $columns = [];
 
     if ($load_selected_columns) {
@@ -1437,6 +1418,7 @@ sub _resolve_columns {
     }
     elsif ($load_all_columns) {
         $columns = [$class->schema->columns];
+        return $columns;
     }
 
     # Always load primary keys
@@ -1444,7 +1426,13 @@ sub _resolve_columns {
         {   old_values => $columns,
             new_values => [$class->schema->primary_key]
         }
-    ) unless $load_all_columns;
+    );
+
+    $class->_add_new_values_to_array(
+        {   old_values => $columns,
+            new_values => $mapping_columns
+        }
+    );
 
     return $columns;
 
