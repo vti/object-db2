@@ -707,10 +707,14 @@ sub find {
     }
 
     # Resolve columns
-    $main->{columns} = $class->_resolve_columns({
-        columns => $params{columns},
-        _mapping_columns => [@{$main->{_mapping_columns} || []}, @{$params{_mapping_columns} || []}]
-    });
+    $main->{columns} = $class->_resolve_columns(
+        {   columns          => $params{columns},
+            _mapping_columns => [
+                @{$main->{_mapping_columns} || []},
+                @{$params{_mapping_columns} || []}
+            ]
+        }
+    );
 
 
     $sql->source($class->schema->table);    ### switch back to main source
@@ -1381,10 +1385,11 @@ sub _resolve_with {
                         $subwith, $chain, $args);
                 }
 
-                $args->{columns} = $rel->foreign_class->_resolve_columns({
-                    columns => $args->{columns},
-                    _mapping_columns => $args->{_mapping_columns}
-                });
+                $args->{columns} = $rel->foreign_class->_resolve_columns(
+                    {   columns          => $args->{columns},
+                        _mapping_columns => $args->{_mapping_columns}
+                    }
+                );
 
                 # Switch back to right source
                 $sql->source($rel->to_source);
@@ -1412,9 +1417,10 @@ sub _resolve_columns {
     my $columns = [];
 
     if ($load_selected_columns) {
-        $columns = ref $load_selected_columns eq 'ARRAY'
-            ? [@$load_selected_columns]
-            : [$load_selected_columns];
+        $columns =
+          ref $load_selected_columns eq 'ARRAY'
+          ? [@$load_selected_columns]
+          : [$load_selected_columns];
     }
     elsif ($load_all_columns) {
         $columns = [$class->schema->columns];
@@ -1449,13 +1455,14 @@ sub _normalize_with {
     my $last_key;
     foreach my $name (@$with) {
         if (ref $name eq 'HASH') {
-            die 'pass relationship before passing any further options as hashref'
+            die
+              'pass relationship before passing any further options as hashref'
               unless $last_key;
             $with{$last_key} = {%{$with{$last_key}}, %$name};
         }
         else {
             die 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]'
-              if $name =~m/^\{/;
+              if $name =~ m/^\{/;
             $with{$name} = {};
             $last_key = $name;
         }
