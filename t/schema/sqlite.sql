@@ -17,16 +17,9 @@ CREATE TABLE `articles` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `category_id` INTEGER,
  `author_id` INTEGER,
- `img_number` INTEGER,
  `title` varchar(40) default '',
  `special_report_id` INTEGER,
  `main_category_id` INTEGER
-);
-CREATE TABLE `images` (
- `id` INTEGER PRIMARY KEY AUTOINCREMENT,
- `img_num` INTEGER,
- `width` INTEGER,
- `height` INTEGER
 );
 CREATE TABLE `special_reports` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,8 +87,15 @@ CREATE TABLE `apartments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `hotel_num_b` INTEGER,
  `apartment_num_b` INTEGER,
+ `image_num_b` INTEGER,
  `name` varchar(40) default '',
  `size` INTEGER
+);
+CREATE TABLE `images` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `image_num_c` INTEGER,
+ `width` INTEGER,
+ `height` INTEGER
 );
 CREATE TABLE `rooms` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

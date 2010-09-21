@@ -52,15 +52,9 @@ sub populate {
             },
             {title => 'article 1-2'},
             {   title    => 'article 1-3',
-                img_number => 1000,
                 comments => [
                     {   content       => 'comment 1-3-1',
                         creation_date => '2005-12-01'
-                    }
-                ],
-                images   => [
-                    {   width   => 30,
-                        height  => 120
                     }
                 ]
             },

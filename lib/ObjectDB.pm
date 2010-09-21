@@ -784,7 +784,7 @@ sub find {
                             $map_from_concat .= '__' unless $first;
                             $first = 0;
                             next OUTER_LOOP
-                              unless $object->column($map_from_col);
+                              unless defined $object->column($map_from_col);
                             $map_from_concat
                               .= $object->column($map_from_col);
                         }

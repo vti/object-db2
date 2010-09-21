@@ -325,10 +325,6 @@ ok(not defined $article->special_report);
 ###### 1.5 Main -> One-to-many -> One-to-many
 ######                         -> One-to-many
 
-@authors = Author->find(with => [qw/articles.images/]);
-is(@authors, 2);
-is($authors[0]->articles->[2]->images->[0]->column('width'), 30);
-
 
 
 ######################################################################
@@ -341,8 +337,18 @@ is($authors[0]->articles->[2]->images->[0]->column('width'), 30);
 ######################################################################
 ###### 2.1 One-to-Many -> One-to-Many
 
+
+# First simple test, this test also makes sure that no exception is thrown
+# even if some apartments have NO images (previous tests for HotelData passed
+# despite bugs because every hotel has apartments and every apartment has rooms)
+my @hotels = Hotel->find(with => [qw/apartments.images/]);
+is(@hotels, 3);
+is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
+
+
+
 # Now get comparable object via find
-my @hotels = Hotel->find(with => [qw/apartments apartments.rooms/]);
+@hotels = Hotel->find(with => [qw/apartments apartments.rooms/]);
 
 is(@{$hotels[0]->apartments},                              2);
 is($hotels[0]->apartments->[0]->column('apartment_num_b'), 47);

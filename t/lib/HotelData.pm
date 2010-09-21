@@ -26,12 +26,18 @@ sub populate {
                 ]
             },
             {   apartment_num_b => 61,
+                image_num_b     => 1000,
                 name            => 'George Washington',
                 size            => 50,
                 rooms           => [
                     {room_num_c => 1, size => 10},
                     {room_num_c => 2, size => 16},
                     {room_num_c => 3, size => 70}
+                ],
+                images   => [
+                    {   width   => 30,
+                        height  => 120
+                    }
                 ]
             },
         ],

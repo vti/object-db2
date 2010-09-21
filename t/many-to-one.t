@@ -33,7 +33,6 @@ is_deeply(
     $article->to_hash,
     {   id                => $article->id,
         author_id         => $author->id,
-        img_number        => undef,
         title             => 'bar',
         main_category_id  => undef,
         category_id       => undef,

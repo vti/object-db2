@@ -79,7 +79,6 @@ is_deeply(
         articles => [
             {   id                => $articles[0]->id,
                 author_id         => $author->id,
-                img_number        => undef,
                 special_report_id => undef,
                 main_category_id  => undef,
                 category_id       => undef,
@@ -87,7 +86,6 @@ is_deeply(
             },
             {   id                => $articles[1]->id,
                 author_id         => $author->id,
-                img_number        => undef,
                 special_report_id => undef,
                 main_category_id  => undef,
                 category_id       => undef,
