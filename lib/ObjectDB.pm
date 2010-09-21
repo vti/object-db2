@@ -693,21 +693,11 @@ sub find {
         $sql->source($class->schema->table);
     }
 
-    # Load just passed columns
-    if ($params{columns}) {
-        die 'columns not provided as ARRAY ref'
-          unless ref $params{columns} eq 'ARRAY';
-        $main->{columns} = [@{$params{columns}}];
-    }
+    # Resolve columns
+    $main->{columns} = $class->_resolve_columns({
+        columns => $params{columns}
+    });
 
-    # Primary keys are always loaded
-    if ($main->{columns}) {
-        $class->_add_new_values_to_array(
-            {   old_values => $main->{columns},
-                new_values => [$class->schema->primary_key]
-            }
-        );
-    }
 
     # Resolve "with" here to add columns needed to map related objects
     my $subreqs = [];
@@ -722,10 +712,6 @@ sub find {
         );
     }
 
-    # Load all columns in case that not columns have been passed
-    unless ($main->{columns}) {
-        $main->{columns} = [$class->schema->columns];
-    }
 
     $sql->source($class->schema->table);    ### switch back to main source
     $sql->columns([@{$main->{columns}}]);
@@ -1367,36 +1353,31 @@ sub _resolve_with {
             my $parent_args = $parent_with_args || $main;
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
-                if (delete $args->{no_cols}) {
-                    # Make sure that no columns are loaded
-                    $args->{columns} = [];
-                }
-                elsif ($args->{columns}) {
-                    $args->{columns} =
-                      ref $args->{columns} eq 'ARRAY'
-                      ? $args->{columns}
-                      : [$args->{columns}];
-                }
+
+                $args->{columns} = $rel->foreign_class->_resolve_columns({
+                    no_cols => $args->{no_cols},
+                    columns => $args->{columns}
+                });
 
 
                 ### Load columns that are required for object mapping
                 # add "to" values to target class
-                if ($args->{columns}) {
-                    $class->_add_new_values_to_array(
-                        {   old_values => $args->{columns},
-                            new_values => [values %{$rel->map}]
-                        }
-                    );
-                }
+                ### TO DO: not necessary if all cols loaded
+                $class->_add_new_values_to_array(
+                    {   old_values => $args->{columns},
+                        new_values => [values %{$rel->map}]
+                    }
+                );
+
 
                 # add "from" keys to parent class
-                if ($parent_args->{columns}) {
-                    $class->_add_new_values_to_array(
-                        {   old_values => $parent_args->{columns},
-                            new_values => [keys %{$rel->map}]
-                        }
-                    );
-                }
+                ### TO DO: not necessary if all cols loaded
+                $class->_add_new_values_to_array(
+                    {   old_values => $parent_args->{columns},
+                        new_values => [keys %{$rel->map}]
+                    }
+                );
+
 
                 # Save map-from-columns and map-to-columns in with or main
                 while (my ($from, $to) = each %{$rel->map}) {
@@ -1412,22 +1393,11 @@ sub _resolve_with {
             else {
                 push @$chain, $name;
 
-                if ($args->{no_cols}) {
-                    $args->{columns} =
-                      [$rel->foreign_class->schema->primary_key];
-                }
-                elsif ($args->{columns}) {
-                    $args->{columns} =
-                      ref $args->{columns} eq 'ARRAY'
-                      ? $args->{columns}
-                      : [$args->{columns}];
+                $args->{columns} = $rel->foreign_class->_resolve_columns({
+                    no_cols => $args->{no_cols},
+                    columns => $args->{columns}
+                });
 
-                    # Add primary keys
-                    #$sql->columns($rel->foreign_class->schema->primary_keys);
-                }
-                else {
-                    $args->{columns} = [$rel->foreign_class->schema->columns];
-                }
 
                 # Add source now to get correct order
                 # Add where constraint as join args
@@ -1448,6 +1418,46 @@ sub _resolve_with {
 
     _execute_code_ref($walker, $class, $with);
 }
+
+sub _resolve_columns {
+    my $self   = shift;
+    my $params = shift;
+
+    my $class = ref $self ? ref $self : $self;
+
+    my $load_no_columns       = $params->{no_cols};
+    my $load_selected_columns = $params->{columns};
+
+    my $load_all_columns;
+    unless ($load_selected_columns || $load_no_columns) {
+        $load_all_columns = 1;
+    }
+
+    my $columns = [];
+
+    if ($load_no_columns) {
+        # Do nothing
+    }
+    elsif ($load_selected_columns) {
+        $columns = ref $load_selected_columns eq 'ARRAY'
+            ? [@$load_selected_columns]
+            : [$load_selected_columns];
+    }
+    elsif ($load_all_columns) {
+        $columns = [$class->schema->columns];
+    }
+
+    # Always load primary keys
+    $class->_add_new_values_to_array(
+        {   old_values => $columns,
+            new_values => [$class->schema->primary_key]
+        }
+    ) unless $load_all_columns;
+
+    return $columns;
+
+}
+
 
 sub _normalize_with {
     my $class = shift;

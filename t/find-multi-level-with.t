@@ -241,7 +241,6 @@ ok(not defined $authors[0]->articles->[0]->main_category->column('title'));
 
 ######################################################################
 ###### 1.3 TWO one-to-one/many-to-one --> One-to-many
-
 @authors =
   Author->find(
     with => [qw/articles.special_report.main_category.admin_histories/]);
