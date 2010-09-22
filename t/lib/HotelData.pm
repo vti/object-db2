@@ -51,7 +51,9 @@ sub populate {
             secretaries     => [
                 {first_name => 'First1', last_name => 'Last1'},
                 {first_name => 'First2', last_name => 'Last2'}
-            ]
+            ],
+            office          => {size => 33, floor => 3},
+            car             => {horsepower => 300, brand => 'Porsche'}
         }
     );
 

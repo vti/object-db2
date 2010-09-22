@@ -132,6 +132,18 @@ CREATE TABLE `managers` (
  `manager_num_b` INTEGER,
  `name` varchar(40) default ''
 ) TYPE=innodb;
+CREATE TABLE `offices` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `manager_num_b` INTEGER,
+ `size` INTEGER,
+ `floor` INTEGER
+) TYPE=innodb;
+CREATE TABLE `cars` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `manager_num_b` INTEGER,
+ `horsepower` INTEGER,
+ `brand` varchar(40) default ''
+) TYPE=innodb;
 CREATE TABLE `secretaries` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `hotel_num_c` INTEGER,

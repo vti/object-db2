@@ -119,6 +119,18 @@ CREATE TABLE `managers` (
  `manager_num_b` INTEGER,
  `name` varchar(40) default ''
 );
+CREATE TABLE `offices` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `manager_num_b` INTEGER,
+ `size` INTEGER,
+ `floor` INTEGER
+);
+CREATE TABLE `cars` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `manager_num_b` INTEGER,
+ `horsepower` INTEGER,
+ `brand` varchar(40) default ''
+);
 CREATE TABLE `secretaries` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `hotel_num_c` INTEGER,

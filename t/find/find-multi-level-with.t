@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 281;
+use Test::More tests => 291;
 
 use lib 't/lib';
 
@@ -540,9 +540,30 @@ is($managers[0]->secretaries->[1]->column('last_name'),          'Last2');
 is(@{$managers[1]->secretaries},                                 0);
 
 
+######################################################################
+#### 2.7 Main -> One-to-one -> One-to-one
+####                        -> One-to-one
+@hotels = Hotel->find(with => [qw/manager.office manager.car/]);
+is(@hotels,                                 3);
+is($hotels[0]->manager->column('name'),     undef);
+is($hotels[0]->manager->office->column('size'), 33);
+is($hotels[0]->manager->car->column('brand'), 'Porsche');
+is($hotels[1]->manager->office, undef);
+is($hotels[1]->manager->car,  undef);
+
 
 ######################################################################
-#### 2.7 Mix 2.1 and 2.2
+#### 2.8 Main -> One-to-one
+####          -> One-to-one
+@managers = Manager->find(with => [qw/office car/]);
+is($managers[0]->office->column('size'), 33);
+is($managers[0]->car->column('brand'), 'Porsche');
+is($managers[1]->office, undef);
+is($managers[1]->car,  undef);
+
+
+######################################################################
+#### 2.9 Mix 2.1 and 2.2
 @hotels = Hotel->find(with => [qw/manager.telefon_numbers apartments.rooms/]);
 is(@{$hotels[0]->apartments}, 2);
 ok(not defined $hotels[0]->apartments->[0]->column('name'));
@@ -553,7 +574,7 @@ is($hotels[0]->apartments->[1]->rooms->[2]->column('size'), 70);
 
 
 ######################################################################
-#### 2.8. include "where" parameter in "with" to only prefetch data that
+#### 2.10 include "where" parameter in "with" to only prefetch data that
 #### meets certain criteria
 
 # has_many relationship
