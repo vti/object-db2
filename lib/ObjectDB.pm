@@ -715,7 +715,7 @@ sub find {
         {   columns          => $params{columns},
             _mapping_columns => [
                 @{$main->{_mapping_columns} || []},
-                @{$params{_mapping_columns} || []}
+                @{$params{map_to} || []}
             ]
         }
     );
@@ -1370,7 +1370,6 @@ sub _resolve_with {
                 $parent_args->{child_args} = $args;
 
                 ### Load columns that are required for object mapping
-                $args->{_mapping_columns} = [values %{$rel->map}];
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
