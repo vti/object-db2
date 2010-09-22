@@ -526,6 +526,8 @@ is(@{$hotels[1]->manager->secretaries},                         0);
 #### 2.6 Main -> One-to-many
 ####             One-to-many
 
+### TO DO: mapping columns between manger/telefon and manager/secr. should not be the same
+
 my @managers = Manager->find(with => [qw/telefon_numbers secretaries/]);
 is(@managers,                                                    3);
 is($managers[0]->column('name'),                                 'Lalolu');
