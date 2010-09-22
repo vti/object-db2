@@ -116,7 +116,7 @@ CREATE TABLE `rooms` (
  `hotel_num_c` INTEGER,
  `apartment_num_c` INTEGER,
  `room_num_c` INTEGER,
-  `size` INTEGER
+ `size` INTEGER
 ) TYPE=innodb;
 CREATE TABLE `maids` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,

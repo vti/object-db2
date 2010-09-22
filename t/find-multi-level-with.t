@@ -666,7 +666,6 @@ is(@hotels, 2);    ### should still be 2, not 3 as in sql (left join)
 is($hotels[0]->column('hotel_num_a'), 5);
 is($hotels[1]->column('hotel_num_a'), 6);
 
-# TO DO: check in tests whether data has been prefetched (or loaded afterwards)
 # TO DO: create more complex where related tests in seperate file
 # is( @{$hotels[0]->apartments}, undef );
 
