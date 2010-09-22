@@ -413,6 +413,10 @@ sub related {
     return $related if $related;
     return undef if defined $related && $related == 0;
 
+    # Allow tests to make sure that checked data was prefetched
+    die 'OBJECTDB_FORCE_PREFETCH: data has to be prefetched'
+      if $ENV{OBJECTDB_FORCE_PREFETCH};
+
     if ($rel->is_type(qw/has_one belongs_to/)) {
         return $self->find_related($name, first => 1);
     }

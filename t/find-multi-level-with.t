@@ -17,6 +17,8 @@ HotelData->populate;
 
 my ($author, $author2) = AuthorData->populate;
 
+# Make sure that data is prefetched
+$ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 
 ######################################################################
 ###### 1. following naming conventions
@@ -567,6 +569,9 @@ is($hotels[2]->manager,                 undef);
 ######################################################################
 #### 3. NO prefetch
 
+# Allow lazy loading of data
+$ENV{OBJECTDB_FORCE_PREFETCH} = 0;
+
 # telefon_numbers are NOT prefetched, array ref should be returned
 @hotels = Hotel->find(with => [qw/manager/]);
 is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
@@ -577,6 +582,8 @@ is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
 @hotels = Hotel->find;
 is($hotels[0]->manager->column('name'), 'Lalolu');
 
+# Make sure that data is prefetched
+$ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 
 ######################################################################
 #### 4. where and multi-level-with
@@ -690,6 +697,8 @@ is($rooms[3]->apartment->hotel->column('name'), 'President');
 #    with => [qw/main_category special_report.main_category.admin_histories/]);
 #is( $articles[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 
+# Allow lazy loading of data
+$ENV{OBJECTDB_FORCE_PREFETCH} = 0;
 
 HotelData->cleanup;
 AuthorData->cleanup;
