@@ -1458,6 +1458,7 @@ sub _resolve_columns {
         }
     );
 
+    # Load columns required for mapping
     $class->_add_new_values_to_array(
         {   old_values => $columns,
             new_values => $mapping_columns
