@@ -16,26 +16,28 @@ sub discover {
         last if $sql;
     }
 
-    if ($sql) {
-        my @unique_keys;
-        if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
-            ### TO DO: Support for multiple unique keys
-            ### TO DO: Support for unique keys created by "create unique index"
-            ### TO DO: cache data in schema files for better cgi performance
-            ### PRAGMAs index_list and index_info
-            ### Temporary hack:
-            my @uk = split ',' => $unique;
-            foreach my $uk (@uk) {
-                push @unique_keys, $self->unquote($uk);
-            }
-            $self->{unique_keys}->[0] = [@unique_keys];
-        }
+    die 'SchemaDiscoverer::SQLite: table not found in db, table name: '
+      . $self->table
+      unless $sql;
 
-        foreach my $part (split '\n' => $sql) {
-            if ($part =~ m/AUTO_?INCREMENT/i) {
-                if ($part =~ m/^\s*`(.*?)`/) {
-                    $self->auto_increment($1);
-                }
+    my @unique_keys;
+    if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
+        ### TO DO: Support for multiple unique keys
+        ### TO DO: Support for unique keys created by "create unique index"
+        ### TO DO: cache data in schema files for better cgi performance
+        ### PRAGMAs index_list and index_info
+        ### Temporary hack:
+        my @uk = split ',' => $unique;
+        foreach my $uk (@uk) {
+            push @unique_keys, $self->unquote($uk);
+        }
+        $self->{unique_keys}->[0] = [@unique_keys];
+    }
+
+    foreach my $part (split '\n' => $sql) {
+        if ($part =~ m/AUTO_?INCREMENT/i) {
+            if ($part =~ m/^\s*`(.*?)`/) {
+                $self->auto_increment($1);
             }
         }
     }
