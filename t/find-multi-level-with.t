@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 258;
+use Test::More tests => 263;
 
 use lib 't/lib';
 
@@ -564,6 +564,17 @@ is(@hotels,                             3);
 is($hotels[0]->manager->column('name'), 'Lalolu');
 is($hotels[1]->manager->column('name'), 'Lalolu');
 is($hotels[2]->manager,                 undef);
+
+
+######################################################################
+#### 2.5 Main -> One-to-many -> One-to-many
+####                         -> One-to-many
+@hotels = Hotel->find(with => [qw/apartments.rooms apartments.images/]);
+is(@hotels, 3);
+is(@{$hotels[0]->apartments->[1]->images},1);
+is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
+is(@{$hotels[0]->apartments->[0]->rooms},                   2);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
 
 
 ######################################################################

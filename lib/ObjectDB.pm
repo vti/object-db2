@@ -760,7 +760,6 @@ sub find {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
-                my @pk;
                 my @result;
 
                 # Prepare column inflation
@@ -780,26 +779,11 @@ sub find {
                     $object->$inflation_method if $inflation_method;
 
                     push @result, $object;
-
-                    if ($main->{map_from}) {
-                        my $map_from_concat = '';
-                        my $first           = 1;
-                        foreach my $map_from_col (@{$main->{map_from}}) {
-                            $map_from_concat .= '__' unless $first;
-                            $first = 0;
-                            next OUTER_LOOP
-                              unless defined $object->column($map_from_col);
-                            $map_from_concat
-                              .= $object->column($map_from_col);
-                        }
-                        push @pk, $map_from_concat;
-                    }
                 }
 
                 if ($subreqs && @$subreqs) {
                     $class->_fetch_subrequests(
                         result  => \@result,
-                        pk      => \@pk,
                         conn    => $conn,
                         subreqs => $subreqs,
                         inflate => $params{inflate}
@@ -861,7 +845,6 @@ sub _fetch_subrequests {
 
     my $conn    = $params{conn};
     my $subreqs = $params{subreqs};
-    my @pk      = @{$params{pk}};
     my @result  = @{$params{result}};
 
     foreach my $subreq (@$subreqs) {
@@ -871,13 +854,33 @@ sub _fetch_subrequests {
         my $chain        = $subreq->[3];
         my $parent_args  = $subreq->[4];
 
-        my $map_from = $parent_args->{map_from}
+        my $map_from = $args->{map_from}
           || die('no map_from cols');
 
-        my $map_to = $parent_args->{map_to}
+        my $map_to = $args->{map_to}
           || die('no map_to cols');
 
-        my $ids = $parent_args->{pk} ? [@{$parent_args->{pk}}] : [@pk];
+
+        my @pk;
+        # create map values for find related (only if map values havent been
+        # created earlier in _row_to_object (in case of preceding one to one rel)
+        unless ($args->{pk}) {
+            OUTER_LOOP: foreach my $object (@result) {
+                my $map_from_concat = '';
+                my $first           = 1;
+                foreach my $map_from_col (@{$map_from}) {
+                    $map_from_concat .= '__' unless $first;
+                    $first = 0;
+                    next OUTER_LOOP
+                      unless defined $object->column($map_from_col);
+                    $map_from_concat
+                      .= $object->column($map_from_col);
+                }
+                push @pk, $map_from_concat;
+            }
+        }
+
+        my $ids = $args->{pk} ? [@{$args->{pk}}] : [@pk];
         next unless @$ids;
 
         my $nested = delete $args->{nested} || [];
@@ -1365,14 +1368,17 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
 
+                $parent_args->{child_args} = $args;
+
                 ### Load columns that are required for object mapping
-                $args->{_mapping_columns}        = [values %{$rel->map}];
-                $parent_args->{_mapping_columns} = [keys %{$rel->map}];
+                $args->{_mapping_columns} = [values %{$rel->map}];
+                push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
+
 
                 # Save map-from-columns and map-to-columns in with or main
                 while (my ($from, $to) = each %{$rel->map}) {
-                    push @{$parent_args->{map_from}}, $from;
-                    push @{$parent_args->{map_to}},   $to;
+                    push @{$args->{map_from}}, $from;
+                    push @{$args->{map_to}},   $to;
                 }
 
                 # $chain for multi-level object-mapping
@@ -1407,6 +1413,11 @@ sub _resolve_with {
     };
 
     _execute_code_ref($walker, $class, $with);
+
+    #use Data::Dumper;
+    #warn Dumper $with if $ENV{OBJECTDB_DEBUG};
+    #warn Dumper $main if $ENV{OBJECTDB_DEBUG};
+
 }
 
 sub _resolve_columns {
@@ -1593,15 +1604,15 @@ sub _row_to_object {
 
             $args->{pk} ||= [];
 
-            if ($args->{map_from} && $object->id) {
+            if ($args->{child_args}->{map_from} && $object->id) {
                 my $map_from_concat = '';
                 my $first           = 1;
-                foreach my $map_from_col (@{$args->{map_from}}) {
+                foreach my $map_from_col (@{$args->{child_args}->{map_from}}) {
                     $map_from_concat .= '__' unless $first;
                     $first = 0;
                     $map_from_concat .= $object->column($map_from_col);
                 }
-                push @{$args->{pk}}, $map_from_concat;
+                push @{$args->{child_args}->{pk}}, $map_from_concat;
             }
 
             if (my $subwith = $args->{nested}) {
