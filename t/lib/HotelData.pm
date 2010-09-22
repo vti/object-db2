@@ -47,6 +47,10 @@ sub populate {
             telefon_numbers => [
                 {tel_num_c => 1111, telefon_number => '123456789'},
                 {tel_num_c => 1112, telefon_number => '987654321'}
+            ],
+            secretaries     => [
+                {first_name => 'First1', last_name => 'Last1'},
+                {first_name => 'First2', last_name => 'Last2'}
             ]
         }
     );
@@ -79,7 +83,7 @@ sub populate {
             name            => 'Lalolu',
             telefon_numbers => [
                 {tel_num_c => 1111, telefon_number => '123456789'},
-                {tel_num_c => 1112, telefon_number => '987654321'}
+                {tel_num_c => 1112, telefon_number => '987654329'}
             ]
         }
     );

@@ -414,7 +414,7 @@ sub related {
     return undef if defined $related && $related == 0;
 
     # Allow tests to make sure that checked data was prefetched
-    die 'OBJECTDB_FORCE_PREFETCH: data has to be prefetched'
+    die "OBJECTDB_FORCE_PREFETCH: data has to be prefetched: '$name'"
       if $ENV{OBJECTDB_FORCE_PREFETCH};
 
     if ($rel->is_type(qw/has_one belongs_to/)) {
@@ -680,11 +680,12 @@ sub find {
 
     if ($params{max} || $params{min}) {
         my $type = $params{max} ? 'max' : 'min';
+        my $params = $params{$type};
         $class->_resolve_max_min_n_results_by_group(
-            {   group  => $params{$type}->{group},
-                column => $params{$type}->{column},
-                top    => $params{$type}->{top} || 1,
-                strict => $params{$type}->{strict},
+            {   group  => $params->{group},
+                column => $params->{column},
+                top    => $params->{top} || 1,
+                strict => $params->{strict},
                 main   => $main,
                 sql    => $sql,
                 type   => $type
@@ -712,11 +713,9 @@ sub find {
 
     # Resolve columns
     $main->{columns} = $class->_resolve_columns(
-        {   columns          => $params{columns},
-            _mapping_columns => [
-                @{$main->{_mapping_columns} || []},
-                @{$params{map_to} || []}
-            ]
+        {   columns => $params{columns},
+            _mapping_columns =>
+              [@{$main->{_mapping_columns} || []}, @{$params{map_to} || []}]
         }
     );
 
@@ -766,7 +765,7 @@ sub find {
                 my $inflation_method =
                   $class->_inflate_columns($params{inflate});
 
-                OUTER_LOOP: foreach my $row (@$rows) {
+              OUTER_LOOP: foreach my $row (@$rows) {
                     my $object = $class->_row_to_object(
                         conn    => $conn,
                         row     => $row,
@@ -861,10 +860,11 @@ sub _fetch_subrequests {
 
 
         my @pk;
-        # create map values for find related (only if map values havent been
-        # created earlier in _row_to_object (in case of preceding one to one rel)
+
+     # create map values for find related (only if map values havent been
+     # created earlier in _row_to_object (in case of preceding one to one rel)
         unless ($args->{pk}) {
-            OUTER_LOOP: foreach my $object (@result) {
+          OUTER_LOOP: foreach my $object (@result) {
                 my $map_from_concat = '';
                 my $first           = 1;
                 foreach my $map_from_col (@{$map_from}) {
@@ -872,8 +872,7 @@ sub _fetch_subrequests {
                     $first = 0;
                     next OUTER_LOOP
                       unless defined $object->column($map_from_col);
-                    $map_from_concat
-                      .= $object->column($map_from_col);
+                    $map_from_concat .= $object->column($map_from_col);
                 }
                 push @pk, $map_from_concat;
             }
@@ -1371,7 +1370,8 @@ sub _resolve_with {
                 ### in child, mapping data saved in child because each child
                 ### only has one parent, but parent can have many childs with
                 ### varying mapping columns for each relationship
-                $parent_args->{child_args} = $args;
+                $parent_args->{child_args} ||= [];
+                push @{$parent_args->{child_args}}, $args;
 
 
                 ### Load columns that are required for object mapping,
@@ -1380,8 +1380,8 @@ sub _resolve_with {
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
-                # Save mapping data in subrequest, preceding main or one-to-one
-                # object can access this data via "child_args"
+               # Save mapping data in subrequest, preceding main or one-to-one
+               # object can access this data via "child_args"
                 while (my ($from, $to) = each %{$rel->map}) {
                     push @{$args->{map_from}}, $from;
                     push @{$args->{map_to}},   $to;
@@ -1421,6 +1421,7 @@ sub _resolve_with {
     _execute_code_ref($walker, $class, $with);
 
     #use Data::Dumper;
+    #warn Dumper $subreqs if $ENV{OBJECTDB_DEBUG};
     #warn Dumper $with if $ENV{OBJECTDB_DEBUG};
     #warn Dumper $main if $ENV{OBJECTDB_DEBUG};
 
@@ -1608,18 +1609,17 @@ sub _row_to_object {
                 $object->$inflation_method if $inflation_method;
             }
 
-
-            $args->{pk} ||= [];
-
-            if ($args->{child_args}->{map_from} && $object->id) {
-                my $map_from_concat = '';
-                my $first           = 1;
-                foreach my $map_from_col (@{$args->{child_args}->{map_from}}) {
-                    $map_from_concat .= '__' unless $first;
-                    $first = 0;
-                    $map_from_concat .= $object->column($map_from_col);
+            foreach my $child_args (@{$args->{child_args}}) {
+                if ($child_args->{map_from} && $object->id) {
+                    my $map_from_concat = '';
+                    my $first           = 1;
+                    foreach my $map_from_col (@{$child_args->{map_from}}) {
+                        $map_from_concat .= '__' unless $first;
+                        $first = 0;
+                        $map_from_concat .= $object->column($map_from_col);
+                    }
+                    push @{$child_args->{pk}}, $map_from_concat;
                 }
-                push @{$args->{child_args}->{pk}}, $map_from_concat;
             }
 
             if (my $subwith = $args->{nested}) {

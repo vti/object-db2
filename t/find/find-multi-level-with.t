@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 263;
+use Test::More tests => 272;
 
 use lib 't/lib';
 
@@ -47,39 +47,41 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
 
 
 # Same test, but only with selected columns
-@authors = Author->find(with => ['articles.comments', {columns=>['content']} ]);
+@authors =
+  Author->find(with => ['articles.comments', {columns => ['content']}]);
 is(@authors, 2);
 ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment 1-1-1');
-is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
-    undef);
+is($authors[0]->articles->[0]->comments->[0]->column('creation_date'), undef);
 
 
 # Same test, but only with selected column passed as scalar
-@authors = Author->find(with => ['articles.comments', {columns=>'content'} ]);
+@authors =
+  Author->find(with => ['articles.comments', {columns => 'content'}]);
 is(@authors, 2);
 ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
 is($authors[0]->articles->[0]->comments->[0]->column('content'),
     'comment 1-1-1');
-is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
-    undef);
-
+is($authors[0]->articles->[0]->comments->[0]->column('creation_date'), undef);
 
 
 # Same test, passing related data in wrong format
 # format is not supported by Perl
 eval { Author->find(with => [qw/articles.comments {columns=>['content']}/]); };
 my $err_msg = 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]';
-ok( $@ =~m/\Q$err_msg/ );
+ok($@ =~ m/\Q$err_msg/);
 
 
 # Pass options first
-eval {@authors = Author->find(with => [{columns=>['content']}, 'articles.comments']) };
+eval {
+    @authors =
+      Author->find(with => [{columns => ['content']}, 'articles.comments']);
+};
 $err_msg = 'pass relationship before passing any further options as hashref';
-ok( $@ =~m/\Q$err_msg/ );
+ok($@ =~ m/\Q$err_msg/);
 
 
 # Mixing the order of relationship chains a bit
@@ -328,7 +330,6 @@ ok(not defined $article->special_report);
 ######                         -> One-to-many
 
 
-
 ######################################################################
 ###### 2. crazy naming
 ###### Using columns for mapping that do not follow naming conventions
@@ -344,9 +345,8 @@ ok(not defined $article->special_report);
 # even if some apartments have NO images (previous tests for HotelData passed
 # despite bugs because every hotel has apartments and every apartment has rooms)
 my @hotels = Hotel->find(with => [qw/apartments.images/]);
-is(@hotels, 3);
+is(@hotels,                                                   3);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
-
 
 
 # Now get comparable object via find
@@ -570,11 +570,30 @@ is($hotels[2]->manager,                 undef);
 #### 2.5 Main -> One-to-many -> One-to-many
 ####                         -> One-to-many
 @hotels = Hotel->find(with => [qw/apartments.rooms apartments.images/]);
-is(@hotels, 3);
-is(@{$hotels[0]->apartments->[1]->images},1);
+is(@hotels,                                                   3);
+is(@{$hotels[0]->apartments->[1]->images},                    1);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
-is(@{$hotels[0]->apartments->[0]->rooms},                   2);
-is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
+is(@{$hotels[0]->apartments->[0]->rooms},                     2);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),   70);
+
+
+######################################################################
+#### 2.6 Main -> One-to-one -> One-to-many
+####                        -> One-to-many
+
+@hotels =
+  Hotel->find(with => [qw/manager.telefon_numbers manager.secretaries/]);
+is(@hotels,                                 3);
+is($hotels[0]->manager->column('name'),     undef);
+is(@{$hotels[0]->manager->telefon_numbers}, 2);
+is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
+    123456789);
+is($hotels[1]->manager->telefon_numbers->[1]->column('telefon_number'),
+    987654329);
+is(@{$hotels[0]->manager->secretaries},                         2);
+is($hotels[0]->manager->secretaries->[0]->column('first_name'), 'First1');
+is($hotels[0]->manager->secretaries->[1]->column('last_name'),  'Last2');
+is(@{$hotels[1]->manager->secretaries},                         0);
 
 
 ######################################################################
