@@ -852,7 +852,6 @@ sub _fetch_subrequests {
         my $args         = $subreq->[1];
         my $subreq_class = $subreq->[2];
         my $chain        = $subreq->[3];
-        my $parent_args  = $subreq->[4];
 
         my $map_from = $args->{map_from}
           || die('no map_from cols');
@@ -1383,7 +1382,7 @@ sub _resolve_with {
 
                 # $chain for multi-level object-mapping
                 # $parent_with_args to map subreq data to correct parent ids
-                push @$subreqs, [$name, $args, $class, $chain, $parent_args];
+                push @$subreqs, [$name, $args, $class, $chain];
 
             }
             else {
