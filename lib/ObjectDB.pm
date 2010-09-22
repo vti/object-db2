@@ -1367,20 +1367,28 @@ sub _resolve_with {
 
             if ($rel->is_type(qw/has_many has_and_belongs_to_many/)) {
 
+                ### Parent has always access to mapping data which is saved
+                ### in child, mapping data saved in child because each child
+                ### only has one parent, but parent can have many childs with
+                ### varying mapping columns for each relationship
                 $parent_args->{child_args} = $args;
 
-                ### Load columns that are required for object mapping
+
+                ### Load columns that are required for object mapping,
+                ### not necessarily equal to "map_from", as parent can have
+                ### many childs (map_from cols of all childs have to be loaded)
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
-                # Save map-from-columns and map-to-columns in with or main
+                # Save mapping data in subrequest, preceding main or one-to-one
+                # object can access this data via "child_args"
                 while (my ($from, $to) = each %{$rel->map}) {
                     push @{$args->{map_from}}, $from;
                     push @{$args->{map_to}},   $to;
                 }
 
+                # Save with-args in subrequest
                 # $chain for multi-level object-mapping
-                # $parent_with_args to map subreq data to correct parent ids
                 push @$subreqs, [$name, $args, $class, $chain];
 
             }
