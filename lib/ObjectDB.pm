@@ -1289,6 +1289,8 @@ sub _resolve_where {
     my $class  = shift;
     my %params = @_;
 
+    $class = ref $class ? ref $class : $class;
+
     return unless $params{where} && @{$params{where}};
 
     my $where = [@{$params{where}}];
@@ -1343,6 +1345,8 @@ sub _resolve_where {
 sub _resolve_with {
     my $class  = shift;
     my %params = @_;
+
+    $class = ref $class ? ref $class : $class;
 
     my $main    = $params{main};
     my $with    = $params{with};
@@ -1543,6 +1547,8 @@ sub primary_key_values {
 sub _row_to_object {
     my $class  = shift;
     my %params = @_;
+
+    $class = ref $class ? ref $class : $class;
 
     my $conn    = $params{conn};
     my $row     = $params{row};
