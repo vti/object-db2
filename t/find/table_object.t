@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use lib 't/lib';
 
@@ -25,15 +25,20 @@ my $authors_table = Author->new;
 my @authors = $authors_table->find;
 is(@authors, 2);
 is($authors[0]->column('id'), $author1->column('id') );
+
+
+# Returned object should NOT be table object
 isnt($authors[0], $authors_table);
 isnt($authors[1], $authors_table);
 
 
 # Pass specific author id
-# Returned object should not be table object
 $authors_table = Author->new;
 my $author = $authors_table->find( id => $author1->column('id') );
 is($author->column('name'), 'author 1');
+
+
+# Returned object should NOT be table object
 isnt($author, $authors_table);
 
 
@@ -41,6 +46,7 @@ isnt($author, $authors_table);
 $authors_table = Author->new;
 @authors = $authors_table->find(where => [name => 'author 1']);
 is(@authors, 1);
+is($author->column('name'), 'author 1');
 
 
 # Prefetch
