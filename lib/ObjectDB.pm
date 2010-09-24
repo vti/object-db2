@@ -718,10 +718,30 @@ sub find {
     $sql->columns([@{$main->{columns}}]);
 
     if (my $id = delete $params{id}) {
-        $id = [$id] if ref $id ne 'ARRAY';
+
+        if (ref $id ne 'ARRAY' && ref $id ne 'HASH') {
+            my @primary_key = $class->schema->primary_key;
+            die 'FIND: id param has to be array or hash ref if there is more than one primary key column (e.g. id=>{ pk1 => 1, pk2 => 2 })'
+              unless ( @primary_key == 1 );
+        }
 
         my %where;
-        @where{$class->schema->primary_key} = @$id;
+        if (ref $id eq 'ARRAY'){
+            %where = @$id;
+        }
+        elsif (ref $id eq 'HASH'){
+            %where = %$id;
+        }
+        else {
+            my @pk_cols = $class->schema->primary_key;
+            %where = ($pk_cols[0] => $id);
+        }
+
+        unless ( $class->schema->is_primary_key(keys %where) ||
+          $class->schema->is_unique_key(keys %where) ){
+            die 'FIND: passed columns do not form primary or unique key';
+        }
+
 
         $sql->where(%where);
 
