@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 25;
 
 use lib 't/lib';
 
@@ -14,6 +14,10 @@ TestEnv->setup;
 
 use AuthorData;
 my ($author1, $author2) = AuthorData->populate;
+
+
+use HotelData;
+my ($hotel1, $hotel2, $hotel3) = HotelData->populate;
 
 
 # Make sure that data is prefetched
@@ -38,7 +42,7 @@ is($author->column('name'), 'author 2');
 
 
 # Pass invalid column (no primary key nor unique key) to throw an exception
-eval { $author = Author->find(id => {password => 'some pass' }) };
+ok(!eval { $author = Author->find(id => {password => 'some pass' }) });
 my $err_msg = 'FIND: passed columns do not form primary or unique key';
 ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 
@@ -70,8 +74,45 @@ is($author->articles->[0]->comments->[0]->column('content'),
     'comment 2-1-1');
 
 
+### Unique keys with multiple columns
 
-### TO DO: primary or unique key with multiple columns
+# Pass columns that do not form a primary of unique key
+ok(!eval { Hotel->find(id => {street=>1, name=>2}) });
+$err_msg = 'FIND: passed columns do not form primary or unique key';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
+
+
+# Pass unique key consisting of multiple columns as hash ref
+my $hotel = Hotel->find(id => {name=>'President2', city=>'London'});
+is($hotel->column('city'), 'London');
+is($hotel->id, $hotel2->id);
+
+
+# Pass unique key consisting of multiple columns as array ref
+$hotel = Hotel->find(id => [name=>'President2', city=>'London']);
+is($hotel->column('name'), 'President2');
+is($hotel->id, $hotel2->id);
+
+
+# same test with changed order of columns
+$hotel = Hotel->find(id => [city=>'London', name=>'President2']);
+is($hotel->column('name'), 'President2');
+is($hotel->id, $hotel2->id);
+
+
+# use second unique key to get the same results
+$hotel = Hotel->find(id => [city=>'London', street=>'Berlin Street']);
+is($hotel->column('name'), 'President2');
+is($hotel->id, $hotel2->id);
+
+
+# pass invalid values
+$hotel = Hotel->find(id => [city=>'London', street=>'Amsterdam Street']);
+is($hotel, undef);
+
+
+
+### TO DO: primary key with multiple columns
 
 
 

@@ -62,6 +62,7 @@ sub populate {
     my $hotel2 = Hotel->create(
         name        => 'President2',
         city        => 'London',
+        street      => 'Berlin Street',
         hotel_num_a => 6,
         apartments  => [
             {   apartment_num_b => 47,
