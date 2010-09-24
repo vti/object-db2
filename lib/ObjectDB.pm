@@ -428,7 +428,7 @@ sub related {
 # get the max/min top n results per group (e.g. the top 4 comments for each article)
 # WARNING: the proposed SQL works fine with multiple thausend rows, but might consume
 # a lot of resources in cases that amount of data is much bigger (not tested so far)
-sub _resolve_max_min_n_results_by_group {
+sub _resolve_max_min_n_per_group {
     my $class  = shift;
     my $params = shift;
 
@@ -437,7 +437,7 @@ sub _resolve_max_min_n_results_by_group {
     my $type   = uc($params->{type});
     my $group  = $params->{group};
     my $column = $params->{column};
-    my $top    = $params->{top};
+    my $top    = $params->{top} || 1;
     my $strict = $params->{strict};
 
     $group  = ref $group      ? [@$group] : [$group];
@@ -460,7 +460,7 @@ sub _resolve_max_min_n_results_by_group {
         # generate a more complex query in case that grouping
         # depends on other tables
         if ($column =~ /[.]/) {
-            $class->_resolve_max_min_n_results_by_group_multi_table($params);
+            $class->_resolve_max_min_n_per_group_multi_table($params);
         }
 
         push @constraint1,
@@ -513,7 +513,7 @@ sub _resolve_max_min_n_results_by_group {
 ### EXPERIMENTAL
 ### a more complex query is required in case that grouping
 ### is performed based on data in other tables
-sub _resolve_max_min_n_results_by_group_multi_table {
+sub _resolve_max_min_n_per_group_multi_table {
     my $class  = shift;
     my $params = shift;
 
@@ -522,7 +522,7 @@ sub _resolve_max_min_n_results_by_group_multi_table {
     my $type   = uc($params->{type});
     my $group  = $params->{group};
     my $column = $params->{column};
-    my $top    = $params->{top};
+    my $top    = $params->{top} || 1;
     my $strict = $params->{strict};
     my $conn   = $params->{conn};
 
@@ -678,17 +678,11 @@ sub find {
 
     my $main = {};
 
-    if ($params{max} || $params{min}) {
-        my $type = $params{max} ? 'max' : 'min';
-        my $params = $params{$type};
-        $class->_resolve_max_min_n_results_by_group(
-            {   group  => $params->{group},
-                column => $params->{column},
-                top    => $params->{top} || 1,
-                strict => $params->{strict},
-                main   => $main,
-                sql    => $sql,
-                type   => $type
+    if (my $maxmin = $params{max} || $params{min}) {
+        $class->_resolve_max_min_n_per_group(
+            {   sql  => $sql,
+                type => $params{max} ? 'max' : 'min',
+                %$maxmin
             }
         );
     }
