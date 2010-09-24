@@ -9,7 +9,7 @@ BEGIN { $ENV{OBJECTDB_NO_DBIX_CONNECTOR} = 1; }
 
 plan skip_all => 'TEST_MYSQL disables this test' if $ENV{TEST_MYSQL};
 
-plan tests => 11;
+plan tests => 13;
 
 use lib 't/lib';
 
@@ -47,5 +47,15 @@ $d->discover($dbh);
 is($d->table, 'article_tag_maps');
 is_deeply($d->columns,     [qw/article_id tag_id/]);
 is_deeply($d->primary_key, [qw/article_id tag_id/]);
+
+
+# Multiple unique keys with multiple columns, passed to SQLite in format:
+# UNIQUE(`col1`,`col2`)
+$d = ObjectDB::SchemaDiscoverer->build(
+    driver => 'SQLite',
+    table => 'hotels');
+$d->discover($dbh);
+is_deeply($d->unique_keys->[0], [qw/city street/]);
+is_deeply($d->unique_keys->[1], [qw/name city/]);
 
 TestEnv->teardown;

@@ -94,7 +94,8 @@ CREATE TABLE `hotels` (
  `name` varchar(40) default '',
  `city` varchar(40) default '',
  `street` varchar(40) default '',
- UNIQUE(`name`)
+ UNIQUE(`city`,`street`),
+ UNIQUE(`name`,`city`)
 ) TYPE=innodb;
 CREATE TABLE `apartments` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,

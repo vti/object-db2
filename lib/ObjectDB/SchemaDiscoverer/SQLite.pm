@@ -20,18 +20,24 @@ sub discover {
       . $self->table
       unless $sql;
 
-    my @unique_keys;
-    if (my ($unique) = ($sql =~ m/UNIQUE\((.*?)\)/)) {
-        ### TO DO: Support for multiple unique keys
-        ### TO DO: Support for unique keys created by "create unique index"
-        ### TO DO: cache data in schema files for better cgi performance
-        ### PRAGMAs index_list and index_info
-        ### Temporary hack:
+    ### TO DO: Support for unique keys created by "create unique index"
+    ### PRAGMAs index_list and index_info
+    ### TO DO: cache data in schema files for better cgi performance
+
+
+    # Unique keys
+    my $counter = 0;
+    while ($sql =~ s/UNIQUE\((.*?)\)//) {
+        my $unique = $1;
+        $unique =~s / //g;
+
+        my @unique_keys;
         my @uk = split ',' => $unique;
         foreach my $uk (@uk) {
             push @unique_keys, $self->unquote($uk);
         }
-        $self->{unique_keys}->[0] = [@unique_keys];
+        $self->{unique_keys}->[$counter] = [@unique_keys];
+        $counter++;
     }
 
     foreach my $part (split '\n' => $sql) {

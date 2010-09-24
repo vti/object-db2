@@ -15,6 +15,7 @@ sub populate {
     # Create data
     my $hotel = Hotel->create(
         name        => 'President',
+        city        => 'New York',
         hotel_num_a => 5,
         apartments  => [
             {   apartment_num_b => 47,
@@ -60,6 +61,7 @@ sub populate {
     # Create a second hotel to make tests a bit more demanding
     my $hotel2 = Hotel->create(
         name        => 'President2',
+        city        => 'London',
         hotel_num_a => 6,
         apartments  => [
             {   apartment_num_b => 47,
@@ -94,6 +96,7 @@ sub populate {
     # Create a third hotel
     my $hotel3 = Hotel->create(
         name        => 'President3',
+        city        => 'Paris',
         hotel_num_a => 7,
         apartments  => [
             {   apartment_num_b => 11,

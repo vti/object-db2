@@ -18,7 +18,7 @@ use TestDB;
 plan skip_all => 'set TEST_MYSQL to "db,user,pass" to enable this test'
   unless $ENV{TEST_MYSQL};
 
-plan tests => 7;
+plan tests => 9;
 
 use_ok('ObjectDB::SchemaDiscoverer::mysql');
 
@@ -36,3 +36,13 @@ is($d->auto_increment, 'id');
 is_deeply($d->columns,          [qw/id name password/]);
 is_deeply($d->primary_key,      [qw/id/]);
 is_deeply($d->unique_keys->[0], [qw/name/]);
+
+
+# Multiple unique keys with multiple columns
+$d = ObjectDB::SchemaDiscoverer->build(
+    driver => 'mysql',
+    table => 'hotels');
+$conn = TestDB->conn;
+$conn->run(sub { $d->discover(shift); });
+is_deeply($d->unique_keys->[0], [qw/city street/]);
+is_deeply($d->unique_keys->[1], [qw/name city/]);
