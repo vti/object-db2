@@ -690,7 +690,6 @@ sub find {
             }
         );
     }
-
     # Standard case
     else {
         $sql->source($class->schema->table);
@@ -1047,8 +1046,10 @@ sub update_column {
 sub update {
     my $self = shift;
 
-    return $self->_update_instance(@_) if ref $self;
+    # Row object
+    return $self->_update_instance(@_) if ref $self && $self->columns;
 
+    # Class or table object
     return $self->_update_objects(@_);
 }
 

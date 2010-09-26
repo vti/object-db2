@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 51;
+use Test::More tests => 53;
 
 use lib 't/lib';
 
@@ -70,6 +70,13 @@ Author->update(set => [name => 'bar'], where => [name => 'foo']);
 $author = Author->find(id => $author->id);
 ok($author);
 is($author->column('name'), 'bar');
+
+# Table object
+my $author_table = Author->new;
+$author_table->update(set => [name => 'foo'], where => [name => 'bar']);
+$author = Author->find(id => $author->id);
+ok($author);
+is($author->column('name'), 'foo');
 
 ok($author->delete);
 ok(!$author->is_in_db);
