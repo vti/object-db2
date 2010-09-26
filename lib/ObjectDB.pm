@@ -667,6 +667,10 @@ sub find {
     my $class  = shift;
     my %params = @_;
 
+    if (ref $class && $class->columns){
+        die q/find method can only be performed on table object, not on row object/;
+    }
+
     my $conn = delete $params{conn} || $class->conn;
     Carp::croak q/Connector is required/ unless $conn;
 

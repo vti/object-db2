@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 11;
 
 use lib 't/lib';
 
@@ -40,6 +40,12 @@ is($author->column('name'), 'author 1');
 
 # Returned object should NOT be table object
 isnt($author, $authors_table);
+
+
+# Find method can only be performed on table object, not on row object
+ok(!eval {$authors_table = Author->new(name=>'Fritz'); $authors_table->find });
+my $err_msg = 'find method can only be performed on table object, not on row object';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 
 
 # Where
