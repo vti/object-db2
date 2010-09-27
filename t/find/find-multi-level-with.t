@@ -24,7 +24,7 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 
 
 ######################################################################
-###### 1. following naming conventions
+###### 1. Follow naming conventions
 
 ######################################################################
 ###### 1.1 One-to-Many --> One-to-Many (--> One-to-Many)
@@ -328,13 +328,9 @@ is($article->to_do_articles->[0]->column('to_do'), 'to do 4');
 ok(not defined $article->special_report);
 
 
-######################################################################
-###### 1.5 Main -> One-to-many -> One-to-many
-######                         -> One-to-many
-
 
 ######################################################################
-###### 2. crazy naming
+###### 2. Custom naming
 ###### Using columns for mapping that do not follow naming conventions
 ###### Using columns for mapping that are not primary key columns
 ###### Map tables using multiple columns
@@ -342,7 +338,6 @@ ok(not defined $article->special_report);
 
 ######################################################################
 #### 2.1 Main -> One-to-many -> One-to-many
-
 
 # First simple test, this test also makes sure that no exception is thrown
 # even if some apartments have NO images (previous tests for HotelData passed
