@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 use lib 't/lib';
 
@@ -17,5 +17,13 @@ use ParkingLot;
 # so primary key should be checked on the ORM level
 ok( !eval{ ParkingLot->create(number_of_spots=>40) });
 my $err_msg = '->create: primary key column can NOT be NULL or has to be AUTO INCREMENT, table: parking_lots';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
+TestEnv->teardown;
+
+ok( !eval{ ParkingLot->create(
+        lot_id_1_l      => undef,
+        lot_id_2_l      => 2,
+        number_of_spots => 40) });
+$err_msg = '->create: primary key column can NOT be NULL or has to be AUTO INCREMENT, table: parking_lots';
 ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 TestEnv->teardown;
