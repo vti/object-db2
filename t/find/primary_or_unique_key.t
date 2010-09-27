@@ -121,4 +121,6 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 0;
 
 AuthorData->cleanup;
 
+HotelData->cleanup;
+
 TestEnv->teardown;

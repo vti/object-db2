@@ -18,7 +18,7 @@ sub populate {
         city        => 'New York',
         hotel_num_a => 5,
         lot_id_1_h  => 10,
-        lot_id_2_h  => 2,
+        lot_id_2_h  => 1,
         parking_lot => {
             number_of_spots => 40
         },
@@ -69,7 +69,7 @@ sub populate {
         city        => 'London',
         street      => 'Berlin Street',
         hotel_num_a => 6,
-        lot_id_1_h  => 10,
+        lot_id_1_h  => 20,
         lot_id_2_h  => 1,
         parking_lot => {
             number_of_spots => 56
