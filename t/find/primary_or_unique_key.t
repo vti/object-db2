@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 31;
 
 use lib 't/lib';
 
@@ -74,9 +74,37 @@ is($author->articles->[0]->comments->[0]->column('content'),
     'comment 2-1-1');
 
 
+### Primary key with multiple columns
+
+# Pass columns that do not form a primary or unique key
+ok(!eval { ParkingLot->find(id => {lot_id_1_l=>1, number_of_spots=>2}) });
+$err_msg = 'FIND: passed columns do not form primary or unique key';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
+
+
+# Pass primary key consisting of multiple columns as hash ref
+my $parking_lot = ParkingLot->find(id => {lot_id_1_l=>'20', lot_id_2_l=>'1'});
+is($parking_lot->column('number_of_spots'), 56);
+
+
+# Pass primary key consisting of multiple columns as array ref
+$parking_lot = ParkingLot->find(id => [lot_id_1_l=>'20', lot_id_2_l=>'1']);
+is($parking_lot->column('number_of_spots'), 56);
+
+
+# same test with changed order of columns
+$parking_lot = ParkingLot->find(id => [lot_id_2_l=>'1', lot_id_1_l=>'20']);
+is($parking_lot->column('number_of_spots'), 56);
+
+
+# pass invalid values
+$parking_lot = ParkingLot->find(id => [lot_id_1_l=>'30', lot_id_2_l=>'1']);
+is($parking_lot, undef);
+
+
 ### Unique keys with multiple columns
 
-# Pass columns that do not form a primary of unique key
+# Pass columns that do not form a primary or unique key
 ok(!eval { Hotel->find(id => {street=>1, name=>2}) });
 $err_msg = 'FIND: passed columns do not form primary or unique key';
 ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
@@ -109,10 +137,6 @@ is($hotel->id, $hotel2->id);
 # pass invalid values
 $hotel = Hotel->find(id => [city=>'London', street=>'Amsterdam Street']);
 is($hotel, undef);
-
-
-
-### TO DO: primary key with multiple columns
 
 
 
