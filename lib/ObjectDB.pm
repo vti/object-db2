@@ -234,10 +234,9 @@ sub create {
 
     my @pk = $class->schema->primary_key;
     die
-      '->create: primary key column can NOT be NULL or has to be AUTO INCREMENT, table: '
+      '->create: primary key column can NOT be NULL or has to be AUTOINCREMENT, table: '
       . $class->schema->table
-      unless $self->_primary_key_columns
-          || (@pk == 1 && $class->schema->auto_increment eq $pk[0]);
+      unless $self->_primary_key_columns_or_autoincrement;
 
     my $sql = ObjectDB::SQL::Insert->new;
     $sql->table($class->schema->table);
@@ -1243,6 +1242,18 @@ sub _primary_key_columns {
     }
 
     return @primary_key;
+}
+
+sub _primary_key_columns_or_autoincrement {
+    my $self = shift;
+
+    return 1 if $self->_primary_key_columns;
+
+    my @pk = $self->schema->primary_key;
+    return 1 if @pk == 1 && $self->schema->auto_increment eq $pk[0];
+
+    return undef;
+
 }
 
 sub _regular_columns {
