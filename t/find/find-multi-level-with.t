@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 289;
+use Test::More tests => 287;
 
 use lib 't/lib';
 
@@ -555,6 +555,14 @@ is($hotels[1]->manager->office, undef);
 is($hotels[1]->manager->car,  undef);
 
 
+my @rooms = Room->find(with => [qw/ apartment apartment.hotel /]);
+is(@rooms,                                      17);
+is($rooms[0]->column('size'),                   70);
+is($rooms[0]->apartment->hotel->column('name'), 'President');
+is($rooms[7]->column('size'),                   10);
+is($rooms[7]->apartment->hotel->column('name'), 'President2');
+
+
 ######################################################################
 #### 2.8 Main -> One-to-one
 ####          -> One-to-one
@@ -718,32 +726,14 @@ is(@{$hotels[1]->apartments->[0]->rooms}, 2);
 is(@{$hotels[1]->apartments->[1]->rooms}, 3);
 
 
-# Similar test, but now WITHOUT WITH
-@hotels = Hotel->find(where => ['apartments.rooms.size' => 70]);
-is(@hotels, 2);    ### should still be 2, not 3 as in sql (left join)
-is($hotels[0]->column('hotel_num_a'), 5);
-is($hotels[1]->column('hotel_num_a'), 6);
-
-# TO DO: create more complex where related tests in seperate file
-# is( @{$hotels[0]->apartments}, undef );
-
-
-# one-to-one relationships with multiple column mapping
-my @rooms = Room->find(with => [qw/ apartment apartment.hotel /]);
-is(@rooms,                                      17);
-is($rooms[0]->column('size'),                   70);
-is($rooms[0]->apartment->hotel->column('name'), 'President');
-is($rooms[7]->column('size'),                   10);
-is($rooms[7]->apartment->hotel->column('name'), 'President2');
-
-
-# Similar test with "where" condition
+# where: one-to-one -> one-to-one
 @rooms = Room->find(
     with  => [qw/ apartment apartment.hotel /],
     where => ['apartment.hotel.name' => 'President']
 );
 is(@rooms,                                      5);
 is($rooms[3]->column('size'),                   16);
+is($rooms[3]->apartment->column('name'),        'George Washington');
 is($rooms[3]->apartment->hotel->column('name'), 'President');
 
 
