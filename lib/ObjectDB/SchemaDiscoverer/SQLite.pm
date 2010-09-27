@@ -16,8 +16,7 @@ sub discover {
         last if $sql;
     }
 
-    die 'SchemaDiscoverer::SQLite: table not found in db, table name: '
-      . $self->table
+    die 'SchemaDiscoverer::SQLite: table ' . $self->table . ' not found in DB'
       unless $sql;
 
     ### TO DO: Support for unique keys created by "create unique index"
@@ -29,7 +28,7 @@ sub discover {
     my $counter = 0;
     while ($sql =~ s/UNIQUE\((.*?)\)//) {
         my $unique = $1;
-        $unique =~s / //g;
+        $unique =~ s / //g;
 
         my @unique_keys;
         my @uk = split ',' => $unique;

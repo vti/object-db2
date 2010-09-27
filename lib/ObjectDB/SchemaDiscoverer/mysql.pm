@@ -13,12 +13,18 @@ sub discover {
 
     my $sth = $dbh->column_info(undef, undef, $self->table, '%');
 
+    my $counter = 0;
     while (my $col_info = $sth->fetchrow_hashref) {
         push @columns, $self->unquote($col_info->{COLUMN_NAME});
 
         $self->auto_increment($columns[$#columns])
           if $col_info->{'mysql_is_auto_increment'};
+        $counter++;
     }
+
+    # Throw an exception if table does not exist
+    die 'SchemaDiscoverer::mysql: table ' . $self->table . ' not found in DB'
+      unless $counter;
 
     $self->columns([sort @columns]);
 
@@ -34,12 +40,12 @@ sub discover {
       grep { !$_->{'Non_unique'} && $_->{'Key_name'} ne 'PRIMARY' } @$result;
 
     my @unique_keys;
-    foreach my $result (@unique_keys_results){
+    foreach my $result (@unique_keys_results) {
         push @unique_keys, ($result->{'Key_name'}, $result->{'Column_name'});
     }
 
     my %unique_keys;
-    while (@unique_keys){
+    while (@unique_keys) {
         my $key   = shift @unique_keys;
         my $value = shift @unique_keys;
 
@@ -48,8 +54,8 @@ sub discover {
     }
 
     my @unique_keys_final;
-    my $counter = 0;
-    foreach my $key (keys %unique_keys){
+    $counter = 0;
+    foreach my $key (keys %unique_keys) {
         $unique_keys_final[$counter] = $unique_keys{$key};
         $counter++;
     }

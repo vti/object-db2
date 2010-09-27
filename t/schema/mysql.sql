@@ -94,6 +94,8 @@ CREATE TABLE `hotels` (
  `name` varchar(40) default '',
  `city` varchar(40) default '',
  `street` varchar(40) default '',
+ `lot_id_1_h` INTEGER,
+ `lot_id_2_h` INTEGER,
  UNIQUE(`city`,`street`),
  UNIQUE(`name`,`city`)
 ) TYPE=innodb;
@@ -133,6 +135,20 @@ CREATE TABLE `managers` (
  `manager_num_b` INTEGER,
  `name` varchar(40) default ''
 ) TYPE=innodb;
+CREATE TABLE `parking_lots` (
+ `lot_id_1_l` INTEGER,
+ `lot_id_2_l` INTEGER,
+ `number_of_spots` INTEGER,
+ PRIMARY KEY (lot_id_1_l,lot_id_2_l)
+) TYPE=innodb;;
+CREATE TABLE `parking_spots` (
+ `spot_id_1` varchar(40),
+ `spot_id_2` INTEGER,
+ `lot_id_1_s` INTEGER,
+ `lot_id_2_s` INTEGER,
+ `size` INTEGER,
+ PRIMARY KEY (spot_id_1,spot_id_2)
+) TYPE=innodb;;
 CREATE TABLE `offices` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `manager_num_b` INTEGER,

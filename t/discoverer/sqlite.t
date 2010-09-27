@@ -9,7 +9,7 @@ BEGIN { $ENV{OBJECTDB_NO_DBIX_CONNECTOR} = 1; }
 
 plan skip_all => 'TEST_MYSQL disables this test' if $ENV{TEST_MYSQL};
 
-plan tests => 13;
+plan tests => 15;
 
 use lib 't/lib';
 
@@ -47,6 +47,13 @@ $d->discover($dbh);
 is($d->table, 'article_tag_maps');
 is_deeply($d->columns,     [qw/article_id tag_id/]);
 is_deeply($d->primary_key, [qw/article_id tag_id/]);
+
+
+# Throw an exeption if table does not exist
+$d = ObjectDB::SchemaDiscoverer->build(driver => 'SQLite', table => 'h');
+ok(!eval { $d->discover($dbh) });
+my $err_msg = 'SchemaDiscoverer::SQLite: table h not found in DB';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 
 
 # Multiple unique keys with multiple columns, passed to SQLite in format:

@@ -232,6 +232,13 @@ sub create {
 
     Carp::croak q/Connector required/ unless $self->conn;
 
+    my @pk = $class->schema->primary_key;
+    die
+      '->create: primary key column can NOT be NULL or has to be AUTO INCREMENT, table: '
+      . $class->schema->table
+      unless $self->_primary_key_columns
+          || (@pk == 1 && $class->schema->auto_increment eq $pk[0]);
+
     my $sql = ObjectDB::SQL::Insert->new;
     $sql->table($class->schema->table);
     $sql->columns([$self->columns]);
@@ -667,8 +674,9 @@ sub find {
     my $class  = shift;
     my %params = @_;
 
-    if (ref $class && $class->columns){
-        die q/find method can only be performed on table object, not on row object/;
+    if (ref $class && $class->columns) {
+        die
+          q/find method can only be performed on table object, not on row object/;
     }
 
     my $conn = delete $params{conn} || $class->conn;
@@ -690,6 +698,7 @@ sub find {
             }
         );
     }
+
     # Standard case
     else {
         $sql->source($class->schema->table);

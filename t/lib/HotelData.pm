@@ -17,6 +17,11 @@ sub populate {
         name        => 'President',
         city        => 'New York',
         hotel_num_a => 5,
+        lot_id_1_h  => 10,
+        lot_id_2_h  => 2,
+        parking_lot => {
+            number_of_spots => 40
+        },
         apartments  => [
             {   apartment_num_b => 47,
                 name            => 'John F. Kennedy',
@@ -64,6 +69,11 @@ sub populate {
         city        => 'London',
         street      => 'Berlin Street',
         hotel_num_a => 6,
+        lot_id_1_h  => 10,
+        lot_id_2_h  => 1,
+        parking_lot => {
+            number_of_spots => 56
+        },
         apartments  => [
             {   apartment_num_b => 47,
                 name            => 'John F. Kennedy',

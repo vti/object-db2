@@ -18,7 +18,7 @@ use TestDB;
 plan skip_all => 'set TEST_MYSQL to "db,user,pass" to enable this test'
   unless $ENV{TEST_MYSQL};
 
-plan tests => 9;
+plan tests => 11;
 
 use_ok('ObjectDB::SchemaDiscoverer::mysql');
 
@@ -38,11 +38,17 @@ is_deeply($d->primary_key,      [qw/id/]);
 is_deeply($d->unique_keys->[0], [qw/name/]);
 
 
+# Throw an exeption if table does not exist
+$d = ObjectDB::SchemaDiscoverer->build(driver => 'mysql', table => 'h');
+ok(!eval { $conn->run(sub { $d->discover(shift) }) });
+my $err_msg = 'SchemaDiscoverer::mysql: table h not found in DB';
+ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
+
+
 # Multiple unique keys with multiple columns
 $d = ObjectDB::SchemaDiscoverer->build(
     driver => 'mysql',
     table => 'hotels');
-$conn = TestDB->conn;
 $conn->run(sub { $d->discover(shift); });
 is_deeply($d->unique_keys->[0], [qw/city street/]);
 is_deeply($d->unique_keys->[1], [qw/name city/]);
