@@ -3,22 +3,25 @@
 use strict;
 use warnings;
 
-use Test::More tests => 291;
+use Test::More tests => 289;
 
 use lib 't/lib';
 
 use TestEnv;
-use HotelData;
-use AuthorData;
-
 TestEnv->setup;
 
+
+use HotelData;
 HotelData->populate;
 
-my ($author, $author2) = AuthorData->populate;
+
+use AuthorData;
+my ($author1, $author2) = AuthorData->populate;
+
 
 # Make sure that data is prefetched
 $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
+
 
 ######################################################################
 ###### 1. following naming conventions
@@ -302,7 +305,7 @@ is($authors[0]->articles->[2]->comments->[0]->column('content'),
 
 # Pass specific article id
 my $article = Article->find(
-    id   => $author->articles->[2]->column('id'),
+    id   => $author1->articles->[2]->column('id'),
     with => [qw/special_report.main_category.admin_histories/]
 );
 is( $article->special_report->main_category->admin_histories->[0]
@@ -315,7 +318,7 @@ ok(not defined $article->special_report->main_category->column('title'));
 # Pass specific article id, make sure that later subrequest is performed even
 # if first subrequest does not provide any results
 $article = Article->find(
-    id   => $author->articles->[3]->column('id'),
+    id   => $author1->articles->[3]->column('id'),
     with => [qw/to_do_articles special_report.main_category.admin_histories/]
 );
 is($article->to_do_articles->[0]->column('to_do'), 'to do 4');
@@ -641,26 +644,7 @@ is($hotels[2]->manager,                 undef);
 
 
 ######################################################################
-#### 3. NO prefetch
-
-# Allow lazy loading of data
-$ENV{OBJECTDB_FORCE_PREFETCH} = 0;
-
-# telefon_numbers are NOT prefetched, array ref should be returned
-@hotels = Hotel->find(with => [qw/manager/]);
-is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
-    '123456789');
-
-
-# manager is not prefetched, a manager object should be returned
-@hotels = Hotel->find;
-is($hotels[0]->manager->column('name'), 'Lalolu');
-
-# Make sure that data is prefetched
-$ENV{OBJECTDB_FORCE_PREFETCH} = 1;
-
-######################################################################
-#### 4. where and multi-level-with
+#### 3. where and multi-level-with
 
 # No match at all
 @hotels = Hotel->find(
@@ -770,10 +754,11 @@ is($rooms[3]->apartment->hotel->column('name'), 'President');
 #    with => [qw/main_category special_report.main_category.admin_histories/]);
 #is( $articles[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
 
+
 # Allow lazy loading of data
 $ENV{OBJECTDB_FORCE_PREFETCH} = 0;
 
+
 HotelData->cleanup;
 AuthorData->cleanup;
-
 TestEnv->teardown;
