@@ -232,7 +232,6 @@ sub create {
 
     Carp::croak q/Connector required/ unless $self->conn;
 
-    my @pk = $class->schema->primary_key;
     die
       '->create: primary key column can NOT be NULL or has to be AUTOINCREMENT, table: '
       . $class->schema->table
