@@ -133,11 +133,11 @@ is(DummyParent->schema->relationship('dummy_childs')->table,
     'passed_a_table_name');
 
 DummyChild->schema->build(TestDB->init_conn);
-is(DummyChild->schema->relationship('best_friend')->foreign_class,
+is(DummyChild->schema->relationship('best_friend')->build(TestDB->init_conn)->foreign_class,
     'Best::Friend');
 
 DummyChild2->schema->build(TestDB->init_conn);
-is(DummyChild2->schema->relationship('best_friend')->foreign_class,
+is(DummyChild2->schema->relationship('best_friend')->build(TestDB->init_conn)->foreign_class,
     'Best::Friend');
 
 DummyWithTable->schema->build(TestDB->init_conn);

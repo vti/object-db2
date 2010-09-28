@@ -112,6 +112,16 @@ sub rows_as_object {
     return undef;
 }
 
+sub objectdb_lazy {
+    # Overwrite this method in CGI environments
+    # to load related classes only if needed
+    # sub objectdb_lazy {1;}
+    # or set $ENV{OBJECTDB_LAZY} to 1
+
+    return $ENV{OBJECTDB_LAZY} || undef;
+}
+
+
 sub init_conn { }
 
 sub id {
@@ -292,6 +302,7 @@ sub create_related {
     my $data = shift;
 
     my $rel = $self->schema->relationship($name);
+    $rel->build($self->conn);
 
     my @params = ();
     while (my ($from, $to) = each %{$rel->map}) {
@@ -359,6 +370,7 @@ sub delete_related {
     my %params = @_;
 
     my $rel = $self->schema->relationship($name);
+    $rel->build($self->conn);
 
     my @where;
     push @where, @{$rel->where}           if $rel->where;
@@ -402,6 +414,7 @@ sub related {
     my $name = shift;
 
     my $rel = $self->schema->relationship($name);
+    $rel->build($self->conn);
 
     my $related = $self->{related}->{$name};
 
@@ -565,7 +578,8 @@ sub _resolve_max_min_n_per_group_multi_table {
     $class->_resolve_multi_table(
         where     => $group,
         sql       => $sub_sql_2,
-        col_alias => 'OBJECTDB_COMPARE_2'
+        col_alias => 'OBJECTDB_COMPARE_2',
+        conn      => $conn
     );
 
 
@@ -637,6 +651,7 @@ sub _resolve_multi_table {
     my $where     = $params{where};
     my $sql       = $params{sql};
     my $col_alias = $params{col_alias};
+    my $conn      = $params{conn};
 
     return unless $where && @$where;
 
@@ -650,7 +665,7 @@ sub _resolve_multi_table {
             my $one_to_many = 0;
             while ($key =~ s/(\w+)\.//) {
                 my $name = $1;
-                my $rel  = $parent->schema->relationship($name);
+                my $rel  = $parent->schema->relationship($name)->build($conn);
 
                 if ($rel->is_has_many) {
                     $one_to_many = 1;
@@ -711,7 +726,8 @@ sub find {
             main    => $main,
             with    => $with,
             sql     => $sql,
-            subreqs => $subreqs
+            subreqs => $subreqs,
+            conn    => $conn
         );
     }
 
@@ -732,7 +748,7 @@ sub find {
         $single = 1;
     }
     elsif (my $where = $params{where}) {
-        $class->_resolve_where(where => $where, sql => $sql);
+        $class->_resolve_where(where => $where, sql => $sql, conn => $conn);
     }
 
     $sql->limit($params{limit}) if $params{limit};
@@ -983,16 +999,16 @@ sub find_related {
     my $name   = shift;
     my %params = @_;
 
-    my $rel = $class->schema->relationship($name);
+    my $conn = $params{conn} || $class->conn;
 
-    my $conn;
+    my $rel = $class->schema->relationship($name);
+    $rel->build($conn);
+
 
     my @where;
 
     if (ref($class)) {
         my $self = $class;
-
-        $conn = $self->conn;
 
         if ($rel->is_has_and_belongs_to_many) {
             my ($to, $from) =
@@ -1009,7 +1025,6 @@ sub find_related {
         }
     }
     else {
-        $conn = $params{conn} || $class->conn;
         Carp::croak q/Connector is required/ unless $conn;
 
         if ($rel->is_has_and_belongs_to_many) {
@@ -1186,6 +1201,7 @@ sub _delete_instance {
             my @child_rel = $self->schema->child_relationships;
             foreach my $name (@child_rel) {
                 my $rel = $self->schema->relationship($name);
+                $rel->build($conn);
 
                 my $related;
 
@@ -1341,6 +1357,7 @@ sub _resolve_where {
 
     my $where = [@{$params{where}}];
     my $sql   = $params{sql};
+    my $conn  = $params{conn};
 
     for (my $i = 0; $i < @$where; $i += 2) {
         my $key   = $where->[$i];
@@ -1353,6 +1370,7 @@ sub _resolve_where {
             while ($key =~ s/(\w+)\.//) {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
+                $rel->build($conn);
 
                 if ($rel->is_has_many) {
                     $one_to_many = 1;
@@ -1398,6 +1416,7 @@ sub _resolve_with {
     my $with    = $params{with};
     my $sql     = $params{sql};
     my $subreqs = $params{subreqs};
+    my $conn    = $params{conn};
 
     return unless $with;
 
@@ -1411,6 +1430,7 @@ sub _resolve_with {
             my $chain = $passed_chain ? [@$passed_chain] : [];
 
             my $rel = $class->schema->relationship($name);
+            $rel->build($conn);
 
             my $parent_args = $parent_with_args || $main;
 

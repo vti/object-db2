@@ -10,6 +10,7 @@ use MainCategory;
 #use Article;
 #use Comment;
 #use SubComment;
+use SpecialReport;
 
 
 ###### Using columns for mapping that do not follow naming conventions

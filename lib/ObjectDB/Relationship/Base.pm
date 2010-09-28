@@ -38,10 +38,7 @@ sub table {
 sub build {
     my $self = shift;
 
-    return if $self->is_built;
-
-    # Create alias for parent class to access related data
-    $self->_create_alias_for_related_data;
+    return $self if $self->is_built;
 
     $self->_detect_and_load_foreign_class;
 
@@ -54,20 +51,22 @@ sub build {
     # Now build other schemas (and other relationships) AFTER
     # current rel is flaged as build
     $self->foreign_class->schema->build(@_) if $self->foreign_class;
-    $self->map_class->schema->build(@_) if $self->can('map_class');
 
+    # TO DO: custom map class (non auto-generated)
+    # $self->map_class->schema->build(@_) if $self->can('map_class');
+
+    # Always build relationships from map_class to foreign classes
+    $self->build_map_class_rels(@_) if $self->can('map_class');
+
+    return $self;
 }
 
-sub _create_alias_for_related_data {
+sub build_map_class_rels {
     my $self = shift;
 
-    unless ($self->class->can($self->name)) {
-        no strict;
-        my $class = $self->class;
-        my $name  = $self->name;
-        my $code  = "sub {shift->related('$name')}";
-        *{"${class}::$name"} = eval $code;
-    }
+    $self->map_schema->relationships->{$self->map_from}->build(@_);
+    $self->map_schema->relationships->{$self->map_to}->build(@_);
+
 }
 
 sub _detect_and_load_foreign_class {

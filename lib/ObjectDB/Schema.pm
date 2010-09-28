@@ -40,6 +40,8 @@ sub build {
     # Cache
     return if $self->is_built;
 
+    $ENV{OBJECTDB_BUILT_SCHEMAS}++;
+
     $self->auto_discover(@_) unless $self->columns;
 
     my $class = $self->class;
@@ -49,7 +51,10 @@ sub build {
     # Prevent recursive discovery
     $self->is_built(1);
 
-    $self->build_relationships(@_);
+    $self->build_relationships(@_) unless $self->class->objectdb_lazy;
+
+    # Build aliases for related data (for all relationships)
+    $self->build_aliases(@_);
 
     return $self;
 }
@@ -88,6 +93,22 @@ sub build_relationships {
 
     while (my ($key, $value) = each %{$self->relationships}) {
         $value->build(@_);
+    }
+}
+
+sub build_aliases {
+    my $self = shift;
+
+    while (my ($key, $rel) = each %{$self->relationships}) {
+
+        unless ($self->class->can($rel->name)) {
+            no strict;
+            my $class = $rel->class;
+            my $name  = $rel->name;
+            my $code  = "sub {shift->related('$name')}";
+            *{"${class}::$name"} = eval $code;
+        }
+
     }
 }
 
