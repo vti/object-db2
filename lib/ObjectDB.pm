@@ -947,7 +947,7 @@ sub _fetch_subrequests {
         foreach my $o (@$related) {
             my $id;
             foreach my $map_to_col (@$map_to) {
-                $id .= $o->column($map_to_col);
+                $id .= '__'.$o->column($map_to_col);
             }
             $set->{$id} ||= [];
             push @{$set->{$id}}, $o;
@@ -973,10 +973,10 @@ sub _fetch_subrequests {
 
             my $id;
             foreach my $map_from_col (@$map_from) {
-                $id .= $parent->column($map_from_col);
+                $id .= '__'.$parent->column($map_from_col);
             }
 
-            $set->{$id} ||= [];
+            next unless $set->{$id};
             push @{$parent->{related}->{$name}}, @{$set->{$id}};
         }
     }
