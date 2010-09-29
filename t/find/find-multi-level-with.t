@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 288;
+use Test::More tests => 296;
 
 use lib 't/lib';
 
@@ -346,47 +346,47 @@ is(@{$hotels[0]->apartments->[0]->images},                    0);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
 
 
-# Now get comparable object via find
+# every hotel has apartments, every apartment has rooms
+# check if all mapping colums are loaded
 @hotels = Hotel->find(with => [qw/apartments apartments.rooms/]);
 
 is(@{$hotels[0]->apartments},                              2);
+is($hotels[0]->apartments->[0]->column('hotel_num_b'),     5);
 is($hotels[0]->apartments->[0]->column('apartment_num_b'), 47);
 is($hotels[0]->apartments->[0]->column('name'),            'John F. Kennedy');
 is($hotels[0]->apartments->[0]->column('size'),            78);
 
+is($hotels[0]->apartments->[1]->column('hotel_num_b'), 5);
 is($hotels[0]->apartments->[1]->column('apartment_num_b'), 61);
 is($hotels[0]->apartments->[1]->column('name'), 'George Washington');
 is($hotels[0]->apartments->[1]->column('size'), 50);
 
 is(@{$hotels[0]->apartments->[0]->rooms},                         2);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('hotel_num_c'),5);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
 is($hotels[0]->apartments->[0]->rooms->[0]->column('room_num_c'), 1);
 is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),       70);
+
+is($hotels[0]->apartments->[0]->rooms->[1]->column('hotel_num_c'),     5);
+is($hotels[0]->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
 is($hotels[0]->apartments->[0]->rooms->[1]->column('room_num_c'), 2);
 is($hotels[0]->apartments->[0]->rooms->[1]->column('size'),       8);
 
 is(@{$hotels[0]->apartments->[1]->rooms},                         3);
+is($hotels[0]->apartments->[1]->rooms->[0]->column('hotel_num_c'),     5);
+is($hotels[0]->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
 is($hotels[0]->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
 is($hotels[0]->apartments->[1]->rooms->[0]->column('size'),       10);
+
+is($hotels[0]->apartments->[1]->rooms->[1]->column('hotel_num_c'),     5);
+is($hotels[0]->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
 is($hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
 is($hotels[0]->apartments->[1]->rooms->[1]->column('size'),       16);
+
+is($hotels[0]->apartments->[1]->rooms->[2]->column('hotel_num_c'),     5);
+is($hotels[0]->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 is($hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
 is($hotels[0]->apartments->[1]->rooms->[2]->column('size'),       70);
-
-
-is($hotels[0]->apartments->[0]->column('hotel_num_b'), 5);
-is($hotels[0]->apartments->[1]->column('hotel_num_b'), 5);
-
-is($hotels[0]->apartments->[0]->rooms->[0]->column('hotel_num_c'),     5);
-is($hotels[0]->apartments->[0]->rooms->[1]->column('hotel_num_c'),     5);
-is($hotels[0]->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
-is($hotels[0]->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
-
-is($hotels[0]->apartments->[1]->rooms->[0]->column('hotel_num_c'),     5);
-is($hotels[0]->apartments->[1]->rooms->[1]->column('hotel_num_c'),     5);
-is($hotels[0]->apartments->[1]->rooms->[2]->column('hotel_num_c'),     5);
-is($hotels[0]->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
-is($hotels[0]->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
-is($hotels[0]->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
 
 
 # Make sure that columns for mapping are present even if no columns should be loaded
@@ -399,6 +399,7 @@ ok($hotels[0]->column('id'));
 ok(not defined $hotels[0]->column('name'));
 is(@{$hotels[0]->apartments},             2);
 is(@{$hotels[0]->apartments->[0]->rooms}, 2);
+is($hotels[0]->apartments->[0]->rooms->[1]->column('size'), 8);
 
 
 # Make sure that columns for mapping are present even if not all apartment columns are loaded
@@ -410,6 +411,7 @@ ok(not defined $hotels[0]->apartments->[0]->column('name'));
 is(@{$hotels[0]->apartments},                               2);
 is(@{$hotels[0]->apartments->[0]->rooms},                   2);
 is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
+
 
 my $hotel_id = $hotels[0]->column('id');
 
@@ -434,6 +436,7 @@ is($hotel->apartments->[0]->rooms->[0]->column('size'), 70);
 # one-to-one after one-to-many to make sure that column aliases work correctly in find_related
 # map: rooms.apartment_num_c => maid.apartment_num_c, i.e. same column name for mapping in both tables
 @hotels = Hotel->find(with => [qw/apartments apartments.rooms.maid/]);
+is($hotels[1]->apartments->[0]->rooms->[0]->maid, undef);
 is($hotels[1]->apartments->[1]->rooms->[0]->maid->column('name'), 'Amelie');
 
 
@@ -452,6 +455,7 @@ is($hotels[0]->manager->telefon_numbers->[0]->column('manager_num_c'),
     '5555555');
 is($hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'),
     '5555555');
+
 
 $hotel_id = $hotels[0]->column('id');
 
@@ -490,8 +494,23 @@ is($hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'),
 
 
 ######################################################################
-#### 2.4 Main -> One-to-many -> One-to-many
+#### 2.4 Main -> One-to-one -> One-to-one
+
+my @rooms = Room->find(with => [qw/ apartment apartment.hotel /]);
+is(@rooms,                                      17);
+is($rooms[0]->column('size'),                   70);
+is($rooms[0]->apartment->hotel->column('name'), 'President');
+is($rooms[7]->column('size'),                   10);
+is($rooms[7]->apartment->hotel->column('name'), 'President2');
+
+
+######################################################################
+#### 2.5 Main -> One-to-many -> One-to-many
 ####                         -> One-to-many
+
+# different mapping columns
+# {hotel_num_b => 'hotel_num_c', apartment_num_b => 'apartment_num_c'}
+# {image_num_b => 'image_num_c'
 @hotels = Hotel->find(with => [qw/apartments.rooms apartments.images/]);
 is(@hotels,                                                   3);
 is(@{$hotels[0]->apartments->[1]->images},                    1);
@@ -501,9 +520,11 @@ is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),   70);
 
 
 ######################################################################
-#### 2.5 Main -> One-to-one -> One-to-many
+#### 2.6 Main -> One-to-one -> One-to-many
 ####                        -> One-to-many
 
+# same mapping columns
+# {hotel_num_b => 'hotel_num_c', manager_num_b => 'manager_num_c'}
 @hotels =
   Hotel->find(with => [qw/manager.telefon_numbers manager.secretaries/]);
 is(@hotels,                                 3);
@@ -520,11 +541,11 @@ is(@{$hotels[1]->manager->secretaries},                         0);
 
 
 ######################################################################
-#### 2.6 Main -> One-to-many
+#### 2.7 Main -> One-to-many
 ####             One-to-many
 
-### TO DO: mapping columns between manger/telefon and manager/secr. should not be the same
-
+# same mapping columns
+# {hotel_num_b => 'hotel_num_c', manager_num_b => 'manager_num_c'}
 my @managers = Manager->find(with => [qw/telefon_numbers secretaries/]);
 is(@managers,                                                    3);
 is($managers[0]->column('name'),                                 'Lalolu');
@@ -537,9 +558,24 @@ is($managers[0]->secretaries->[1]->column('last_name'),          'Last2');
 is(@{$managers[1]->secretaries},                                 0);
 
 
+# similar test, but different mapping columns
+# {hotel_num_b => 'hotel_num_c', apartment_num_b => 'apartment_num_c'}
+# {image_num_b => 'image_num_c'
+my @apartments = Apartment->find(with => [qw/rooms images/]);
+is(@apartments,                                  6);
+is(@{$apartments[0]->images},                    0);
+is(@{$apartments[1]->images},                    1);
+is($apartments[1]->images->[0]->column('width'), 30);
+is(@{$apartments[0]->rooms},                     2);
+is($apartments[0]->rooms->[0]->column('size'),   70);
+
+
 ######################################################################
-#### 2.7 Main -> One-to-one -> One-to-one
+#### 2.8 Main -> One-to-one -> One-to-one
 ####                        -> One-to-one
+
+# same mapping columns
+# {manager_num_b => 'manager_num_b'}
 @hotels = Hotel->find(with => [qw/manager.office manager.car/]);
 is(@hotels,                                 3);
 is($hotels[0]->manager->column('name'),     undef);
@@ -549,17 +585,12 @@ is($hotels[1]->manager->office, undef);
 is($hotels[1]->manager->car,  undef);
 
 
-my @rooms = Room->find(with => [qw/ apartment apartment.hotel /]);
-is(@rooms,                                      17);
-is($rooms[0]->column('size'),                   70);
-is($rooms[0]->apartment->hotel->column('name'), 'President');
-is($rooms[7]->column('size'),                   10);
-is($rooms[7]->apartment->hotel->column('name'), 'President2');
-
-
 ######################################################################
-#### 2.8 Main -> One-to-one
+#### 2.9 Main -> One-to-one
 ####          -> One-to-one
+
+# same mapping columns
+# {manager_num_b => 'manager_num_b'}
 @managers = Manager->find(with => [qw/office car/]);
 is($managers[0]->office->column('size'), 33);
 is($managers[0]->car->column('brand'), 'Porsche');
@@ -568,7 +599,9 @@ is($managers[1]->car,  undef);
 
 
 ######################################################################
-#### 2.9 Mix 2.1 and 2.2
+#### 2.10 Main -> One-to-one  -> One-to-many
+####           -> One-to-many -> One-to-many
+
 @hotels = Hotel->find(with => [qw/manager.telefon_numbers apartments.rooms/]);
 is(@{$hotels[0]->apartments}, 2);
 ok(not defined $hotels[0]->apartments->[0]->column('name'));
@@ -579,7 +612,7 @@ is($hotels[0]->apartments->[1]->rooms->[2]->column('size'), 70);
 
 
 ######################################################################
-#### 2.10 include "where" parameter in "with" to only prefetch data that
+#### 2.11 include "where" parameter in "with" to only prefetch data that
 #### meets certain criteria
 
 # has_many relationship
