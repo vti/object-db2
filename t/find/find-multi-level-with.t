@@ -27,7 +27,7 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 ###### 1. Follow naming conventions
 
 ######################################################################
-###### 1.1 One-to-Many --> One-to-Many (--> One-to-Many)
+#### 1.1 Main -> One-to-Many --> One-to-Many (--> One-to-Many)
 
 # First simple test
 my @authors = Author->find(with => [qw/articles articles.comments/]);
@@ -141,8 +141,8 @@ is(@{$authors[0]->articles->[1]->comments}, 0);
 
 
 ######################################################################
-###### 1.2 Mix One-to-Many x 3 (up to 3 levels) AND One-to-Many --> One-to-One
-###### articles.comments articles.main_category)
+#### 1.2 Main -> One-to-many  -> One-to-many (-> One-to-many)
+####          -> One-to-many  -> One-to-one
 @authors = Author->find(
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
@@ -224,7 +224,8 @@ is($authors[0]->articles->[0]->main_category->column('title'),
 
 
 ######################################################################
-###### 1.3 One-to-One --> One-to-Many
+#### 1.3 Main -> One-to-one -> One-to-many
+
 my @articles = Article->find(with => [qw/main_category.admin_histories/]);
 is($articles[0]->main_category->admin_histories->[0]->column('admin_name'),
     'Andre1');
@@ -238,6 +239,18 @@ is($articles[0]->main_category->admin_histories->[0]->column('admin_name'),
 is($articles[0]->main_category->column('title'), 'main category 4');
 
 
+# article with title article 2-1 has no main category, so subrequest
+# should not be performed (empty IN, does not execute in mysql)
+@articles = Article->find(
+    with  => [qw/main_category.admin_histories/],
+    where => [title => 'article 2-1']
+);
+is($articles[0]->main_category, undef);
+
+
+######################################################################
+#### 1.4 Main -> One-to-many -> One-to-one -> One-to-many
+
 @authors = Author->find(with => [qw/articles.main_category.admin_histories/]);
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]
       ->column('admin_name'),
@@ -246,8 +259,24 @@ is( $authors[0]->articles->[0]->main_category->admin_histories->[0]
 ok(not defined $authors[0]->articles->[0]->main_category->column('title'));
 
 
+#####################################################################
+#### 1.5 Main -> One-to-one -> One-to-one -> One-to-many
+
+# Pass specific article id
+my $article = Article->find(
+    id   => $author1->articles->[2]->column('id'),
+    with => [qw/special_report.main_category.admin_histories/]
+);
+is( $article->special_report->main_category->admin_histories->[0]
+      ->column('admin_name'),
+    'Andre1'
+);
+ok(not defined $article->special_report->main_category->column('title'));
+
+
 ######################################################################
-###### 1.4 TWO one-to-one/many-to-one --> One-to-many
+#### 1.6 Main -> One-to-many -> One-to-one -> One-to-one -> One-to-many
+
 @authors =
   Author->find(
     with => [qw/articles.special_report.main_category.admin_histories/]);
@@ -258,17 +287,6 @@ is( $authors[0]->articles->[2]
 );
 ok( not defined $authors[0]->articles->[2]
       ->special_report->main_category->column('title'));
-
-
-# article with title article 2-1 has no main category, so subrequest
-# should not be performed (empty IN, does not execute in mysql)
-ok( eval {
-        @articles = Article->find(
-            with  => [qw/main_category.admin_histories/],
-            where => [title => 'article 2-1']
-        );
-    }
-);
 
 
 @authors = Author->find(
@@ -284,6 +302,11 @@ is( $authors[0]->articles->[2]
 is($authors[0]->articles->[2]->special_report->main_category->column('title'),
     'main category 4');
 
+
+
+######################################################################
+#### 1.7 Main -> One-to-many -> One-to-one -> One-to-one -> One-to-many
+####          -> One-to-many -> One-to-many
 
 ### mix
 @authors = Author->find(
@@ -303,17 +326,10 @@ is($authors[0]->articles->[2]->comments->[0]->column('content'),
     'comment 1-3-1');
 
 
-# Pass specific article id
-my $article = Article->find(
-    id   => $author1->articles->[2]->column('id'),
-    with => [qw/special_report.main_category.admin_histories/]
-);
-is( $article->special_report->main_category->admin_histories->[0]
-      ->column('admin_name'),
-    'Andre1'
-);
-ok(not defined $article->special_report->main_category->column('title'));
 
+######################################################################
+#### 1.8 Main -> One-to-one -> One-to-one -> One-to-many
+####          -> One-to-many
 
 # Pass specific article id, make sure that later subrequest is performed even
 # if first subrequest does not provide any results
@@ -322,7 +338,6 @@ $article = Article->find(
     with => [qw/to_do_articles special_report.main_category.admin_histories/]
 );
 is($article->to_do_articles->[0]->column('to_do'), 'to do 4');
-
 
 # related object should not exist if no data exists for this object (empty objects not allowed)
 ok(not defined $article->special_report);
