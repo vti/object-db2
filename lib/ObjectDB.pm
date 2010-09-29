@@ -909,8 +909,8 @@ sub _fetch_subrequests {
 
         my @pk;
 
-     # create map values for find related (only if map values havent been
-     # created earlier in _row_to_object (in case of preceding one to one rel)
+        # create map values for find related (only if map values havent been
+        # created earlier in _row_to_object (in case of preceding one to one rel)
         unless ($args->{pk}) {
           OUTER_LOOP: foreach my $object (@result) {
                 my $map_from_concat = '';
@@ -967,9 +967,9 @@ sub _fetch_subrequests {
                 }
             }
 
-            next unless $parent->column($map_from->[0]);
-
             $parent->{related}->{$name} = [];
+
+            next unless $parent->column($map_from->[0]);
 
             my $id;
             foreach my $map_from_col (@$map_from) {

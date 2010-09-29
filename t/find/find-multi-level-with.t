@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 287;
+use Test::More tests => 288;
 
 use lib 't/lib';
 
@@ -335,15 +335,14 @@ ok(not defined $article->special_report);
 ###### Using columns for mapping that are not primary key columns
 ###### Map tables using multiple columns
 
-
 ######################################################################
 #### 2.1 Main -> One-to-many -> One-to-many
 
-# First simple test, this test also makes sure that no exception is thrown
-# even if some apartments have NO images (previous tests for HotelData passed
-# despite bugs because every hotel has apartments and every apartment has rooms)
+# First simple test
+# only one apartment has images
 my @hotels = Hotel->find(with => [qw/apartments.images/]);
 is(@hotels,                                                   3);
+is(@{$hotels[0]->apartments->[0]->images},                    0);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
 
 
