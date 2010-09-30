@@ -17,6 +17,7 @@ sub populate {
         name        => 'President',
         city        => 'New York',
         hotel_num_a => 5,
+        hotel_num_a2 => 50,
         lot_id_1_h  => 10,
         lot_id_2_h  => 1,
         parking_lot => {
@@ -46,6 +47,10 @@ sub populate {
                     }
                 ]
             },
+        ],
+        employees => [
+            {   first_name => 'F1', last_name => 'L1' },
+            {   first_name => 'F2', last_name => 'L2' },
         ],
         manager => {
             manager_num_b   => 5555555,

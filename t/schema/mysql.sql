@@ -91,6 +91,7 @@ CREATE TABLE `family` (
 CREATE TABLE `hotels` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
  `hotel_num_a` INTEGER,
+ `hotel_num_a2` INTEGER,
  `name` varchar(40) default '',
  `city` varchar(40) default '',
  `street` varchar(40) default '',
@@ -98,6 +99,12 @@ CREATE TABLE `hotels` (
  `lot_id_2_h` INTEGER,
  UNIQUE(`city`,`street`),
  UNIQUE(`name`,`city`)
+) TYPE=innodb;
+CREATE TABLE `employees` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+ `hotel_num_b2` INTEGER,
+ `first_name` varchar(40) default '',
+ `last_name` varchar(40) default ''
 ) TYPE=innodb;
 CREATE TABLE `apartments` (
  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,

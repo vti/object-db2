@@ -78,6 +78,7 @@ CREATE TABLE `nested_comments` (
 CREATE TABLE `hotels` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `hotel_num_a` INTEGER,
+ `hotel_num_a2` INTEGER,
  `name` varchar(40) default '',
  `city` varchar(40) default '',
  `street` varchar(40) default '',
@@ -85,6 +86,12 @@ CREATE TABLE `hotels` (
  `lot_id_2_h` INTEGER,
  UNIQUE(`city`,   `street`), -- add some spaces between comma
  UNIQUE(`name`,`city`)
+);
+CREATE TABLE `employees` (
+ `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+ `hotel_num_b2` INTEGER,
+ `first_name` varchar(40) default '',
+ `last_name` varchar(40) default ''
 );
 CREATE TABLE `apartments` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 296;
+use Test::More tests => 325;
 
 use lib 't/lib';
 
@@ -25,6 +25,7 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 
 ######################################################################
 ###### 1. Follow naming conventions
+######################################################################
 
 ######################################################################
 #### 1.1 Main -> One-to-Many --> One-to-Many (--> One-to-Many)
@@ -349,6 +350,8 @@ ok(not defined $article->special_report);
 ###### Using columns for mapping that do not follow naming conventions
 ###### Using columns for mapping that are not primary key columns
 ###### Map tables using multiple columns
+######################################################################
+
 
 ######################################################################
 #### 2.1 Main -> One-to-many -> One-to-many
@@ -614,21 +617,110 @@ is($managers[1]->car,  undef);
 
 
 ######################################################################
-#### 2.10 Main -> One-to-one  -> One-to-many
-####           -> One-to-many -> One-to-many
+#### 2.10 Create a really complex test
 
-@hotels = Hotel->find(with => [qw/manager.telefon_numbers apartments.rooms/]);
-is(@{$hotels[0]->apartments}, 2);
-ok(not defined $hotels[0]->apartments->[0]->column('name'));
-ok(not defined $hotels[0]->manager->column('name'));
-is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
-    '123456789');
-is($hotels[0]->apartments->[1]->rooms->[2]->column('size'), 70);
+# Main -> One-to-One  -> One-to-one  -> One-to-one (TO DO)
+#      |              |              -> One-to-one (TO DO)
+#      |              |              -> One-to-many (TO DO)
+#      |              |              -> One-to-many (TO DO)
+#      |              -> One-to-one
+#      |              -> One-to-many
+#      |              -> One-to-many
+#      -> One-to-One
+#      -> One-to-Many -> One-to-many
+#      -> One-to-Many
+
+
+# Hotel -> manager     -> car         -> car_brand (TO DO)
+#       |              |              -> car_radio (TO DO)
+#       |              |              -> car_maintenance (TO DO)
+#       |              |              -> car_wheels (TO DO)
+#       |              -> office
+#       |              -> telefon_numbers
+#       |              -> secretaries
+#       -> parking_lot
+#       -> apartments -> rooms
+#       -> employees
+
+
+@hotels = Hotel->find(with => [
+    'manager',
+    'manager.car',
+    'manager.office',
+    'manager.telefon_numbers',
+    'manager.secretaries',
+    'parking_lot',
+    'apartments',
+    'apartments.rooms',
+    'employees'
+]);
+
+# Hotel
+is(@hotels, 3);
+is($hotels[0]->column('name'), 'President');
+is($hotels[1]->column('name'), 'President2');
+
+# Manager
+is($hotels[0]->manager->column('name'),'Lalolu');
+is($hotels[1]->manager->column('name'),'Lalolu');
+
+# Car
+is(ref $hotels[0]->manager->car, 'Car');
+is($hotels[0]->manager->car->column('brand'), 'Porsche');
+is($hotels[1]->manager->car, undef);
+
+# Office
+is(ref $hotels[0]->manager->office, 'Office');
+is($hotels[0]->manager->office->column('size'), '33');
+is($hotels[1]->manager->office, undef);
+
+# TelefonNumber
+is(@{$hotels[0]->manager->telefon_numbers}, 2);
+is($hotels[0]->manager->telefon_numbers->[1]->column('telefon_number'),
+    '987654321');
+is(@{$hotels[1]->manager->telefon_numbers}, 2);
+is($hotels[1]->manager->telefon_numbers->[1]->column('telefon_number'),
+    '987654329');
+
+# Secretary
+is(@{$hotels[0]->manager->secretaries}, 2);
+is($hotels[0]->manager->secretaries->[1]->column('last_name'),
+    'Last2');
+is(@{$hotels[1]->manager->secretaries}, 0);
+
+# Parking lot
+is(ref $hotels[0]->parking_lot, 'ParkingLot');
+is($hotels[0]->parking_lot->column('number_of_spots'), 40);
+is(ref $hotels[1]->parking_lot, 'ParkingLot');
+is($hotels[1]->parking_lot->column('number_of_spots'), 56);
+is($hotels[2]->parking_lot, undef);
+
+# Apartment
+is(@{$hotels[0]->apartments},2);
+is($hotels[0]->apartments->[1]->column('name'), 'George Washington');
+
+is(@{$hotels[1]->apartments},2);
+is($hotels[1]->apartments->[1]->column('name'), 'George Washington');
+
+# Room
+is(@{$hotels[0]->apartments->[1]->rooms}, 3);
+is($hotels[0]->apartments->[1]->rooms->[1]->column('size'), 16);
+
+is(@{$hotels[1]->apartments->[1]->rooms}, 3);
+is($hotels[1]->apartments->[1]->rooms->[1]->column('size'), 15);
+
+# Employee
+is(@{$hotels[0]->employees},2);
+is($hotels[0]->employees->[1]->column('first_name'), 'F2');
+is(@{$hotels[1]->employees},0);
+
 
 
 ######################################################################
-#### 2.11 include "where" parameter in "with" to only prefetch data that
-#### meets certain criteria
+###### 3. include "where" parameter in "with" to only prefetch data
+###### that meets certain criteria
+######################################################################
+
 
 # has_many relationship
 @hotels =
@@ -692,9 +784,10 @@ is($hotels[1]->manager->column('name'), 'Lalolu');
 is($hotels[2]->manager,                 undef);
 
 
-
 ######################################################################
-#### 3. where and multi-level-with
+###### 4. where and multi-level-with
+######################################################################
+
 
 # No match at all
 @hotels = Hotel->find(
