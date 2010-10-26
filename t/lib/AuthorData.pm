@@ -112,6 +112,7 @@ sub populate {
     );
 
 
+    # main category
     my $category_1 = MainCategory->create(title => 'main category 1');
     my $category_2 = MainCategory->create(title => 'main category 2');
     my $category_3 = MainCategory->create(title => 'main category 3');
@@ -130,12 +131,16 @@ sub populate {
         ]
     );
 
+    # special report
+    my $special_report_1 = SpecialReport->create(title => 'special report 1');
+
+
+
     $author->articles->[0]
       ->column('main_category_id' => $category_4->column('id'))->update;
 
 
     # 3rd article -> belongs to special report 1 -> belongs to main category 4
-    my $special_report_1 = SpecialReport->create(title => 'special report 1');
     $author->articles->[2]
       ->column('special_report_id' => $special_report_1->column('id'))
       ->update;

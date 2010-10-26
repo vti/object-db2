@@ -1471,13 +1471,15 @@ sub _resolve_with {
     return unless $with;
 
     my $walker = sub {
-        my ($code_ref, $class, $with, $passed_chain, $parent_with_args) = @_;
+        my ($code_ref, $class, $with, $passed_rel_chain, $passed_table_chain,
+          $parent_with_args) = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
             my $args = $with->[$i + 1];
 
-            my $chain = $passed_chain ? [@$passed_chain] : [];
+            my $rel_chain = $passed_rel_chain ? [@$passed_rel_chain] : [];
+            my $table_chain = $passed_table_chain ? [@$passed_table_chain] : [];
 
             my $rel = $class->schema->relationship($name);
             $rel->build($conn);
@@ -1507,19 +1509,30 @@ sub _resolve_with {
 
                 # Save with-args in subrequest
                 # $chain for multi-level object-mapping
-                push @$subreqs, [$name, $args, $class, $chain];
+                push @$subreqs, [$name, $args, $class, $rel_chain];
 
             }
             else {
-                push @$chain, $name;
+                push @$rel_chain, $name;
 
-                # Add source now to get correct order
+                # Force addition of source (duplicates allowed)
+                # create alias_prefix in case of duplicates (table chain)
+                my $alias_prefix;
+                my $source = $rel->to_source;
+                if ($sql->has_source($source)){
+                    $alias_prefix = join('__',@$table_chain).'__';
+                }
+
+                push @$table_chain, $rel->foreign_table;
+
+                # Add source before resolving childs to get correct order
                 # Add where constraint as join args
-                $sql->source($rel->to_source($args->{where}));
+                $source = $rel->to_source($args->{where},$alias_prefix);
+                $sql->add_source($source);
 
                 if (my $subwith = $args->{nested}) {
                     _execute_code_ref($code_ref, $rel->foreign_class,
-                        $subwith, $chain, $args);
+                        $subwith, $rel_chain, $table_chain, $args);
                 }
 
                 $args->{columns} = $rel->foreign_class->_resolve_columns(
@@ -1529,7 +1542,7 @@ sub _resolve_with {
                 );
 
                 # Switch back to right source
-                $sql->source($rel->to_source);
+                $sql->source($source);
                 $sql->columns([@{$args->{columns}}]);
 
             }

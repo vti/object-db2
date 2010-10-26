@@ -31,11 +31,6 @@ sub source {
     my $self = shift;
     my ($source) = @_;
 
-    # Normalize
-    $source = {name => $source} unless ref $source eq 'HASH';
-
-    $source->{columns} ||= [];
-
     return $self if $self->switch_to_source($source);
 
     # Create a new source
@@ -46,7 +41,19 @@ sub source {
 
 sub switch_to_source {
     my $self = shift;
+
+    if (my $s = $self->has_source(@_)) {
+        $self->{_source} = $s;
+        return $self;
+    }
+    return;
+}
+
+sub has_source {
+    my $self = shift;
     my ($source) = @_;
+
+    $source = {name => $source} unless ref $source eq 'HASH';
 
     my $name = $source->{name};
     my $as   = $source->{as};
@@ -57,25 +64,29 @@ sub switch_to_source {
 
         if ($as) {
             if ($as eq $s->{name} || ($s->{as} && $s->{as} eq $as)) {
-                $self->{_source} = $self->sources->[$i];
-                return $self;
+                return $s;
             }
         }
-        elsif ($name eq $self->sources->[$i]->{name}) {
-            $self->{_source} = $self->sources->[$i];
-            return $self;
+        elsif ($name eq $s->{name}) {
+            return $s;
         }
     }
+    return;
 }
 
 sub add_source {
     my $self = shift;
     my ($source) = @_;
 
+    # Normalize
+    $source = {name => $source} unless ref $source eq 'HASH';
+
+    $source->{columns} ||= [];
+
     push @{$self->sources}, $source;
     $self->{_source} = $self->sources->[-1];
 
-    return $self;
+    return $self->{_source};
 }
 
 sub columns {

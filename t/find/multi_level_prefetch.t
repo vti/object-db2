@@ -958,11 +958,31 @@ is($rooms[3]->apartment->hotel->column('name'), 'President');
 
 
 ######################################################################
-### FAILING TEST: Putting the same table in different parts of the object hierarchy
-#@articles =
-#  Article->find(
-#    with => [qw/main_category special_report.main_category.admin_histories/]);
-#is( $articles[2]->special_report->main_category->admin_histories->[0]->column('admin_name'), 'Andre1');
+###### 5. Include same table multiple times in the object hierarchy
+######################################################################
+
+@articles =
+  Article->find(
+    with => [qw/main_category special_report.main_category.admin_histories/]);
+is($articles[0]->special_report, undef);
+is($articles[1]->special_report, undef);
+is( @{$articles[2]->special_report->main_category->admin_histories}, 2);
+is($articles[3]->special_report, undef);
+is($articles[4]->special_report, undef);
+is($articles[5]->special_report, undef);
+is($articles[6]->special_report, undef);
+is($articles[7]->special_report, undef);
+
+is($articles[0]->main_category->column('title'), 'main category 4');
+is($articles[1]->main_category, undef);
+is($articles[2]->main_category, undef);
+is($articles[3]->main_category, undef);
+is($articles[4]->main_category, undef);
+is($articles[5]->main_category, undef);
+is($articles[6]->main_category, undef);
+is($articles[7]->main_category, undef);
+
+
 
 
 # Allow lazy loading of data

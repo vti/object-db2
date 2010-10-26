@@ -31,6 +31,7 @@ sub _detect_column_mapping {
 sub to_source {
     my $self             = shift;
     my $passed_join_args = shift;
+    my $alias_prefix     = shift || '';
 
     my $table         = $self->table;
     my $foreign_table = $self->foreign_table;
@@ -38,10 +39,10 @@ sub to_source {
 
     my $as;
     if ($foreign_table eq $table) {
-        $as = $self->name;
+        $as = $alias_prefix.$self->name;
     }
     else {
-        $as = $foreign_table;
+        $as = $alias_prefix.$foreign_table;
     }
 
     my $constraint;
