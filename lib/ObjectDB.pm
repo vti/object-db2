@@ -869,20 +869,17 @@ sub _resolve_id {
 
 }
 
-sub _add_new_values_to_array {
+sub _merge_arrays {
     my $self   = shift;
-    my $params = shift;
+    my $array1 = shift;
+    my $array2 = shift;
 
-    my $old_values = $params->{old_values};
-    my $new_values = $params->{new_values};
-
-    # Only add new values (if they do not already exist in array)
-    foreach my $new_value (@$new_values) {
-        unless (grep { $_ eq $new_value } @$old_values) {
-            unshift @{$old_values}, $new_value;
-        }
+    my %array_values;
+    foreach my $value (@$array1,@$array2){
+        $array_values{$value} = undef;
     }
-    return $self;
+
+    return [keys %array_values];
 }
 
 
@@ -1523,18 +1520,10 @@ sub _resolve_columns {
     }
 
     # Always load primary keys
-    $class->_add_new_values_to_array(
-        {   old_values => $columns,
-            new_values => [$class->schema->primary_key]
-        }
-    );
+    $columns = $class->_merge_arrays($columns, [$class->schema->primary_key]);
 
     # Load columns required for mapping
-    $class->_add_new_values_to_array(
-        {   old_values => $columns,
-            new_values => $mapping_columns
-        }
-    );
+    $columns = $class->_merge_arrays($columns, $mapping_columns);
 
     return $columns;
 
