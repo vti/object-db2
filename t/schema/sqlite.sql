@@ -33,6 +33,7 @@ CREATE TABLE `main_categories` (
 CREATE TABLE `admin_histories` (
  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
  `main_category_id` INTEGER,
+ `tag_id` INTEGER,
  `from` date default '',
  `till` date default '',
  `admin_name` varchar(40) default ''

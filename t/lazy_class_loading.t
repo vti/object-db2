@@ -79,17 +79,17 @@ is($ENV{OBJECTDB_BUILT_SCHEMAS}, 7);
 # "delete"
 use Tag;
 Tag->new(id=>1)->delete;
-is($ENV{OBJECTDB_BUILT_SCHEMAS}, 10);
+is($ENV{OBJECTDB_BUILT_SCHEMAS}, 11);
 
 
 # _resolve_where
 @hotels = Hotel->find(where=>['apartments.size' => 4]);
-is($ENV{OBJECTDB_BUILT_SCHEMAS}, 11);
+is($ENV{OBJECTDB_BUILT_SCHEMAS}, 12);
 
 
 # prefetch
 my @apartments = Apartment->find(with => 'rooms');
-is($ENV{OBJECTDB_BUILT_SCHEMAS}, 12);
+is($ENV{OBJECTDB_BUILT_SCHEMAS}, 13);
 
 
 # TO DO: max/min n per group

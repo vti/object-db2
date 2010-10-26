@@ -51,7 +51,19 @@ sub populate {
 
                 ]
             },
-            {title => 'article 1-2'},
+            {   title    => 'article 1-2',
+                tags     => [   {   name=>'Tag1'},
+                                {   name=>'Tag2'},
+                                {   name => 'Tag3',
+                                    admin_histories => [{
+                                        admin_name => 'Andre2',
+                                        from       => '2010-02-01',
+                                        till       => '2010-03-01'
+                                    }]
+
+                                }
+                            ]
+            },
             {   title    => 'article 1-3',
                 comments => [
                     {   content       => 'comment 1-3-1',
@@ -60,7 +72,8 @@ sub populate {
                 ]
             },
             {   title          => 'article 1-4',
-                to_do_articles => [{to_do => 'to do 4'}]
+                to_do_articles => [{to_do => 'to do 4'}],
+                tags           => [{name=>'Tag4'},{name=>'Tag5'}]
             }
         ]
     );
@@ -81,7 +94,8 @@ sub populate {
                     {   content       => 'comment 2-1-2',
                         creation_date => '2004-06-04'
                     }
-                ]
+                ],
+                tags => [{name=>'Tag10'},{name=>'Tag11'}]
             },
             {title => 'article 2-2'},
             {   title    => 'article 2-3',

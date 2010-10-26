@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 325;
+use Test::More tests => 341;
 
 use lib 't/lib';
 
@@ -342,6 +342,91 @@ is($article->to_do_articles->[0]->column('to_do'), 'to do 4');
 
 # related object should not exist if no data exists for this object (empty objects not allowed)
 ok(not defined $article->special_report);
+
+
+######################################################################
+#### 1.9 Main -> Many-to-many
+
+@articles = Article->find(with=>'tags');
+is(@articles, 8);
+is(@{$articles[0]->tags}, 0);
+is(@{$articles[1]->tags}, 3);
+is($articles[1]->tags->[0]->column('name'), 'Tag1');
+is(@{$articles[3]->tags}, 2);
+is($articles[3]->tags->[1]->column('name'), 'Tag5');
+
+
+# where constraint
+@articles = Article->find(with=>'tags', where=>['tags.name' => 'Tag5']);
+is(@articles, 1);
+is(@{$articles[0]->tags}, 2);
+is($articles[0]->tags->[1]->column('name'), 'Tag5');
+
+
+@articles = Article->find(with=>'tags', where=>['tags.name' => {'like'=>'Tag1%'}]);
+is(@articles, 2);
+is($articles[0]->tags->[0]->column('name'), 'Tag1');
+is($articles[1]->tags->[0]->column('name'), 'Tag10');
+
+
+######################################################################
+#### 2.0 Main -> One-to-many -> Many-to-many
+
+@authors = Author->find(with=>'articles.tags');
+is(@authors, 2);
+is(@{$authors[0]->articles->[0]->tags}, 0);
+is(@{$authors[0]->articles->[1]->tags}, 3);
+is($authors[0]->articles->[1]->column('title'), undef);
+is(@{$authors[0]->articles->[3]->tags}, 2);
+is($authors[0]->articles->[1]->tags->[0]->column('name'), 'Tag1');
+is(@{$authors[1]->articles->[0]->tags}, 2);
+is($authors[1]->articles->[0]->tags->[1]->column('name'), 'Tag11');
+
+
+@authors = Author->find(with=>'articles.tags', where=>['articles.tags.name' => {'like'=>'Tag1%'}]);
+is(@authors, 2);
+is(@{$authors[0]->articles->[0]->tags}, 0);
+is(@{$authors[0]->articles->[1]->tags}, 3);
+is($authors[0]->articles->[1]->tags->[0]->column('name'), 'Tag1');
+is(@{$authors[0]->articles->[3]->tags}, 2);
+is(@{$authors[1]->articles->[0]->tags}, 2);
+is($authors[1]->articles->[0]->tags->[1]->column('name'), 'Tag11');
+
+
+@authors = Author->find(with=>'articles.tags', where=>['articles.tags.name' => {'like'=>'Tag5%'}]);
+is(@authors, 1);
+is($authors[0]->column('name'), 'author 1');
+
+
+######################################################################
+#### 2.0 Main -> Many-to-many -> One-to-many
+@articles = Article->find(with=>'tags.admin_histories');
+
+is(@articles, 8);
+is(@{$articles[0]->tags}, 0);
+is(@{$articles[1]->tags}, 3);
+is($articles[1]->tags->[0]->column('name'), undef);
+is(@{$articles[1]->tags->[0]->admin_histories}, 0);
+is(@{$articles[1]->tags->[2]->admin_histories}, 1);
+is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'), 'Andre2');
+is(@{$articles[3]->tags}, 2);
+is($articles[3]->tags->[1]->column('name'), undef);
+
+
+@articles = Article->find(with=>['tags','tags.admin_histories']);
+
+is(@articles, 8);
+is(@{$articles[0]->tags}, 0);
+is(@{$articles[1]->tags}, 3);
+is($articles[1]->tags->[0]->column('name'), 'Tag1');
+is(@{$articles[1]->tags->[0]->admin_histories}, 0);
+is(@{$articles[1]->tags->[2]->admin_histories}, 1);
+is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'), 'Andre2');
+is(@{$articles[3]->tags}, 2);
+is($articles[3]->tags->[1]->column('name'), 'Tag5');
+
+
+
 
 
 

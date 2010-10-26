@@ -10,7 +10,9 @@ use ObjectDB::Utils qw/camelize decamelize class_to_table plural_to_single/;
 
 __PACKAGE__->attr([qw/name foreign_class foreign_table namespace/]);
 __PACKAGE__->attr([qw/map/]                  => sub { {} });
-__PACKAGE__->attr([qw/with where join_args/] => sub { [] });
+__PACKAGE__->attr([qw/with where join_args foreign_class_from_cols
+    foreign_class_to_cols map_to_cols map_from_cols/]
+    => sub { [] });
 __PACKAGE__->attr(is_built                   => 0);
 
 sub type { decamelize((split '::' => ref(shift))[-1]) }
@@ -64,8 +66,22 @@ sub build {
 sub build_map_class_rels {
     my $self = shift;
 
+    # Build relationships of map class
     $self->map_schema->relationships->{$self->map_from}->build(@_);
     $self->map_schema->relationships->{$self->map_to}->build(@_);
+
+    # Create mapping cols accessors for main class
+    # ARRAY TO ALWAY GET THE SAME ORDER
+    while (my ($to, $from) = each  %{$self->map_schema->relationships->{$self->map_from}->map}) {
+        push @{$self->map_from_cols}, $from;
+        push @{$self->map_to_cols}, $to;
+    }
+
+    # Create mapping cols accessors for foreign class
+    while (my ($from, $to) = each  %{$self->map_schema->relationships->{$self->map_to}->map}) {
+        push @{$self->foreign_class_from_cols}, $from;
+        push @{$self->foreign_class_to_cols}, $to;
+    }
 
 }
 

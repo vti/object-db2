@@ -19,6 +19,12 @@ sub _detect_column_mapping {
         $self->map({$pk => $foreign_pk});
     }
 
+    # Put mapping cols in array to get STRICT ORDER
+    while (my ($from, $to) = each %{$self->map}) {
+        push @{$self->map_from_cols}, $from;
+        push @{$self->map_to_cols},   $to;
+    }
+
     return;
 }
 

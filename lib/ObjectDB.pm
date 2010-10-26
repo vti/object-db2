@@ -334,6 +334,7 @@ sub create_related {
                 return $wantarray ? @$result : $result;
             }
             elsif ($rel->is_has_and_belongs_to_many) {
+
                 $data = [$data] unless ref $data eq 'ARRAY';
 
                 my $map_from = $rel->map_from;
@@ -348,7 +349,6 @@ sub create_related {
                 foreach my $d (@$data) {
                     my $object =
                       $rel->foreign_class->find_or_create(conn => $conn, %$d);
-
                     my $rel = $rel->map_class->create(
                         conn             => $conn,
                         $from_foreign_pk => $self->column($from_pk),
@@ -897,12 +897,10 @@ sub _fetch_subrequests {
         my $subreq_class = $subreq->[2];
         my $chain        = $subreq->[3];
 
-        my $map_from = $args->{map_from}
-          || die('no map_from cols');
+        my $rel = $subreq_class->schema->relationship($name);
 
-        my $map_to = $args->{map_to}
-          || die('no map_to cols');
-
+        my $map_from = $rel->map_from_cols;
+        my $map_to = $rel->map_to_cols;
 
         my @pk;
 
@@ -934,7 +932,6 @@ sub _fetch_subrequests {
                 conn    => $conn,
                 ids     => $ids,
                 with    => $nested,
-                map_to  => $map_to,
                 inflate => $params{inflate},
                 %$args
             )
@@ -944,7 +941,13 @@ sub _fetch_subrequests {
         foreach my $o (@$related) {
             my $id;
             foreach my $map_to_col (@$map_to) {
-                $id .= '__'.$o->column($map_to_col);
+
+                if ($rel->is_type(qw/has_and_belongs_to_many/)) {
+                    $id .= '__'.$o->virtual_column('map__'.$map_to_col);
+                }
+                else {
+                    $id .= '__'.$o->column($map_to_col);
+                }
             }
             $set->{$id} ||= [];
             push @{$set->{$id}}, $o;
@@ -985,74 +988,124 @@ sub find_or_create {
 
     my $conn = delete $params{conn} || $class->conn;
 
-    my $self = $class->find(conn => $conn, where => [%params], single => 1);
+    my @where;
+    while (my ($key, $value) = each %params) {
+        push @where, ($key, $value) unless $class->schema->is_relationship($key);
+    }
+
+    my $self = $class->find(conn => $conn, where => [@where], single => 1);
     return $self if $self;
 
     return $class->create(conn => $conn, %params);
 }
 
 sub find_related {
-    my $class  = shift;
-    my $name   = shift;
-    my %params = @_;
+    my $class    = shift;
+    my $rel_name = shift;
+    my %params   = @_;
 
+    # Passed values
+    my $passed_where = delete $params{where};
+    my $passed_with  = delete $params{with};
+
+
+    # Connector
     my $conn = $params{conn} || $class->conn;
+    Carp::croak q/Connector is required/ unless $conn;
 
-    my $rel = $class->schema->relationship($name);
+
+    # Get relationship object
+    my $rel = $class->schema->relationship($rel_name);
     $rel->build($conn);
 
 
+    # Initialize
     my @where;
+    my @with;
+    my $find_class;
+    my $ids;
 
-    if (ref($class)) {
-        my $self = $class;
 
-        if ($rel->is_has_and_belongs_to_many) {
-            my ($to, $from) =
-              %{$rel->map_class->schema->relationship($rel->map_from)->map};
+    # Get ids
+    if (ref $class) {
+        # Get values for mapping columns (ids)
+        my $first = 1;
+        my $map_from_concat;
+        foreach my $from (@{$rel->map_from_cols}) {
+            $map_from_concat .= '__' unless $first;
+            $first = 0;
+            return unless defined $class->column($from);
+            $map_from_concat .= $class->column($from);
         }
-        else {
-            my ($from, $to) = %{$rel->map};
-
-            return unless $self->column($from);
-
-            @where = ($to => $self->column($from));
-
-            $params{first} = 1 if $rel->type =~ m/belongs_to/;
-        }
+        $ids = [$map_from_concat];
     }
     else {
-        Carp::croak q/Connector is required/ unless $conn;
-
-        if ($rel->is_has_and_belongs_to_many) {
-            die 'todo';
-        }
-        else {
-            if ($params{map_to}) {
-                my @map_to = @{$params{map_to}};
-
-                if (@map_to > 1) {
-                    my $concat = '-concat(' . join(',', @map_to) . ')';
-
-                    @where = ($concat => [@{delete $params{ids}}]);
-
-                }
-                else {
-                    @where = ($map_to[0] => [@{delete $params{ids}}]);
-                }
-            }
-        }
+        $ids = delete $params{ids};
     }
 
-    push @where, @{$rel->where}           if $rel->where;
-    push @where, @{delete $params{where}} if $params{where};
 
-    return $rel->foreign_class->find(
-        conn  => $conn,
-        where => [@where],
-        %params
-    );
+    # Make sure that row object is returned in scalar context (not iterator
+    # object) in case of belongs_to rel
+    if(ref $class && ($rel->is_belongs_to || $rel->is_belongs_to_one) ) {
+        $params{single} = 1;
+    }
+
+
+    # Passed where, passed with and find class
+    if ($rel->is_has_and_belongs_to_many) {
+        push @with, ($rel->map_to, {nested => $passed_with,
+          where => $passed_where, columns => delete $params{columns} });
+        $find_class = $rel->map_class;
+    }
+    else {
+        @with = @$passed_with if $passed_with;
+        @where = @$passed_where if $passed_where;
+        $find_class = $rel->foreign_class;
+    }
+
+
+    # Prepare where to search only for related objects
+    my @map_to = @{$rel->map_to_cols};
+    if (@map_to > 1) {
+        my $concat = '-concat(' . join(',', @map_to) . ')';
+        push @where, ($concat => [@$ids]);
+    }
+    else {
+        push @where, ($map_to[0] => [@$ids]);
+    }
+    push @where, @{$rel->where} if $rel->where;
+
+
+    # Return results
+    if ($rel->is_has_and_belongs_to_many) {
+
+        my @results = $find_class->find(
+            conn   => $conn,
+            where  => [@where],
+            with   => [@with],
+            %params
+        );
+
+        my @final;
+        foreach my $result (@results) {
+            my $final = $result->related($rel->map_to);
+            next unless $final;
+            $final->virtual_column('map__'.$map_to[0] => $result->column($map_to[0]));
+            push @final, $final;
+        }
+        return @final;
+
+    }
+    else {
+        return $find_class->find(
+            conn   => $conn,
+            where  => [@where],
+            with   => [@with],
+            %params
+        );
+    }
 }
+
 
 sub update_column {
     my $self = shift;
@@ -1369,7 +1422,7 @@ sub _resolve_where {
                 my $rel  = $parent->schema->relationship($name);
                 $rel->build($conn);
 
-                if ($rel->is_has_many) {
+                if ($rel->is_has_many || $rel->is_has_and_belongs_to_many) {
                     $one_to_many = 1;
                 }
 
@@ -1447,12 +1500,10 @@ sub _resolve_with {
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
-               # Save mapping data in subrequest, preceding main or one-to-one
-               # object can access this data via "child_args"
-                while (my ($from, $to) = each %{$rel->map}) {
-                    push @{$args->{map_from}}, $from;
-                    push @{$args->{map_to}},   $to;
-                }
+                # Save mapping data in subrequest, preceding main or one-to-one
+                # object can access this data via "child_args"
+                $args->{map_from} = $rel->map_from_cols;
+                $args->{map_to}   = $rel->map_to_cols;
 
                 # Save with-args in subrequest
                 # $chain for multi-level object-mapping
