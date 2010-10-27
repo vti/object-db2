@@ -113,6 +113,7 @@ sub rows_as_object {
 }
 
 sub objectdb_lazy {
+
     # Overwrite this method in CGI environments
     # to load related classes only if needed
     # sub objectdb_lazy {1;}
@@ -875,7 +876,7 @@ sub _merge_arrays {
     my $array2 = shift;
 
     my %array_values;
-    foreach my $value (@$array1,@$array2){
+    foreach my $value (@$array1, @$array2) {
         $array_values{$value} = undef;
     }
 
@@ -900,12 +901,12 @@ sub _fetch_subrequests {
         my $rel = $subreq_class->schema->relationship($name);
 
         my $map_from = $rel->map_from_cols;
-        my $map_to = $rel->map_to_cols;
+        my $map_to   = $rel->map_to_cols;
 
         my @pk;
 
-        # create map values for find related (only if map values havent been
-        # created earlier in _row_to_object (in case of preceding one to one rel)
+     # create map values for find related (only if map values havent been
+     # created earlier in _row_to_object (in case of preceding one to one rel)
         unless ($args->{pk}) {
           OUTER_LOOP: foreach my $object (@result) {
                 my $map_from_concat = '';
@@ -943,10 +944,10 @@ sub _fetch_subrequests {
             foreach my $map_to_col (@$map_to) {
 
                 if ($rel->is_type(qw/has_and_belongs_to_many/)) {
-                    $id .= '__'.$o->virtual_column('map__'.$map_to_col);
+                    $id .= '__' . $o->virtual_column('map__' . $map_to_col);
                 }
                 else {
-                    $id .= '__'.$o->column($map_to_col);
+                    $id .= '__' . $o->column($map_to_col);
                 }
             }
             $set->{$id} ||= [];
@@ -973,7 +974,7 @@ sub _fetch_subrequests {
 
             my $id;
             foreach my $map_from_col (@$map_from) {
-                $id .= '__'.$parent->column($map_from_col);
+                $id .= '__' . $parent->column($map_from_col);
             }
 
             next unless $set->{$id};
@@ -990,7 +991,8 @@ sub find_or_create {
 
     my @where;
     while (my ($key, $value) = each %params) {
-        push @where, ($key, $value) unless $class->schema->is_relationship($key);
+        push @where, ($key, $value)
+          unless $class->schema->is_relationship($key);
     }
 
     my $self = $class->find(conn => $conn, where => [@where], single => 1);
@@ -1028,6 +1030,7 @@ sub find_related {
 
     # Get ids
     if (ref $class) {
+
         # Get values for mapping columns (ids)
         my $first = 1;
         my $map_from_concat;
@@ -1046,19 +1049,24 @@ sub find_related {
 
     # Make sure that row object is returned in scalar context (not iterator
     # object) in case of belongs_to rel
-    if(ref $class && ($rel->is_belongs_to || $rel->is_belongs_to_one) ) {
+    if (ref $class && ($rel->is_belongs_to || $rel->is_belongs_to_one)) {
         $params{single} = 1;
     }
 
 
     # Passed where, passed with and find class
     if ($rel->is_has_and_belongs_to_many) {
-        push @with, ($rel->map_to, {nested => $passed_with,
-          where => $passed_where, columns => delete $params{columns} });
+        push @with,
+          ( $rel->map_to,
+            {   nested  => $passed_with,
+                where   => $passed_where,
+                columns => delete $params{columns}
+            }
+          );
         $find_class = $rel->map_class;
     }
     else {
-        @with = @$passed_with if $passed_with;
+        @with  = @$passed_with  if $passed_with;
         @where = @$passed_where if $passed_where;
         $find_class = $rel->foreign_class;
     }
@@ -1080,9 +1088,9 @@ sub find_related {
     if ($rel->is_has_and_belongs_to_many) {
 
         my @results = $find_class->find(
-            conn   => $conn,
-            where  => [@where],
-            with   => [@with],
+            conn  => $conn,
+            where => [@where],
+            with  => [@with],
             %params
         );
 
@@ -1090,7 +1098,8 @@ sub find_related {
         foreach my $result (@results) {
             my $final = $result->related($rel->map_to);
             next unless $final;
-            $final->virtual_column('map__'.$map_to[0] => $result->column($map_to[0]));
+            $final->virtual_column(
+                'map__' . $map_to[0] => $result->column($map_to[0]));
             push @final, $final;
         }
         return @final;
@@ -1098,9 +1107,9 @@ sub find_related {
     }
     else {
         return $find_class->find(
-            conn   => $conn,
-            where  => [@where],
-            with   => [@with],
+            conn  => $conn,
+            where => [@where],
+            with  => [@with],
             %params
         );
     }
@@ -1472,14 +1481,16 @@ sub _resolve_with {
 
     my $walker = sub {
         my ($code_ref, $class, $with, $passed_rel_chain, $passed_table_chain,
-          $parent_with_args) = @_;
+            $parent_with_args)
+          = @_;
 
         for (my $i = 0; $i < @$with; $i += 2) {
             my $name = $with->[$i];
             my $args = $with->[$i + 1];
 
             my $rel_chain = $passed_rel_chain ? [@$passed_rel_chain] : [];
-            my $table_chain = $passed_table_chain ? [@$passed_table_chain] : [];
+            my $table_chain =
+              $passed_table_chain ? [@$passed_table_chain] : [];
 
             my $rel = $class->schema->relationship($name);
             $rel->build($conn);
@@ -1502,8 +1513,8 @@ sub _resolve_with {
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
-                # Save mapping data in subrequest, preceding main or one-to-one
-                # object can access this data via "child_args"
+               # Save mapping data in subrequest, preceding main or one-to-one
+               # object can access this data via "child_args"
                 $args->{map_from} = $rel->map_from_cols;
                 $args->{map_to}   = $rel->map_to_cols;
 
@@ -1519,15 +1530,15 @@ sub _resolve_with {
                 # create alias_prefix in case of duplicates (table chain)
                 my $alias_prefix;
                 my $source = $rel->to_source;
-                if ($sql->has_source($source)){
-                    $alias_prefix = join('__',@$table_chain).'__';
+                if ($sql->has_source($source)) {
+                    $alias_prefix = join('__', @$table_chain) . '__';
                 }
 
                 push @$table_chain, $rel->foreign_table;
 
                 # Add source before resolving childs to get correct order
                 # Add where constraint as join args
-                $source = $rel->to_source($args->{where},$alias_prefix);
+                $source = $rel->to_source($args->{where}, $alias_prefix);
                 $sql->add_source($source);
 
                 if (my $subwith = $args->{nested}) {
