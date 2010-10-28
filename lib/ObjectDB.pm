@@ -807,12 +807,12 @@ sub find {
                 if ($wantarray) {
                     return @result;
                 }
+                elsif ($single) {
+                    $result[0];
+                }
                 elsif ($class->rows_as_object) {
                     my $rows_object = ObjectDB::Rows->new;
                     return $rows_object->rows(\@result);
-                }
-                elsif ($single) {
-                    $result[0];
                 }
             }
             else {
