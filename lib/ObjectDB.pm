@@ -122,7 +122,39 @@ sub objectdb_lazy {
 }
 
 
-sub init_conn { }
+# Very basic init_conn to get you started quickly, overwrite this method
+# in subclass for more complex db configuration
+sub init_conn {
+    my $self = shift;
+
+    # Get DB
+    my $db_system = $self->db_system;
+    my $db_user   = $self->db_user;
+    my $db_pass   = $self->db_pass;
+    my $db_name   = $self->db_name;
+
+    my @options;
+    if (lc($db_system) eq 'mysql') {
+        push @options, "dbi:mysql:$db_name", $db_user, $db_pass;
+    }
+    else {
+        die 'unknown db system';
+    }
+
+    require ObjectDB::Connector;
+    my $conn = ObjectDB::Connector->new(@options);
+    die $DBI::errorstr unless $conn;
+
+    return $conn;
+
+}
+
+sub db_system {};
+sub db_user {};
+sub db_pass {};
+sub db_name {};
+
+
 
 sub id {
     my $self = shift;
