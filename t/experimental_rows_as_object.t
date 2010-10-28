@@ -67,8 +67,9 @@ is_deeply(
 # Rows are not deleted by next in prefetch mode
 is($authors->row(0)->articles->row(0)->comments->number_of_rows, 6);
 
-my $authors_serialized = $authors->to_hash;
 
+# to_hash
+my $authors_serialized = $authors->to_hash;
 is($authors_serialized->[0]->{articles}->[0]->{comments}->[0]->{content}, 'comment 1-1-1');
 
 
