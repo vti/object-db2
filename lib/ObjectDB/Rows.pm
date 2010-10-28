@@ -40,4 +40,18 @@ sub next {
     }
 }
 
+sub to_hash {
+    my $self = shift;
+
+    my @objects;
+    while (my $object = $self->next){
+        my $hash = $object->to_hash;
+        push @objects, $hash;
+    }
+
+    return [@objects];
+
+}
+
+
 1;

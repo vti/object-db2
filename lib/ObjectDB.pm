@@ -769,7 +769,7 @@ sub find {
 
             my $wantarray = wantarray;
 
-            if ($wantarray || $params{rows_as_object} || $single) {
+            if ($wantarray || $class->rows_as_object || $single) {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
@@ -807,7 +807,7 @@ sub find {
                 if ($wantarray) {
                     return @result;
                 }
-                elsif ($params{rows_as_object}) {
+                elsif ($class->rows_as_object) {
                     my $rows_object = ObjectDB::Rows->new;
                     return $rows_object->rows(\@result);
                 }

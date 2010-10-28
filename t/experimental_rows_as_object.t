@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 use lib 't/lib';
 
@@ -21,12 +21,9 @@ my $authors = Schema::Author->find(with => ['articles.comments'],);
 
 # Now with rows_as_object option (for highest level) and
 # sub rows_as_objects {1} for related objects
-# TO DO: find a better way to define this only once
 $authors = Schema::Author->find(
-    rows_as_object => 1,
-    with           => ['articles.comments'],
+    with => ['articles.comments'],
 );
-
 
 # row(0) instead of ->[0]
 is($authors->row(0)->articles->row(0)->comments->row(0)->column('content'),
@@ -69,6 +66,11 @@ is_deeply(
 
 # Rows are not deleted by next in prefetch mode
 is($authors->row(0)->articles->row(0)->comments->number_of_rows, 6);
+
+my $authors_serialized = $authors->to_hash;
+
+is($authors_serialized->[0]->{articles}->[0]->{comments}->[0]->{content}, 'comment 1-1-1');
+
 
 
 Schema::AuthorData->cleanup;
