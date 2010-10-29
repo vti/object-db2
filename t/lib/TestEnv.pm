@@ -24,8 +24,8 @@ sub setup {
         die "Unknown driver $driver";
     }
 
-    my $fullpath = "$FindBin::Bin/schema/$filename.sql";
-    $fullpath = "$FindBin::Bin/../schema/$filename.sql" unless -e $fullpath;
+    my $fullpath = "$FindBin::Bin/sample_schema/$filename.sql";
+    $fullpath = "$FindBin::Bin/../sample_schema/$filename.sql" unless -e $fullpath;
 
     open(my $file, "<$fullpath") or die "Can't open $fullpath: $!";
 
