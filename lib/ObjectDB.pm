@@ -1201,7 +1201,7 @@ sub _update_objects {
         warn join(', ', @{$sql->bind});
     }
 
-    $conn->run(
+    return $conn->run(
         sub {
             my $dbh = shift;
 
@@ -1212,8 +1212,6 @@ sub _update_objects {
             return unless $rv;
         }
     );
-
-    return 1;
 }
 
 sub delete {
@@ -1232,12 +1230,14 @@ sub delete {
             sub {
                 my $dbh = shift;
 
+                my $count = 0;
                 my $found = $self->find(conn => $conn, %params);
                 while (my $r = $found->next) {
                     $r->delete(conn => $conn);
+                    $count++;
                 }
 
-                return 1;
+                return $count;
             }
         );
     }

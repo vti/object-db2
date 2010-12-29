@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 53;
+use Test::More tests => 57;
 
 use lib 't/lib';
 
@@ -61,12 +61,12 @@ $author->update_column(name => 'foo');
 $author = Author->find(id => $author->id);
 is($author->column('name'), 'foo');
 
-Author->update(set => [name => 'bar'], where => [name => 'bar']);
+is(Author->update(set => [name => 'bar'], where => [name => 'bar']), '0E0');
 $author = Author->find(id => $author->id);
 ok($author);
 is($author->column('name'), 'foo');
 
-Author->update(set => [name => 'bar'], where => [name => 'foo']);
+is(Author->update(set => [name => 'bar'], where => [name => 'foo']), 1);
 $author = Author->find(id => $author->id);
 ok($author);
 is($author->column('name'), 'bar');
@@ -90,7 +90,7 @@ is(Author->count, 1);
 is(Author->count(name => 'foo'), 0);
 is(Author->count(name => 'bar'), 1);
 
-Author->delete;
+is(Author->delete, 1);
 ok(!Author->find(id => $author->id));
 is(Author->count, 0);
 
@@ -107,7 +107,7 @@ is($authors[2]->column('name'), 'bar');
 is(@authors,                    1);
 is($authors[0]->column('name'), 'bar');
 
-Author->delete;
+is(Author->delete, 3);
 
 $author = Author->find_or_create(name => 'foo');
 ok($author);
