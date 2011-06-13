@@ -56,7 +56,8 @@ is($tel_nums[0]->column('manager_num_c'), $managers[0]->column('manager_num_b'))
 
 # "delete_related", (NO exception thrown, even if Secretary class
 # is not loaded so far)
-ok( eval{ $managers[0]->delete_related('secretaries')}, 'delete_related: no exception thrown' );
+eval { $managers[0]->delete_related('secretaries') };
+ok(!$@, 'delete_related: no exception thrown');
 is($ENV{OBJECTDB_BUILT_SCHEMAS}, 4);
 
 
