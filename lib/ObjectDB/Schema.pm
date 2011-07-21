@@ -6,7 +6,8 @@ use warnings;
 use base 'ObjectDB::Base';
 
 require Carp;
-use ObjectDB::Loader;
+use Class::Load ();
+
 use ObjectDB::SchemaDiscoverer;
 use ObjectDB::Utils qw/camelize decamelize class_to_table/;
 
@@ -20,7 +21,7 @@ sub new {
     unless ($self->table) {
         my $class = $self->class;
 
-        ObjectDB::Loader->load($class);
+        Class::Load::load_class($class);
 
         my $table = class_to_table($class, $class->plural_class_name);
 
@@ -43,7 +44,7 @@ sub class          { $_[0]->{class} }
 sub auto_increment { $_[0]->{auto_increment} }
 sub relationships  { $_[0]->{relationships} }
 
-sub namespace      { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
+sub namespace { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
 
 sub build {
     my $self = shift;
@@ -338,7 +339,7 @@ sub _new_relationship {
       if !ref($foreign) && $self->{relationships}->{$foreign};
 
     my $class = 'ObjectDB::Relationship::' . camelize($type);
-    ObjectDB::Loader->load($class);
+    Class::Load::load_class($class);
 
     my $args = @_ == 1 ? $_[0] : {@_};
 

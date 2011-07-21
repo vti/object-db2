@@ -5,16 +5,17 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-require ObjectDB::Loader;
+use Class::Load ();
+
 use ObjectDB::Utils qw/camelize decamelize class_to_table plural_to_single/;
 
 sub BUILD {
     my $self = shift;
 
-    $self->{map}                   = {} unless exists $self->{map};
-    $self->{with}                  = [] unless exists $self->{with};
-    $self->{where}                 = [] unless exists $self->{where};
-    $self->{join_args}             = [] unless exists $self->{join_args};
+    $self->{map}       = {} unless exists $self->{map};
+    $self->{with}      = [] unless exists $self->{with};
+    $self->{where}     = [] unless exists $self->{where};
+    $self->{join_args} = [] unless exists $self->{join_args};
     $self->{foreign_class_to_cols} = []
       unless exists $self->{foreign_class_to_cols};
     $self->{foreign_class_from_cols} = []
@@ -61,7 +62,7 @@ sub class {
 
     my $class = $self->{class};
 
-    ObjectDB::Loader->load($class);
+    Class::Load::load_class($class);
 
     return $self->{class};
 }
@@ -151,7 +152,7 @@ sub _detect_and_load_foreign_class {
         $self->foreign_class($foreign_class);
     }
 
-    ObjectDB::Loader->load($self->foreign_class);
+    Class::Load::load_class($self->foreign_class);
 
 }
 

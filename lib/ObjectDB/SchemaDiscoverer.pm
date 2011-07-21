@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 require Carp;
-use ObjectDB::Loader;
+use Class::Load ();
 
 sub build {
     my $class  = shift;
@@ -16,7 +16,7 @@ sub build {
 
     my $driver_class = __PACKAGE__ . '::' . $driver;
 
-    ObjectDB::Loader->load($driver_class);
+    Class::Load::load_class($driver_class);
 
     return $driver_class->new(%params);
 }

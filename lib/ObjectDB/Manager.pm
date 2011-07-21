@@ -5,8 +5,9 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
+use Class::Load ();
+
 use ObjectDB::Utils 'table_to_class';
-use ObjectDB::Loader;
 
 our $AUTOLOAD;
 
@@ -40,7 +41,7 @@ EOF
         }
     }
 
-    ObjectDB::Loader->load($class);
+    Class::Load::load_class($class);
 
     return $class;
 }

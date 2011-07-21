@@ -38,6 +38,7 @@ WriteMakefile(
         'Carp'         => '0',
         'DBI'          => '0',
         'Scalar::Util' => '0',
+        'Class::Load'  => '0',
     },
     test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
 );
