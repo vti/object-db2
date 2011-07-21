@@ -5,14 +5,33 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr('rows');
-__PACKAGE__->attr('next_counter' => 0);
+#__PACKAGE__->attr('rows');
+
+sub BUILD {
+    my $self = shift;
+
+    $self->{next_counter} = 0 unless defined $self->{next_counter};
+    $self->{rows} ||= [];
+
+    return $self;
+}
 
 sub row {
     my $self = shift;
     my $num  = shift;
 
     return $self->rows->[$num];
+}
+
+sub rows {
+    my $self = shift;
+
+    if (@_) {
+        $self->{rows} = $_[0];
+        return $self;
+    }
+
+    return $self->{rows};
 }
 
 sub number_of_rows {
@@ -25,17 +44,17 @@ sub next {
 
     my $number_of_rows = scalar(@{$self->rows});
 
-    my $next_counter = $self->next_counter;
+    my $next_counter = $self->{next_counter};
 
     if ($next_counter > $number_of_rows - 1) {
-        $self->next_counter(0);
+        $self->{next_counter} = 0;
         return undef;
     }
     else {
         my $row = $self->rows->[$next_counter];
         $next_counter++;
 
-        $self->next_counter($next_counter);
+        $self->{next_counter} = $next_counter;
         return $row;
     }
 }

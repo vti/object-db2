@@ -5,10 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr([qw/table class auto_increment namespace/]);
-__PACKAGE__->attr(relationships => sub { {} });
-__PACKAGE__->attr(is_built => 0);
-
 require Carp;
 use ObjectDB::Loader;
 use ObjectDB::SchemaDiscoverer;
@@ -28,17 +24,32 @@ sub new {
 
         my $table = class_to_table($class, $class->plural_class_name);
 
-        $self->table($table);
+        $self->{table} = $table;
     }
 
     return $self;
 }
 
+sub BUILD {
+    my $self = shift;
+
+    $self->{relationships} ||= {};
+
+    return $self;
+}
+
+sub table          { $_[0]->{table} }
+sub class          { $_[0]->{class} }
+sub auto_increment { $_[0]->{auto_increment} }
+sub relationships  { $_[0]->{relationships} }
+
+sub namespace      { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
+
 sub build {
     my $self = shift;
 
     # Cache
-    return if $self->is_built;
+    return if $self->{is_built};
 
     $ENV{OBJECTDB_BUILT_SCHEMAS}++;
 
@@ -49,7 +60,7 @@ sub build {
       unless $self->primary_key;
 
     # Prevent recursive discovery
-    $self->is_built(1);
+    $self->{is_built} = 1;
 
     $self->build_relationships(@_) unless $self->class->objectdb_lazy;
 
@@ -82,7 +93,7 @@ sub auto_discover {
 
             $self->unique_keys($_) for @{$discoverer->unique_keys};
 
-            $self->auto_increment($discoverer->auto_increment)
+            $self->{auto_increment} = $discoverer->auto_increment
               if $discoverer->auto_increment;
         }
     );
@@ -91,7 +102,7 @@ sub auto_discover {
 sub build_relationships {
     my $self = shift;
 
-    while (my ($key, $value) = each %{$self->relationships}) {
+    while (my ($key, $value) = each %{$self->{relationships}}) {
         $value->build(@_);
     }
 }
@@ -99,7 +110,7 @@ sub build_relationships {
 sub build_aliases {
     my $self = shift;
 
-    while (my ($key, $rel) = each %{$self->relationships}) {
+    while (my ($key, $rel) = each %{$self->{relationships}}) {
 
         unless ($self->class->can($rel->name)) {
             no strict;
@@ -261,14 +272,14 @@ sub is_relationship {
     my $self = shift;
     my $name = shift;
 
-    return exists $self->relationships->{$name};
+    return exists $self->{relationships}->{$name};
 }
 
 sub relationship {
     my $self = shift;
     my $name = shift;
 
-    my $rel = $self->relationships->{$name};
+    my $rel = $self->{relationships}->{$name};
 
     unless ($rel) {
         my $class = $self->class;
@@ -282,7 +293,7 @@ sub child_relationships {
     my $self = shift;
 
     my @rel;
-    while (my ($key, $value) = each %{$self->relationships}) {
+    while (my ($key, $value) = each %{$self->{relationships}}) {
         push @rel, $key
           if $value->is_type(qw/has_one has_many has_and_belongs_to_many/);
     }
@@ -294,7 +305,7 @@ sub parent_relationships {
     my $self = shift;
 
     my @rel;
-    while (my ($key, $value) = each %{$self->relationships}) {
+    while (my ($key, $value) = each %{$self->{relationships}}) {
         push @rel, $key if $value->is_type(qw/belongs_to_one belongs_to/);
     }
 
@@ -324,7 +335,7 @@ sub _new_relationship {
     my $foreign = shift;
 
     return $self
-      if !ref($foreign) && $self->relationships->{$foreign};
+      if !ref($foreign) && $self->{relationships}->{$foreign};
 
     my $class = 'ObjectDB::Relationship::' . camelize($type);
     ObjectDB::Loader->load($class);
@@ -339,7 +350,7 @@ sub _new_relationship {
             table     => $self->table,
             %$args
         );
-        $self->relationships->{$name} = $rel;
+        $self->{relationships}->{$name} = $rel;
     }
 
     return $self;

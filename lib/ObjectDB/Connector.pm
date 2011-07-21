@@ -5,8 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr('dbh');
-
 use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 use constant DBIXCONNECTOR => $ENV{OBJECTDB_NO_DBIX_CONNECTOR}
   ? 0
@@ -28,18 +26,20 @@ sub new {
 sub driver {
     my $self = shift;
 
-    return $self->dbh->{Driver}->{Name};
+    return $self->{dbh}->{Driver}->{Name};
 }
+
+sub dbh { $_[0]->{dbh} }
 
 sub mode { }
 
-sub in_txn { !shift->dbh->FETCH('AutoCommit') }
+sub in_txn { !shift->{dbh}->FETCH('AutoCommit') }
 
 sub txn {
     my $self = shift;
     my $cb   = pop;
 
-    my $dbh = $self->dbh && $self->dbh->FETCH('Active') ? $self->dbh : undef;
+    my $dbh = $self->{dbh} && $self->{dbh}->FETCH('Active') ? $self->{dbh} : undef;
     $dbh ||= $self->connect;
 
     # Already in transaction
@@ -82,9 +82,9 @@ sub txn {
 sub connect {
     my $self = shift;
 
-    $self->dbh(DBI->connect(@{$self->{_args}}));
+    $self->{dbh} = DBI->connect(@{$self->{_args}});
 
-    return $self->dbh;
+    return $self->{dbh};
 }
 
 sub run {
@@ -93,7 +93,7 @@ sub run {
 
     Carp::croak qw/Callback is required/ unless $cb && ref $cb eq 'CODE';
 
-    my $dbh = $self->dbh && $self->dbh->FETCH('Active') ? $self->dbh : undef;
+    my $dbh = $self->{dbh} && $self->{dbh}->FETCH('Active') ? $self->{dbh} : undef;
     $dbh ||= $self->connect;
 
     local $_ = $dbh;

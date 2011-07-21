@@ -5,8 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr([qw/is_modified is_in_db/] => 0);
-
 use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 
 our $VERSION = '0.990201';
@@ -30,6 +28,9 @@ sub new {
 
     return $self;
 }
+
+sub is_modified { $_[0]->{is_modified} }
+sub is_in_db    { $_[0]->{is_in_db} }
 
 sub plural_class_name {
     my $class = shift;
@@ -145,10 +146,10 @@ sub column {
         my %columns = @_;
         while (my ($key, $value) = each %columns) {
             if (defined $self->{columns}->{$key} && defined $value) {
-                $self->is_modified(1) if $self->{columns}->{$key} ne $value;
+                $self->{is_modified} = 1 if $self->{columns}->{$key} ne $value;
             }
             elsif (defined $self->{columns}->{$key} || defined $value) {
-                $self->is_modified(1);
+                $self->{is_modified} = 1;
             }
 
             $self->{columns}->{$key} = $value;
@@ -272,8 +273,8 @@ sub create {
 
             $self->_set_auto_increment_column($dbh);
 
-            $self->is_in_db(1);
-            $self->is_modified(0);
+            $self->{is_in_db} = 1;
+            $self->{is_modified} = 0;
 
             while (my ($key, $value) = each %{$self->{related}}) {
                 $self->{related}->{$key} =
@@ -1172,8 +1173,8 @@ sub _update_instance {
             my $rv = $sth->execute(@{$sql->bind});
             return unless $rv && $rv eq '1';
 
-            $self->is_in_db(1);
-            $self->is_modified(0);
+            $self->{is_in_db} = 1;
+            $self->{is_modified} = 0;
         }
     );
 
@@ -1300,7 +1301,7 @@ sub _delete_instance {
             my $rv = $sth->execute(@{$sql->bind});
             return unless $rv && $rv eq '1';
 
-            $self->is_in_db(0);
+            $self->{is_in_db} = 0;
 
             return $self;
         }
@@ -1732,7 +1733,7 @@ sub _row_to_object {
                 $object->column($column => shift @$row);
             }
 
-            $object->is_modified(0);
+            $object->{is_modified} = 0;
             if ($object->id) {
                 $self->{related}->{$name} = $object;
             }
@@ -1772,8 +1773,8 @@ sub _row_to_object {
       q/Not all columns of current row could be mapped to the object/
       if @$row;
 
-    $self->is_in_db(1);
-    $self->is_modified(0);
+    $self->{is_in_db} = 1;
+    $self->{is_modified} = 0;
 
     return $self;
 }

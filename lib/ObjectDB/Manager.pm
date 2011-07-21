@@ -5,9 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-__PACKAGE__->attr('conn');
-__PACKAGE__->attr('namespace');
-
 use ObjectDB::Utils 'table_to_class';
 use ObjectDB::Loader;
 
@@ -19,7 +16,7 @@ sub name_to_class {
 
     return unless $name;
 
-    my $namespace = $self->namespace;
+    my $namespace = $self->{namespace};
     $namespace ||= '';
 
     my $class;
@@ -63,7 +60,7 @@ sub AUTOLOAD {
     $method = (split '::' => $method)[-1];
 
     my $class = $self->name_to_class($name);
-    return $class->$method(conn => $self->conn, @_);
+    return $class->$method(conn => $self->{conn}, @_);
 }
 
 1;
