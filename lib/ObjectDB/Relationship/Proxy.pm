@@ -5,6 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Relationship::Base';
 
-__PACKAGE__->attr('proxy_key');
+sub proxy_key { @_ > 1 ? $_[0]->{map_class} = $_[1] : $_[0]->{map_class} }
 
 1;

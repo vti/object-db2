@@ -5,9 +5,13 @@ use warnings;
 
 use base 'ObjectDB::Relationship::Base';
 
-__PACKAGE__->attr([qw/map_class map_from map_to/]);
-
 use ObjectDB::Utils qw/plural_to_single class_to_table/;
+
+sub map_class { @_ > 1 ? $_[0]->{map_class} = $_[1] : $_[0]->{map_class} }
+
+sub map_from { @_ > 1 ? $_[0]->{map_from} = $_[1] : $_[0]->{map_from} }
+
+sub map_to { @_ > 1 ? $_[0]->{map_to} = $_[1] : $_[0]->{map_to} }
 
 sub _detect_column_mapping {
     my $self = shift;

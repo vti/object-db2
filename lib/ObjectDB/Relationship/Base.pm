@@ -8,14 +8,51 @@ use base 'ObjectDB::Base';
 require ObjectDB::Loader;
 use ObjectDB::Utils qw/camelize decamelize class_to_table plural_to_single/;
 
-__PACKAGE__->attr([qw/name foreign_class foreign_table namespace/]);
-__PACKAGE__->attr([qw/map/] => sub { {} });
-__PACKAGE__->attr(
-    [   qw/with where join_args foreign_class_from_cols
-          foreign_class_to_cols map_to_cols map_from_cols/
-    ] => sub { [] }
-);
-__PACKAGE__->attr(is_built => 0);
+sub BUILD {
+    my $self = shift;
+
+    $self->{map}                   = {} unless exists $self->{map};
+    $self->{with}                  = [] unless exists $self->{with};
+    $self->{where}                 = [] unless exists $self->{where};
+    $self->{join_args}             = [] unless exists $self->{join_args};
+    $self->{foreign_class_to_cols} = []
+      unless exists $self->{foreign_class_to_cols};
+    $self->{foreign_class_from_cols} = []
+      unless exists $self->{foreign_class_from_cols};
+    $self->{map_to_cols}   = [] unless exists $self->{map_to_cols};
+    $self->{map_from_cols} = [] unless exists $self->{map_from_cols};
+    $self->{is_built}      = 0  unless exists $self->{is_built};
+}
+
+sub name { $_[0]->{name} }
+
+sub foreign_class {
+    @_ > 1 ? $_[0]->{foreign_class} = $_[1] : $_[0]->{foreign_class};
+}
+
+sub foreign_table {
+    @_ > 1 ? $_[0]->{foreign_table} = $_[1] : $_[0]->{foreign_table};
+}
+
+sub namespace { $_[0]->{namespace} }
+
+sub map { @_ > 1 ? $_[0]->{map} = $_[1] : $_[0]->{map} }
+
+sub with { @_ > 1 ? $_[0]->{with} = $_[1] : $_[0]->{with} }
+
+sub where { @_ > 1 ? $_[0]->{where} = $_[1] : $_[0]->{where} }
+
+sub join_args { $_[0]->{join_args} }
+
+sub foreign_class_to_cols { $_[0]->{foreign_class_to_cols} }
+
+sub foreign_class_from_cols { $_[0]->{foreign_class_from_cols} }
+
+sub map_to_cols { $_[0]->{map_to_cols} }
+
+sub map_from_cols { $_[0]->{map_from_cols} }
+
+sub is_built { @_ > 1 ? $_[0]->{is_built} = $_[1] : $_[0]->{is_built} }
 
 sub type { decamelize((split '::' => ref(shift))[-1]) }
 
