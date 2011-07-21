@@ -39,10 +39,10 @@ sub to_source {
 
     my $as;
     if ($foreign_table eq $table) {
-        $as = $alias_prefix.$self->name;
+        $as = $alias_prefix . $self->name;
     }
     else {
-        $as = $alias_prefix.$foreign_table;
+        $as = $alias_prefix . $foreign_table;
     }
 
     my $constraint;
