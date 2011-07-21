@@ -7,7 +7,12 @@ use base 'ObjectDB::SQL::Base';
 
 use ObjectDB::SQL::Utils 'escape';
 
-__PACKAGE__->attr(values => sub { [] });
+sub BUILD {
+    my $self = shift;
+    $self->{values} = [] if not exists $self->{sources};
+}
+
+sub values { @_ > 1 ? $_[0]->{values} = $_[1] : $_[0]->{values} }
 
 sub build {
     my $self = shift;
