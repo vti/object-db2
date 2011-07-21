@@ -12,7 +12,7 @@ sub build {
 
     my $driver = delete $params{driver};
 
-    Carp::croak 'driver is required' unless $driver;
+    Carp::croak('driver is required') unless $driver;
 
     my $driver_class = __PACKAGE__ . '::' . $driver;
 

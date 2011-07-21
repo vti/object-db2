@@ -38,9 +38,9 @@ sub cond {
         push @{$self->{cond}}, @_;
     }
     else {
-        Carp::croak "Unexpected parameter: "
+        Carp::croak("Unexpected parameter: "
           . ref($_[0])
-          . " (\"$_[0]\"). cond() accepts reference to array/scalar or array of parameters!";
+          . " (\"$_[0]\"). cond() accepts reference to array/scalar or array of parameters!");
     }
 
     return $self;
