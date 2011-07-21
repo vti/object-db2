@@ -10,6 +10,8 @@ use_ok('ObjectDB::Relationship::BelongsTo');
 use lib 't/lib';
 
 use TestDB;
+use TestEnv;
+TestEnv->setup;
 
 my $rel = ObjectDB::Relationship::BelongsTo->new(
     class     => 'Article',

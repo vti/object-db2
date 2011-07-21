@@ -7,8 +7,12 @@ use base 'ObjectDB';
 
 use ObjectDB::Connector;
 
+our $CONN;
+
 sub init_conn {
     my $class = shift;
+
+    return $CONN if $CONN;
 
     my @args = ();
 
@@ -17,7 +21,7 @@ sub init_conn {
         push @args, 'dbi:mysql:' . shift @options, @options;
     }
     else {
-        push @args, 'dbi:SQLite:' . 'object_db.db';
+        push @args, 'dbi:SQLite:' . ':memory:';
     }
 
     my $conn = ObjectDB::Connector->new(@args);
@@ -28,6 +32,7 @@ sub init_conn {
         $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
     }
 
+    $CONN = $conn;
     return $conn;
 }
 

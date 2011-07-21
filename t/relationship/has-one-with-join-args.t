@@ -11,6 +11,9 @@ use lib 't/lib';
 
 use TestDB;
 
+use TestEnv;
+TestEnv->setup;
+
 my $rel = ObjectDB::Relationship::HasOne->new(
     class     => 'Author',
     name      => 'article',

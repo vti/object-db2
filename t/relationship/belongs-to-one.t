@@ -10,6 +10,8 @@ use_ok('ObjectDB::Relationship::BelongsToOne');
 use lib 't/lib';
 
 use TestDB;
+use TestEnv;
+TestEnv->setup;
 
 my $rel = ObjectDB::Relationship::BelongsToOne->new(
     class => 'AuthorAdmin',
