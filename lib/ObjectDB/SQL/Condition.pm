@@ -7,9 +7,16 @@ use base 'ObjectDB::Base';
 
 use ObjectDB::SQL::Utils qw/escape prepare_column/;
 
-__PACKAGE__->attr(logic  => 'AND');
-__PACKAGE__->attr(prefix => '');
-__PACKAGE__->attr(driver => '');
+sub BUILD {
+    my $self = shift;
+    $self->{logic}  = 'AND' if not exists $self->{logic};
+    $self->{prefix} = ''    if not exists $self->{prefix};
+    $self->{driver} = ''    if not exists $self->{driver};
+}
+
+sub prefix { @_ > 1 ? $_[0]->{prefix} = $_[1] : $_[0]->{prefix} }
+sub driver { @_ > 1 ? $_[0]->{driver} = $_[1] : $_[0]->{driver} }
+sub logic  { @_ > 1 ? $_[0]->{logic}  = $_[1] : $_[0]->{logic} }
 
 use overload '""' => sub { shift->to_string }, fallback => 1;
 
@@ -93,7 +100,7 @@ sub _build {
     while (my ($key, $value) = @{$cond}[$count, $count + 1]) {
         last unless $key;
 
-        $string .= " " . $self->logic . " " unless $count == 0;
+        $string .= " " . $self->{logic} . " " unless $count == 0;
         if (ref $key eq 'SCALAR') {
             $string .= $$key;
 
@@ -124,7 +131,7 @@ sub _build {
                     }
                 }
 
-                my $driver = $self->driver || die 'no sql driver defined';
+                my $driver = $self->{driver} || die 'no sql driver defined';
 
                 if ($driver =~ /SQLite/) {
                     $key = join(' || "__" || ', @concat);
@@ -246,7 +253,7 @@ sub logic_switched {
 
     if ($key =~ s/^-//) {
         if ($key eq 'or' || $key eq 'and') {
-            $self->logic(uc $key);
+            $self->{logic} = uc $key;
             return 1;
         }
     }
