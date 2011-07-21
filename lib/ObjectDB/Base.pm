@@ -15,9 +15,14 @@ sub new {
     my $class = shift;
 
     # Instantiate
-    return bless
+    my $self = bless
       exists $_[0] ? exists $_[1] ? {@_} : {%{$_[0]}} : {},
       ref $class || $class;
+
+    return $self;
+}
+
+sub BUILD {
 }
 
 # Performance is very important for something as often used as accessors,
