@@ -5,8 +5,14 @@ use warnings;
 
 use base 'ObjectDB::SQL::Base';
 
-__PACKAGE__->attr([qw/group_by having/]);
-__PACKAGE__->attr([qw/sources/] => sub { [] });
+sub BUILD {
+    my $self = shift;
+    $self->{sources} = [] if not exists $self->{sources};
+}
+
+sub having   { @_ > 1 ? $_[0]->{having}   = $_[1] : $_[0]->{having} }
+sub group_by { @_ > 1 ? $_[0]->{group_by} = $_[1] : $_[0]->{group_by} }
+sub sources  { $_[0]->{sources} }
 
 use ObjectDB::SQL::Condition;
 use ObjectDB::SQL::Utils qw/escape prepare_column/;
@@ -193,17 +199,17 @@ sub to_string {
     $query .= $self->where;
     $self->bind($self->where->bind);
 
-    if (my $group_by = $self->group_by) {
+    if (my $group_by = $self->{group_by}) {
         $group_by = prepare_column($group_by, $default_prefix);
         $query .= ' GROUP BY ' . $group_by;
     }
 
     # TO DO: REWRITE NECESSARY
-    if ($self->having && ref $self->having eq 'SCALAR') {
-        $query .= ' HAVING ' . ${$self->having} if $self->having;
+    if ($self->{having} && ref $self->{having} eq 'SCALAR') {
+        $query .= ' HAVING ' . ${$self->{having}} if $self->{having};
     }
     else {
-        $query .= ' HAVING ' . escape($self->having) if $self->having;
+        $query .= ' HAVING ' . escape($self->{having}) if $self->{having};
     }
 
     if (my $order_by = $self->order_by) {
