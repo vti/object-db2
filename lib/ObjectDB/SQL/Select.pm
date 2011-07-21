@@ -12,7 +12,7 @@ sub BUILD {
 
 sub having   { @_ > 1 ? $_[0]->{having}   = $_[1] : $_[0]->{having} }
 sub group_by { @_ > 1 ? $_[0]->{group_by} = $_[1] : $_[0]->{group_by} }
-sub sources  { $_[0]->{sources} }
+sub sources { $_[0]->{sources} }
 
 use ObjectDB::SQL::Condition;
 use ObjectDB::SQL::Utils qw/escape prepare_column/;
