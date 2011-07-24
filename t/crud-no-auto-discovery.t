@@ -22,43 +22,43 @@ TestEnv->setup;
 my ($hotel, $hotel2, $hotel3) = HotelData->populate;
 
 is(@{$hotel->apartments},                              2);
-is($hotel->apartments->[0]->column('apartment_num_b'), 47);
-is($hotel->apartments->[0]->column('name'),            'John F. Kennedy');
-is($hotel->apartments->[0]->column('size'),            78);
+is($hotel->apartments->[0]->apartment_num_b, 47);
+is($hotel->apartments->[0]->name,            'John F. Kennedy');
+is($hotel->apartments->[0]->size,            78);
 
-is($hotel->apartments->[1]->column('apartment_num_b'), 61);
-is($hotel->apartments->[1]->column('name'),            'George Washington');
-is($hotel->apartments->[1]->column('size'),            50);
+is($hotel->apartments->[1]->apartment_num_b, 61);
+is($hotel->apartments->[1]->name,            'George Washington');
+is($hotel->apartments->[1]->size,            50);
 
 is(@{$hotel->apartments->[0]->rooms},                         2);
-is($hotel->apartments->[0]->rooms->[0]->column('room_num_c'), 1);
-is($hotel->apartments->[0]->rooms->[0]->column('size'),       70);
-is($hotel->apartments->[0]->rooms->[1]->column('room_num_c'), 2);
-is($hotel->apartments->[0]->rooms->[1]->column('size'),       8);
+is($hotel->apartments->[0]->rooms->[0]->room_num_c, 1);
+is($hotel->apartments->[0]->rooms->[0]->size,       70);
+is($hotel->apartments->[0]->rooms->[1]->room_num_c, 2);
+is($hotel->apartments->[0]->rooms->[1]->size,       8);
 
 is(@{$hotel->apartments->[1]->rooms},                         3);
-is($hotel->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
-is($hotel->apartments->[1]->rooms->[0]->column('size'),       10);
-is($hotel->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
-is($hotel->apartments->[1]->rooms->[1]->column('size'),       16);
-is($hotel->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
-is($hotel->apartments->[1]->rooms->[2]->column('size'),       70);
+is($hotel->apartments->[1]->rooms->[0]->room_num_c, 1);
+is($hotel->apartments->[1]->rooms->[0]->size,       10);
+is($hotel->apartments->[1]->rooms->[1]->room_num_c, 2);
+is($hotel->apartments->[1]->rooms->[1]->size,       16);
+is($hotel->apartments->[1]->rooms->[2]->room_num_c, 3);
+is($hotel->apartments->[1]->rooms->[2]->size,       70);
 
 # Now the most interesting part:
-is($hotel->apartments->[0]->column('hotel_num_b'), 5);
-is($hotel->apartments->[1]->column('hotel_num_b'), 5);
+is($hotel->apartments->[0]->hotel_num_b, 5);
+is($hotel->apartments->[1]->hotel_num_b, 5);
 
-is($hotel->apartments->[0]->rooms->[0]->column('hotel_num_c'),     5);
-is($hotel->apartments->[0]->rooms->[1]->column('hotel_num_c'),     5);
-is($hotel->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
-is($hotel->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
+is($hotel->apartments->[0]->rooms->[0]->hotel_num_c,     5);
+is($hotel->apartments->[0]->rooms->[1]->hotel_num_c,     5);
+is($hotel->apartments->[0]->rooms->[0]->apartment_num_c, 47);
+is($hotel->apartments->[0]->rooms->[1]->apartment_num_c, 47);
 
-is($hotel->apartments->[1]->rooms->[0]->column('hotel_num_c'),     5);
-is($hotel->apartments->[1]->rooms->[1]->column('hotel_num_c'),     5);
-is($hotel->apartments->[1]->rooms->[2]->column('hotel_num_c'),     5);
-is($hotel->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
-is($hotel->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
-is($hotel->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
+is($hotel->apartments->[1]->rooms->[0]->hotel_num_c,     5);
+is($hotel->apartments->[1]->rooms->[1]->hotel_num_c,     5);
+is($hotel->apartments->[1]->rooms->[2]->hotel_num_c,     5);
+is($hotel->apartments->[1]->rooms->[0]->apartment_num_c, 61);
+is($hotel->apartments->[1]->rooms->[1]->apartment_num_c, 61);
+is($hotel->apartments->[1]->rooms->[2]->apartment_num_c, 61);
 
 HotelData->cleanup;
 

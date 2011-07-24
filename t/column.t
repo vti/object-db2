@@ -23,5 +23,4 @@ $author->column(id => undef);
 ok(not defined $author->column('id'));
 
 $author->column(id => 'bar');
-$author->column('id');
 is($author->column('id'), 'bar');

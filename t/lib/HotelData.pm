@@ -14,16 +14,14 @@ sub populate {
 
     # Create data
     my $hotel = Hotel->create(
-        name        => 'President',
-        city        => 'New York',
-        hotel_num_a => 5,
+        name         => 'President',
+        city         => 'New York',
+        hotel_num_a  => 5,
         hotel_num_a2 => 50,
-        lot_id_1_h  => 10,
-        lot_id_2_h  => 1,
-        parking_lot => {
-            number_of_spots => 40
-        },
-        apartments  => [
+        lot_id_1_h   => 10,
+        lot_id_2_h   => 1,
+        parking_lot  => {number_of_spots => 40},
+        apartments   => [
             {   apartment_num_b => 47,
                 name            => 'John F. Kennedy',
                 size            => 78,
@@ -41,16 +39,16 @@ sub populate {
                     {room_num_c => 2, size => 16},
                     {room_num_c => 3, size => 70}
                 ],
-                images   => [
-                    {   width   => 30,
-                        height  => 120
+                images => [
+                    {   width  => 30,
+                        height => 120
                     }
                 ]
             },
         ],
         employees => [
-            {   first_name => 'F1', last_name => 'L1' },
-            {   first_name => 'F2', last_name => 'L2' },
+            {first_name => 'F1', last_name => 'L1'},
+            {first_name => 'F2', last_name => 'L2'},
         ],
         manager => {
             manager_num_b   => 5555555,
@@ -59,12 +57,12 @@ sub populate {
                 {tel_num_c => 1111, telefon_number => '123456789'},
                 {tel_num_c => 1112, telefon_number => '987654321'}
             ],
-            secretaries     => [
+            secretaries => [
                 {first_name => 'First1', last_name => 'Last1'},
                 {first_name => 'First2', last_name => 'Last2'}
             ],
-            office          => {size => 33, floor => 3},
-            car             => {horsepower => 300, brand => 'Porsche'}
+            office => {size       => 33,  floor => 3},
+            car    => {horsepower => 300, brand => 'Porsche'}
         }
     );
 
@@ -76,9 +74,7 @@ sub populate {
         hotel_num_a => 6,
         lot_id_1_h  => 20,
         lot_id_2_h  => 1,
-        parking_lot => {
-            number_of_spots => 56
-        },
+        parking_lot => {number_of_spots => 56},
         apartments  => [
             {   apartment_num_b => 47,
                 name            => 'John F. Kennedy',

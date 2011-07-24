@@ -31,6 +31,7 @@ sub new {
 
 sub is_modified { $_[0]->{is_modified} }
 sub is_in_db    { $_[0]->{is_in_db} }
+sub is_empty    { return !!$_[0]->columns }
 
 sub plural_class_name {
     my $class = shift;
