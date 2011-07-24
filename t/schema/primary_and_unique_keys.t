@@ -20,14 +20,6 @@ use Test::More tests => 37;
 
 use lib 't/lib';
 
-use TestEnv;
-
-TestEnv->setup;
-
-my $conn = TestDB->conn;
-
-
-
 ### Primary key with multiple columns
 
 # table
@@ -187,6 +179,3 @@ is_deeply([$multi_unique->_primary_or_unique_key_columns], [qw/id/]);
 $multi_unique = MultiUnique->new->column(first_name => '', last_name => '');
 is_deeply([$multi_unique->_primary_or_unique_key_columns],
     [qw/first_name last_name/]);
-
-
-TestEnv->teardown;
