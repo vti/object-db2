@@ -36,10 +36,10 @@ WriteMakefile(
 
     PREREQ_PM => {
         'Carp'            => '0',
-        'DBI'             => '0',
-        'Scalar::Util'    => '0',
         'Class::Load'     => '0',
+        'DBI'             => '0',
         'DBIx::Connector' => '0.36',
+        'Scalar::Util'    => '0',
     },
     test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
 );
