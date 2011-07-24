@@ -29,7 +29,7 @@ sub BUILD {
 
 sub is_modified { $_[0]->{is_modified} }
 sub is_in_db    { $_[0]->{is_in_db} }
-sub is_empty    { return !!$_[0]->columns }
+sub is_empty    { !!$_[0]->columns }
 
 sub plural_class_name {
     my $class = shift;
@@ -111,7 +111,6 @@ sub objectdb_lazy {
 
     return $ENV{OBJECTDB_LAZY} || undef;
 }
-
 
 sub id {
     my $self = shift;
@@ -281,7 +280,7 @@ sub create {
 
 sub _set_auto_increment_column {
     my $self = shift;
-    my $dbh  = shift;
+    my ($dbh) = @_;
 
     if (my $auto_increment = $self->schema->auto_increment) {
         my $id =
@@ -516,7 +515,6 @@ sub _resolve_max_min_n_per_group {
     else {
         $sql->having(\qq/COUNT(*) < $top/);
     }
-
 }
 
 ### EXPERIMENTAL
@@ -844,7 +842,6 @@ sub _resolve_id {
     }
 
     $sql->where(%where);
-
 }
 
 sub _merge_arrays {
@@ -931,9 +928,6 @@ sub _fetch_subrequests {
             push @{$set->{$id}}, $o;
         }
 
-        #warn Dumper $set;
-        #$related = {map { $_->id => $_ } @$related};
-
       OUTER_LOOP: foreach my $o (@result) {
             my $parent = $o;
             foreach my $part (@$chain) {
@@ -997,7 +991,6 @@ sub find_related {
     my $find_class;
     my $ids;
 
-
     $ids = delete $params{ids};
 
     # Get ids
@@ -1020,7 +1013,6 @@ sub find_related {
     if ($rel->is_belongs_to || $rel->is_belongs_to_one) {
         $params{single} = 1;
     }
-
 
     # Passed where, passed with and find class
     if ($rel->is_has_and_belongs_to_many) {
@@ -1049,7 +1041,6 @@ sub find_related {
         push @where, ($map_to[0] => [@$ids]);
     }
     push @where, @{$rel->where} if $rel->where;
-
 
     # Return results
     if ($rel->is_has_and_belongs_to_many) {
@@ -1092,7 +1083,7 @@ sub update {
     my $self = shift;
 
     # Row object
-    return $self->_update_instance(@_) if ref $self && $self->columns;
+    return $self->_update_instance(@_) if $self->columns;
 
     # Class or table object
     return $self->_update_objects(@_);
@@ -1458,7 +1449,7 @@ sub _resolve_with {
 
                 ### Parent has always access to mapping data which is saved
                 ### in child, mapping data saved in child because each child
-                ### only has one parent, but parent can have many childs with
+                ### only has one parent, but parent can have many children with
                 ### varying mapping columns for each relationship
                 $parent_args->{child_args} ||= [];
                 push @{$parent_args->{child_args}}, $args;
@@ -1466,7 +1457,7 @@ sub _resolve_with {
 
                 ### Load columns that are required for object mapping,
                 ### not necessarily equal to "map_from", as parent can have
-                ### many childs (map_from cols of all childs have to be loaded)
+                ### many children (map_from cols of all children have to be loaded)
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
@@ -1493,7 +1484,7 @@ sub _resolve_with {
 
                 push @$table_chain, $rel->foreign_table;
 
-                # Add source before resolving childs to get correct order
+                # Add source before resolving children to get correct order
                 # Add where constraint as join args
                 $source = $rel->to_source($args->{where}, $alias_prefix);
                 $sql->add_source($source);
@@ -1518,12 +1509,6 @@ sub _resolve_with {
     };
 
     _execute_code_ref($walker, $class, $with);
-
-    #use Data::Dumper;
-    #warn Dumper $subreqs if $ENV{OBJECTDB_DEBUG};
-    #warn Dumper $with if $ENV{OBJECTDB_DEBUG};
-    #warn Dumper $main if $ENV{OBJECTDB_DEBUG};
-
 }
 
 sub _resolve_columns {
@@ -1649,16 +1634,8 @@ sub _row_to_object {
         $self->column($column => shift @$row);
     }
 
-    #warn '_row v';
-    #warn Dumper $sql;
-    #warn Dumper \@columns;
-    #warn '_row ^';
-
     my $sources = [@{$sql->sources}];
     shift @$sources;
-
-    #use Data::Dumper;
-    #warn Dumper $with;
 
     $with ||= [];
 
@@ -1740,7 +1717,7 @@ sub _execute_code_ref {
 
 sub _inflate_columns {
     my $self    = shift;
-    my $inflate = shift;
+    my ($inflate) = @_;
 
     return unless $inflate;
 
@@ -1756,13 +1733,13 @@ sub _inflate_columns {
           if $self->namespace;
 
         if ($class eq $inflation_class) {
-
             if ($inflation_method =~ /^inflate_/) {
                 return $inflation_method;
             }
             else {
                 return 'inflate_' . $inflation_method;
             }
+
             last;
         }
     }

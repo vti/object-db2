@@ -55,14 +55,12 @@ sub create {
 
         $rgt = $left->column('rgt') if $left;
 
-        $class->update(
-            conn  => $conn,
+        $class->new(conn => $conn)->update(
             set   => [rgt => \'rgt + 2'],
             where => [rgt => {'>' => $rgt}]
         );
 
-        $class->update(
-            conn  => $conn,
+        $class->new(conn => $conn)->update(
             set   => [lft => \'lft + 2'],
             where => [lft => {'>' => $rgt}]
         );

@@ -21,7 +21,7 @@ TestEnv->setup;
 my $master;
 my ($c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9);
 
-$master = Article->new(category_id => 1, title => 'bar')->create;
+$master = Article->new->set_columns(category_id => 1, title => 'bar')->create;
 
 $c1 = NestedComment->new->create(
 
