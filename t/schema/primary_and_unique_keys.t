@@ -1,11 +1,13 @@
 #!/usr/bin/env perl
 
+use lib 't/lib';
+
 package MultiPrimary;
-use base 'ObjectDB';
+use base 'TestDB';
 __PACKAGE__->schema->columns(qw/foo bar other/)->primary_key(qw/foo bar/);
 
 package MultiUnique;
-use base 'ObjectDB';
+use base 'TestDB';
 __PACKAGE__->schema->columns(qw/id first_name last_name age city street/)
   ->primary_key(qw/id/)
   ->unique_keys([qw/first_name last_name/], [qw/city street/]);

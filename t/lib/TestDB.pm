@@ -9,7 +9,7 @@ use ObjectDB::Connector;
 
 our $CONN;
 
-sub init_conn {
+sub conn {
     my $class = shift;
 
     return $CONN if $CONN;

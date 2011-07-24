@@ -18,7 +18,7 @@ use_ok('ObjectDB::SchemaDiscoverer');
 
 TestEnv->setup;
 
-my $dbh = TestDB->init_conn->dbh;
+my $dbh = TestDB->conn->dbh;
 
 my $d;
 
@@ -50,7 +50,7 @@ is_deeply($d->primary_key, [qw/article_id tag_id/]);
 # Throw an exeption if table does not exist
 $d = ObjectDB::SchemaDiscoverer->build(driver => 'SQLite', table => 'h');
 ok(!eval { $d->discover($dbh) });
-my $err_msg = 'SchemaDiscoverer::SQLite: table h not found in DB';
+my $err_msg = "SchemaDiscoverer::SQLite: table 'h' not found in DB";
 ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 
 

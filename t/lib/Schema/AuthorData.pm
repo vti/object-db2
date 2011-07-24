@@ -14,7 +14,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $author = Schema::Author->create(
+    my $author = Schema::Author->new->create(
         name     => 'author 1',
         articles => [
             {   title    => 'article 1-1',
@@ -60,7 +60,7 @@ sub populate {
 sub cleanup {
     my $class = shift;
 
-    Schema::Author->delete;
+    Schema::Author->new->delete(all => 1);
 }
 
 

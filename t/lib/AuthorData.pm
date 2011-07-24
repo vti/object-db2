@@ -21,7 +21,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $author = Author->create(
+    my $author = Author->new->create(
         name     => 'author 1',
         articles => [
             {   title    => 'article 1-1',
@@ -79,7 +79,7 @@ sub populate {
     );
 
 
-    my $author2 = Author->create(
+    my $author2 = Author->new->create(
         name     => 'author 2',
         articles => [
             {   title    => 'article 2-1',
@@ -113,10 +113,10 @@ sub populate {
 
 
     # main category
-    my $category_1 = MainCategory->create(title => 'main category 1');
-    my $category_2 = MainCategory->create(title => 'main category 2');
-    my $category_3 = MainCategory->create(title => 'main category 3');
-    my $category_4 = MainCategory->create(
+    my $category_1 = MainCategory->new->create(title => 'main category 1');
+    my $category_2 = MainCategory->new->create(title => 'main category 2');
+    my $category_3 = MainCategory->new->create(title => 'main category 3');
+    my $category_4 = MainCategory->new->create(
         title           => 'main category 4',
         admin_histories => [
             {   admin_name => 'Andre1',
@@ -132,7 +132,7 @@ sub populate {
     );
 
     # special report
-    my $special_report_1 = SpecialReport->create(title => 'special report 1');
+    my $special_report_1 = SpecialReport->new->create(title => 'special report 1');
 
 
 
@@ -154,8 +154,8 @@ sub populate {
 sub cleanup {
     my $class = shift;
 
-    Author->delete;
-    MainCategory->delete;
+    Author->new->delete(all => 1);
+    MainCategory->new->delete(all => 1);
 }
 
 

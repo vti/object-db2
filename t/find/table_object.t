@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 9;
 
 use lib 't/lib';
 
@@ -22,9 +22,9 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 
 # First simple test
 my $authors_table = Author->new;
-my @authors = $authors_table->find;
-is(@authors, 2);
-is($authors[0]->column('id'), $author1->column('id') );
+my @authors       = $authors_table->find;
+is(@authors,                  2);
+is($authors[0]->column('id'), $author1->column('id'));
 
 
 # Returned object should NOT be table object
@@ -34,7 +34,7 @@ isnt($authors[1], $authors_table);
 
 # Pass specific author id
 $authors_table = Author->new;
-my $author = $authors_table->find( id => $author1->column('id') );
+my $author = $authors_table->find(id => $author1->column('id'));
 is($author->column('name'), 'author 1');
 
 
@@ -42,16 +42,10 @@ is($author->column('name'), 'author 1');
 isnt($author, $authors_table);
 
 
-# Find method can only be performed on table object, not on row object
-ok(!eval {$authors_table = Author->new(name=>'Fritz'); $authors_table->find });
-my $err_msg = 'find method can only be performed on table object, not on row object';
-ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
-
-
 # Where
 $authors_table = Author->new;
 @authors = $authors_table->find(where => [name => 'author 1']);
-is(@authors, 1);
+is(@authors,                1);
 is($author->column('name'), 'author 1');
 
 

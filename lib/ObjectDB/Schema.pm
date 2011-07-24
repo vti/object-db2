@@ -114,7 +114,7 @@ sub build_aliases {
     for my $column ($self->columns) {
         unless ($self->class->can($column)) {
             no strict;
-            my $code  = "sub {shift->column('$column', \@_)}";
+            my $code  = "sub {my \$self = shift; \$self->column('$column', \@_)}";
             *{"${class}::$column"} = eval $code;
         }
     }

@@ -9,7 +9,7 @@ use TestDB;
 sub setup {
     shift;
 
-    my $conn = TestDB->init_conn;
+    my $conn = TestDB->conn;
 
     my $driver = $conn->driver;
 

@@ -60,7 +60,7 @@ is(Schema::Tag->schema->relationship('articles')->class, 'Schema::Tag');
 
 Schema::AuthorData->populate;
 
-my $authors = Schema::Author->find(
+my $authors = Schema::Author->new->find(
     rows_as_object => 1,
     with           => ['articles.comments']
 );

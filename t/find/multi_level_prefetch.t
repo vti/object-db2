@@ -31,7 +31,7 @@ $ENV{OBJECTDB_FORCE_PREFETCH} = 1;
 #### 1.1 Main -> One-to-Many --> One-to-Many (--> One-to-Many)
 
 # First simple test
-my @authors = Author->find(with => [qw/articles articles.comments/]);
+my @authors = Author->new->find(with => [qw/articles articles.comments/]);
 is(@authors,                                    2);
 is($authors[0]->articles->[0]->column('title'), 'article 1-1');
 is($authors[0]->articles->[1]->column('title'), 'article 1-2');
@@ -40,7 +40,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 
 
 # Only data of deepest relationship should be loaded completely
-@authors = Author->find(with => [qw/articles.comments/]);
+@authors = Author->new->find(with => [qw/articles.comments/]);
 is(@authors, 2);
 ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
@@ -52,7 +52,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'),
 
 # Same test, but only with selected columns
 @authors =
-  Author->find(with => ['articles.comments', {columns => ['content']}]);
+  Author->new->find(with => ['articles.comments', {columns => ['content']}]);
 is(@authors, 2);
 ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
@@ -63,7 +63,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'), undef);
 
 # Same test, but only with selected column passed as scalar
 @authors =
-  Author->find(with => ['articles.comments', {columns => 'content'}]);
+  Author->new->find(with => ['articles.comments', {columns => 'content'}]);
 is(@authors, 2);
 ok(!defined $authors[0]->articles->[0]->column('title'));
 ok(!defined $authors[0]->articles->[1]->column('title'));
@@ -74,7 +74,9 @@ is($authors[0]->articles->[0]->comments->[0]->column('creation_date'), undef);
 
 # Same test, passing related data in wrong format
 # format is not supported by Perl
-eval { Author->find(with => [qw/articles.comments {columns=>['content']}/]); };
+eval {
+    Author->new->find(with => [qw/articles.comments {columns=>['content']}/]);
+};
 my $err_msg = 'use: with => ["foo",{...}], not: with => [qw/ foo {...} /]';
 ok($@ =~ m/\Q$err_msg/);
 
@@ -82,14 +84,15 @@ ok($@ =~ m/\Q$err_msg/);
 # Pass options first
 eval {
     @authors =
-      Author->find(with => [{columns => ['content']}, 'articles.comments']);
+      Author->new->find(
+        with => [{columns => ['content']}, 'articles.comments']);
 };
 $err_msg = 'pass relationship before passing any further options as hashref';
 ok($@ =~ m/\Q$err_msg/);
 
 
 # Mixing the order of relationship chains a bit
-@authors = Author->find(with => [qw/articles.comments articles/]);
+@authors = Author->new->find(with => [qw/articles.comments articles/]);
 is(@authors,                                    2);
 is($authors[0]->articles->[0]->column('title'), 'article 1-1');
 is($authors[0]->articles->[1]->column('title'), 'article 1-2');
@@ -99,7 +102,7 @@ is($authors[0]->articles->[0]->comments->[0]->column('content'),
 
 ###### Load all columns for each relationship
 @authors =
-  Author->find(
+  Author->new->find(
     with => [qw/articles articles.comments articles.comments.sub_comments/]);
 is(@authors,                                    2);
 is(@{$authors[0]->articles},                    4);
@@ -122,7 +125,7 @@ is($authors[0]->articles->[2]->comments->[0]->column('content'),
 
 
 ###### Only data of deepest relationship should be loaded completely
-@authors = Author->find(with => [qw/articles.comments.sub_comments/]);
+@authors = Author->new->find(with => [qw/articles.comments.sub_comments/]);
 is(@authors,                 2);
 is(@{$authors[0]->articles}, 4);
 ok(not defined $authors[0]->articles->[0]->column('title'));
@@ -144,7 +147,7 @@ is(@{$authors[0]->articles->[1]->comments}, 0);
 ######################################################################
 #### 1.2 Main -> One-to-many  -> One-to-many (-> One-to-many)
 ####          -> One-to-many  -> One-to-one
-@authors = Author->find(
+@authors = Author->new->find(
     with => [
         qw/articles articles.comments articles.comments.sub_comments articles.main_category/
     ]
@@ -172,7 +175,7 @@ is($authors[0]->articles->[0]->main_category->column('title'),
 
 
 @authors =
-  Author->find(
+  Author->new->find(
     with => [qw/articles.comments.sub_comments articles.main_category/]);
 is(@authors,                 2);
 is(@{$authors[0]->articles}, 4);
@@ -194,7 +197,7 @@ is($authors[0]->articles->[0]->main_category->column('title'),
 
 
 @authors =
-  Author->find(with => [qw/articles.comments articles.main_category/]);
+  Author->new->find(with => [qw/articles.comments articles.main_category/]);
 is(@authors,                 2);
 is(@{$authors[0]->articles}, 4);
 ok(not defined $authors[0]->articles->[0]->column('title'));
@@ -209,7 +212,7 @@ is($authors[0]->articles->[0]->main_category->column('title'),
 
 
 @authors =
-  Author->find(
+  Author->new->find(
     with => [qw/articles.comments articles.main_category articles/]);
 is(@authors,                                    2);
 is(@{$authors[0]->articles},                    4);
@@ -227,14 +230,16 @@ is($authors[0]->articles->[0]->main_category->column('title'),
 ######################################################################
 #### 1.3 Main -> One-to-one -> One-to-many
 
-my @articles = Article->find(with => [qw/main_category.admin_histories/]);
+my @articles =
+  Article->new->find(with => [qw/main_category.admin_histories/]);
 is($articles[0]->main_category->admin_histories->[0]->column('admin_name'),
     'Andre1');
 ok(not defined $articles[0]->main_category->column('title'));
 
 
 @articles =
-  Article->find(with => [qw/main_category main_category.admin_histories/]);
+  Article->new->find(
+    with => [qw/main_category main_category.admin_histories/]);
 is($articles[0]->main_category->admin_histories->[0]->column('admin_name'),
     'Andre1');
 is($articles[0]->main_category->column('title'), 'main category 4');
@@ -242,7 +247,7 @@ is($articles[0]->main_category->column('title'), 'main category 4');
 
 # article with title article 2-1 has no main category, so subrequest
 # should not be performed (empty IN, does not execute in mysql)
-@articles = Article->find(
+@articles = Article->new->find(
     with  => [qw/main_category.admin_histories/],
     where => [title => 'article 2-1']
 );
@@ -252,7 +257,8 @@ is($articles[0]->main_category, undef);
 ######################################################################
 #### 1.4 Main -> One-to-many -> One-to-one -> One-to-many
 
-@authors = Author->find(with => [qw/articles.main_category.admin_histories/]);
+@authors =
+  Author->new->find(with => [qw/articles.main_category.admin_histories/]);
 is( $authors[0]->articles->[0]->main_category->admin_histories->[0]
       ->column('admin_name'),
     'Andre1'
@@ -264,7 +270,7 @@ ok(not defined $authors[0]->articles->[0]->main_category->column('title'));
 #### 1.5 Main -> One-to-one -> One-to-one -> One-to-many
 
 # Pass specific article id
-my $article = Article->find(
+my $article = Article->new->find(
     id   => $author1->articles->[2]->column('id'),
     with => [qw/special_report.main_category.admin_histories/]
 );
@@ -279,7 +285,7 @@ ok(not defined $article->special_report->main_category->column('title'));
 #### 1.6 Main -> One-to-many -> One-to-one -> One-to-one -> One-to-many
 
 @authors =
-  Author->find(
+  Author->new->find(
     with => [qw/articles.special_report.main_category.admin_histories/]);
 is( $authors[0]->articles->[2]
       ->special_report->main_category->admin_histories->[0]
@@ -290,7 +296,7 @@ ok( not defined $authors[0]->articles->[2]
       ->special_report->main_category->column('title'));
 
 
-@authors = Author->find(
+@authors = Author->new->find(
     with => [
         qw/articles.special_report.main_category articles.special_report.main_category.admin_histories/
     ]
@@ -304,13 +310,12 @@ is($authors[0]->articles->[2]->special_report->main_category->column('title'),
     'main category 4');
 
 
-
 ######################################################################
 #### 1.7 Main -> One-to-many -> One-to-one -> One-to-one -> One-to-many
 ####          -> One-to-many -> One-to-many
 
 ### mix
-@authors = Author->find(
+@authors = Author->new->find(
     with => [
         qw/articles.comments articles.special_report.main_category.admin_histories/
     ]
@@ -327,14 +332,13 @@ is($authors[0]->articles->[2]->comments->[0]->column('content'),
     'comment 1-3-1');
 
 
-
 ######################################################################
 #### 1.8 Main -> One-to-one -> One-to-one -> One-to-many
 ####          -> One-to-many
 
 # Pass specific article id, make sure that later subrequest is performed even
 # if first subrequest does not provide any results
-$article = Article->find(
+$article = Article->new->find(
     id   => $author1->articles->[3]->column('id'),
     with => [qw/to_do_articles special_report.main_category.admin_histories/]
 );
@@ -347,24 +351,28 @@ ok(not defined $article->special_report);
 ######################################################################
 #### 1.9 Main -> Many-to-many
 
-@articles = Article->find(with=>'tags');
-is(@articles, 8);
-is(@{$articles[0]->tags}, 0);
-is(@{$articles[1]->tags}, 3);
+@articles = Article->new->find(with => 'tags');
+is(@articles,                               8);
+is(@{$articles[0]->tags},                   0);
+is(@{$articles[1]->tags},                   3);
 is($articles[1]->tags->[0]->column('name'), 'Tag1');
-is(@{$articles[3]->tags}, 2);
+is(@{$articles[3]->tags},                   2);
 is($articles[3]->tags->[1]->column('name'), 'Tag5');
 
 
 # where constraint
-@articles = Article->find(with=>'tags', where=>['tags.name' => 'Tag5']);
-is(@articles, 1);
-is(@{$articles[0]->tags}, 2);
+@articles =
+  Article->new->find(with => 'tags', where => ['tags.name' => 'Tag5']);
+is(@articles,                               1);
+is(@{$articles[0]->tags},                   2);
 is($articles[0]->tags->[1]->column('name'), 'Tag5');
 
 
-@articles = Article->find(with=>'tags', where=>['tags.name' => {'like'=>'Tag1%'}]);
-is(@articles, 2);
+@articles = Article->new->find(
+    with  => 'tags',
+    where => ['tags.name' => {'like' => 'Tag1%'}]
+);
+is(@articles,                               2);
 is($articles[0]->tags->[0]->column('name'), 'Tag1');
 is($articles[1]->tags->[0]->column('name'), 'Tag10');
 
@@ -372,62 +380,66 @@ is($articles[1]->tags->[0]->column('name'), 'Tag10');
 ######################################################################
 #### 2.0 Main -> One-to-many -> Many-to-many
 
-@authors = Author->find(with=>'articles.tags');
-is(@authors, 2);
-is(@{$authors[0]->articles->[0]->tags}, 0);
-is(@{$authors[0]->articles->[1]->tags}, 3);
-is($authors[0]->articles->[1]->column('title'), undef);
-is(@{$authors[0]->articles->[3]->tags}, 2);
+@authors = Author->new->find(with => 'articles.tags');
+is(@authors,                                              2);
+is(@{$authors[0]->articles->[0]->tags},                   0);
+is(@{$authors[0]->articles->[1]->tags},                   3);
+is($authors[0]->articles->[1]->column('title'),           undef);
+is(@{$authors[0]->articles->[3]->tags},                   2);
 is($authors[0]->articles->[1]->tags->[0]->column('name'), 'Tag1');
-is(@{$authors[1]->articles->[0]->tags}, 2);
+is(@{$authors[1]->articles->[0]->tags},                   2);
 is($authors[1]->articles->[0]->tags->[1]->column('name'), 'Tag11');
 
 
-@authors = Author->find(with=>'articles.tags', where=>['articles.tags.name' => {'like'=>'Tag1%'}]);
-is(@authors, 2);
-is(@{$authors[0]->articles->[0]->tags}, 0);
-is(@{$authors[0]->articles->[1]->tags}, 3);
+@authors = Author->new->find(
+    with  => 'articles.tags',
+    where => ['articles.tags.name' => {'like' => 'Tag1%'}]
+);
+is(@authors,                                              2);
+is(@{$authors[0]->articles->[0]->tags},                   0);
+is(@{$authors[0]->articles->[1]->tags},                   3);
 is($authors[0]->articles->[1]->tags->[0]->column('name'), 'Tag1');
-is(@{$authors[0]->articles->[3]->tags}, 2);
-is(@{$authors[1]->articles->[0]->tags}, 2);
+is(@{$authors[0]->articles->[3]->tags},                   2);
+is(@{$authors[1]->articles->[0]->tags},                   2);
 is($authors[1]->articles->[0]->tags->[1]->column('name'), 'Tag11');
 
 
-@authors = Author->find(with=>'articles.tags', where=>['articles.tags.name' => {'like'=>'Tag5%'}]);
-is(@authors, 1);
+@authors = Author->new->find(
+    with  => 'articles.tags',
+    where => ['articles.tags.name' => {'like' => 'Tag5%'}]
+);
+is(@authors,                    1);
 is($authors[0]->column('name'), 'author 1');
 
 
 ######################################################################
 #### 2.0 Main -> Many-to-many -> One-to-many
-@articles = Article->find(with=>'tags.admin_histories');
+@articles = Article->new->find(with => 'tags.admin_histories');
 
-is(@articles, 8);
-is(@{$articles[0]->tags}, 0);
-is(@{$articles[1]->tags}, 3);
-is($articles[1]->tags->[0]->column('name'), undef);
+is(@articles,                                   8);
+is(@{$articles[0]->tags},                       0);
+is(@{$articles[1]->tags},                       3);
+is($articles[1]->tags->[0]->column('name'),     undef);
 is(@{$articles[1]->tags->[0]->admin_histories}, 0);
 is(@{$articles[1]->tags->[2]->admin_histories}, 1);
-is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'), 'Andre2');
-is(@{$articles[3]->tags}, 2);
+is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'),
+    'Andre2');
+is(@{$articles[3]->tags},                   2);
 is($articles[3]->tags->[1]->column('name'), undef);
 
 
-@articles = Article->find(with=>['tags','tags.admin_histories']);
+@articles = Article->new->find(with => ['tags', 'tags.admin_histories']);
 
-is(@articles, 8);
-is(@{$articles[0]->tags}, 0);
-is(@{$articles[1]->tags}, 3);
-is($articles[1]->tags->[0]->column('name'), 'Tag1');
+is(@articles,                                   8);
+is(@{$articles[0]->tags},                       0);
+is(@{$articles[1]->tags},                       3);
+is($articles[1]->tags->[0]->column('name'),     'Tag1');
 is(@{$articles[1]->tags->[0]->admin_histories}, 0);
 is(@{$articles[1]->tags->[2]->admin_histories}, 1);
-is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'), 'Andre2');
-is(@{$articles[3]->tags}, 2);
+is($articles[1]->tags->[2]->admin_histories->[0]->column('admin_name'),
+    'Andre2');
+is(@{$articles[3]->tags},                   2);
 is($articles[3]->tags->[1]->column('name'), 'Tag5');
-
-
-
-
 
 
 ######################################################################
@@ -443,7 +455,7 @@ is($articles[3]->tags->[1]->column('name'), 'Tag5');
 
 # First simple test
 # only one apartment has images
-my @hotels = Hotel->find(with => [qw/apartments.images/]);
+my @hotels = Hotel->new->find(with => [qw/apartments.images/]);
 is(@hotels,                                                   3);
 is(@{$hotels[0]->apartments->[0]->images},                    0);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
@@ -451,7 +463,7 @@ is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
 
 # every hotel has apartments, every apartment has rooms
 # check if all mapping colums are loaded
-@hotels = Hotel->find(with => [qw/apartments apartments.rooms/]);
+@hotels = Hotel->new->find(with => [qw/apartments apartments.rooms/]);
 
 is(@{$hotels[0]->apartments},                              2);
 is($hotels[0]->apartments->[0]->column('hotel_num_b'),     5);
@@ -459,54 +471,54 @@ is($hotels[0]->apartments->[0]->column('apartment_num_b'), 47);
 is($hotels[0]->apartments->[0]->column('name'),            'John F. Kennedy');
 is($hotels[0]->apartments->[0]->column('size'),            78);
 
-is($hotels[0]->apartments->[1]->column('hotel_num_b'), 5);
+is($hotels[0]->apartments->[1]->column('hotel_num_b'),     5);
 is($hotels[0]->apartments->[1]->column('apartment_num_b'), 61);
 is($hotels[0]->apartments->[1]->column('name'), 'George Washington');
 is($hotels[0]->apartments->[1]->column('size'), 50);
 
-is(@{$hotels[0]->apartments->[0]->rooms},                         2);
-is($hotels[0]->apartments->[0]->rooms->[0]->column('hotel_num_c'),5);
+is(@{$hotels[0]->apartments->[0]->rooms},                              2);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('hotel_num_c'),     5);
 is($hotels[0]->apartments->[0]->rooms->[0]->column('apartment_num_c'), 47);
-is($hotels[0]->apartments->[0]->rooms->[0]->column('room_num_c'), 1);
-is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),       70);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('room_num_c'),      1);
+is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),            70);
 
 is($hotels[0]->apartments->[0]->rooms->[1]->column('hotel_num_c'),     5);
 is($hotels[0]->apartments->[0]->rooms->[1]->column('apartment_num_c'), 47);
-is($hotels[0]->apartments->[0]->rooms->[1]->column('room_num_c'), 2);
-is($hotels[0]->apartments->[0]->rooms->[1]->column('size'),       8);
+is($hotels[0]->apartments->[0]->rooms->[1]->column('room_num_c'),      2);
+is($hotels[0]->apartments->[0]->rooms->[1]->column('size'),            8);
 
-is(@{$hotels[0]->apartments->[1]->rooms},                         3);
+is(@{$hotels[0]->apartments->[1]->rooms},                              3);
 is($hotels[0]->apartments->[1]->rooms->[0]->column('hotel_num_c'),     5);
 is($hotels[0]->apartments->[1]->rooms->[0]->column('apartment_num_c'), 61);
-is($hotels[0]->apartments->[1]->rooms->[0]->column('room_num_c'), 1);
-is($hotels[0]->apartments->[1]->rooms->[0]->column('size'),       10);
+is($hotels[0]->apartments->[1]->rooms->[0]->column('room_num_c'),      1);
+is($hotels[0]->apartments->[1]->rooms->[0]->column('size'),            10);
 
 is($hotels[0]->apartments->[1]->rooms->[1]->column('hotel_num_c'),     5);
 is($hotels[0]->apartments->[1]->rooms->[1]->column('apartment_num_c'), 61);
-is($hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'), 2);
-is($hotels[0]->apartments->[1]->rooms->[1]->column('size'),       16);
+is($hotels[0]->apartments->[1]->rooms->[1]->column('room_num_c'),      2);
+is($hotels[0]->apartments->[1]->rooms->[1]->column('size'),            16);
 
 is($hotels[0]->apartments->[1]->rooms->[2]->column('hotel_num_c'),     5);
 is($hotels[0]->apartments->[1]->rooms->[2]->column('apartment_num_c'), 61);
-is($hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'), 3);
-is($hotels[0]->apartments->[1]->rooms->[2]->column('size'),       70);
+is($hotels[0]->apartments->[1]->rooms->[2]->column('room_num_c'),      3);
+is($hotels[0]->apartments->[1]->rooms->[2]->column('size'),            70);
 
 
 # Make sure that columns for mapping are present even if no columns should be loaded
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     columns => [],
     with    => [qw/apartments apartments.rooms/]
 );
 is($hotels[0]->column('hotel_num_a'), 5);
 ok($hotels[0]->column('id'));
 ok(not defined $hotels[0]->column('name'));
-is(@{$hotels[0]->apartments},             2);
-is(@{$hotels[0]->apartments->[0]->rooms}, 2);
+is(@{$hotels[0]->apartments},                               2);
+is(@{$hotels[0]->apartments->[0]->rooms},                   2);
 is($hotels[0]->apartments->[0]->rooms->[1]->column('size'), 8);
 
 
 # Make sure that columns for mapping are present even if not all apartment columns are loaded
-@hotels = Hotel->find(with => [qw/apartments.rooms/]);
+@hotels = Hotel->new->find(with => [qw/apartments.rooms/]);
 ok($hotels[0]->apartments->[0]->column('id'));
 is($hotels[0]->apartments->[0]->column('hotel_num_b'),     5);
 is($hotels[0]->apartments->[0]->column('apartment_num_b'), 47);
@@ -520,7 +532,7 @@ my $hotel_id = $hotels[0]->column('id');
 
 
 # Same test with specific id
-my $hotel = Hotel->find(
+my $hotel = Hotel->new->find(
     id   => $hotel_id,
     with => [qw/apartments.rooms/]
 );
@@ -538,15 +550,15 @@ is($hotel->apartments->[0]->rooms->[0]->column('size'), 70);
 
 # one-to-one after one-to-many to make sure that column aliases work correctly in find_related
 # map: rooms.apartment_num_c => maid.apartment_num_c, i.e. same column name for mapping in both tables
-@hotels = Hotel->find(with => [qw/apartments apartments.rooms.maid/]);
-is($hotels[1]->apartments->[0]->rooms->[0]->maid, undef);
+@hotels = Hotel->new->find(with => [qw/apartments apartments.rooms.maid/]);
+is($hotels[1]->apartments->[0]->rooms->[0]->maid,                 undef);
 is($hotels[1]->apartments->[1]->rooms->[0]->maid->column('name'), 'Amelie');
 
 
 ######################################################################
 #### 2.3 Main -> One-to-one -> One-to-many
 
-@hotels = Hotel->find(with => [qw/manager manager.telefon_numbers/]);
+@hotels = Hotel->new->find(with => [qw/manager manager.telefon_numbers/]);
 is($hotels[0]->manager->column('name'),        'Lalolu');
 is($hotels[0]->manager->column('hotel_num_b'), 5);
 is(@{$hotels[0]->manager->telefon_numbers},    2);
@@ -564,7 +576,7 @@ $hotel_id = $hotels[0]->column('id');
 
 
 # same test with passed id
-$hotel = Hotel->find(
+$hotel = Hotel->new->find(
     id   => $hotel_id,
     with => [qw/manager manager.telefon_numbers/]
 );
@@ -580,7 +592,7 @@ is($hotel->manager->telefon_numbers->[1]->column('manager_num_c'), '5555555');
 
 
 # same test, but do not load manager data
-@hotels = Hotel->find(with => [qw/manager.telefon_numbers/]);
+@hotels = Hotel->new->find(with => [qw/manager.telefon_numbers/]);
 ok(not defined $hotels[0]->manager->column('name'));
 ok($hotels[0]->manager->column('id'));
 is($hotels[0]->manager->column('hotel_num_b'),   5);
@@ -599,7 +611,7 @@ is($hotels[0]->manager->telefon_numbers->[1]->column('manager_num_c'),
 ######################################################################
 #### 2.4 Main -> One-to-one -> One-to-one
 
-my @rooms = Room->find(with => [qw/ apartment apartment.hotel /]);
+my @rooms = Room->new->find(with => [qw/ apartment apartment.hotel /]);
 is(@rooms,                                      17);
 is($rooms[0]->column('size'),                   70);
 is($rooms[0]->apartment->hotel->column('name'), 'President');
@@ -614,7 +626,7 @@ is($rooms[7]->apartment->hotel->column('name'), 'President2');
 # different mapping columns
 # {hotel_num_b => 'hotel_num_c', apartment_num_b => 'apartment_num_c'}
 # {image_num_b => 'image_num_c'
-@hotels = Hotel->find(with => [qw/apartments.rooms apartments.images/]);
+@hotels = Hotel->new->find(with => [qw/apartments.rooms apartments.images/]);
 is(@hotels,                                                   3);
 is(@{$hotels[0]->apartments->[1]->images},                    1);
 is($hotels[0]->apartments->[1]->images->[0]->column('width'), 30);
@@ -629,7 +641,7 @@ is($hotels[0]->apartments->[0]->rooms->[0]->column('size'),   70);
 # same mapping columns
 # {hotel_num_b => 'hotel_num_c', manager_num_b => 'manager_num_c'}
 @hotels =
-  Hotel->find(with => [qw/manager.telefon_numbers manager.secretaries/]);
+  Hotel->new->find(with => [qw/manager.telefon_numbers manager.secretaries/]);
 is(@hotels,                                 3);
 is($hotels[0]->manager->column('name'),     undef);
 is(@{$hotels[0]->manager->telefon_numbers}, 2);
@@ -649,7 +661,7 @@ is(@{$hotels[1]->manager->secretaries},                         0);
 
 # same mapping columns
 # {hotel_num_b => 'hotel_num_c', manager_num_b => 'manager_num_c'}
-my @managers = Manager->find(with => [qw/telefon_numbers secretaries/]);
+my @managers = Manager->new->find(with => [qw/telefon_numbers secretaries/]);
 is(@managers,                                                    3);
 is($managers[0]->column('name'),                                 'Lalolu');
 is(@{$managers[0]->telefon_numbers},                             2);
@@ -664,7 +676,7 @@ is(@{$managers[1]->secretaries},                                 0);
 # similar test, but different mapping columns
 # {hotel_num_b => 'hotel_num_c', apartment_num_b => 'apartment_num_c'}
 # {image_num_b => 'image_num_c'
-my @apartments = Apartment->find(with => [qw/rooms images/]);
+my @apartments = Apartment->new->find(with => [qw/rooms images/]);
 is(@apartments,                                  6);
 is(@{$apartments[0]->images},                    0);
 is(@{$apartments[1]->images},                    1);
@@ -679,13 +691,13 @@ is($apartments[0]->rooms->[0]->column('size'),   70);
 
 # same mapping columns
 # {manager_num_b => 'manager_num_b'}
-@hotels = Hotel->find(with => [qw/manager.office manager.car/]);
-is(@hotels,                                 3);
-is($hotels[0]->manager->column('name'),     undef);
+@hotels = Hotel->new->find(with => [qw/manager.office manager.car/]);
+is(@hotels,                                     3);
+is($hotels[0]->manager->column('name'),         undef);
 is($hotels[0]->manager->office->column('size'), 33);
-is($hotels[0]->manager->car->column('brand'), 'Porsche');
-is($hotels[1]->manager->office, undef);
-is($hotels[1]->manager->car,  undef);
+is($hotels[0]->manager->car->column('brand'),   'Porsche');
+is($hotels[1]->manager->office,                 undef);
+is($hotels[1]->manager->car,                    undef);
 
 
 ######################################################################
@@ -694,11 +706,11 @@ is($hotels[1]->manager->car,  undef);
 
 # same mapping columns
 # {manager_num_b => 'manager_num_b'}
-@managers = Manager->find(with => [qw/office car/]);
+@managers = Manager->new->find(with => [qw/office car/]);
 is($managers[0]->office->column('size'), 33);
-is($managers[0]->car->column('brand'), 'Porsche');
-is($managers[1]->office, undef);
-is($managers[1]->car,  undef);
+is($managers[0]->car->column('brand'),   'Porsche');
+is($managers[1]->office,                 undef);
+is($managers[1]->car,                    undef);
 
 
 ######################################################################
@@ -728,36 +740,34 @@ is($managers[1]->car,  undef);
 #       -> employees
 
 
-@hotels = Hotel->find(with => [
-    'manager',
-    'manager.car',
-    'manager.office',
-    'manager.telefon_numbers',
-    'manager.secretaries',
-    'parking_lot',
-    'apartments',
-    'apartments.rooms',
-    'employees'
-]);
+@hotels = Hotel->new->find(
+    with => [
+        'manager',             'manager.car',
+        'manager.office',      'manager.telefon_numbers',
+        'manager.secretaries', 'parking_lot',
+        'apartments',          'apartments.rooms',
+        'employees'
+    ]
+);
 
 # Hotel
-is(@hotels, 3);
+is(@hotels,                    3);
 is($hotels[0]->column('name'), 'President');
 is($hotels[1]->column('name'), 'President2');
 
 # Manager
-is($hotels[0]->manager->column('name'),'Lalolu');
-is($hotels[1]->manager->column('name'),'Lalolu');
+is($hotels[0]->manager->column('name'), 'Lalolu');
+is($hotels[1]->manager->column('name'), 'Lalolu');
 
 # Car
-is(ref $hotels[0]->manager->car, 'Car');
+is(ref $hotels[0]->manager->car,              'Car');
 is($hotels[0]->manager->car->column('brand'), 'Porsche');
-is($hotels[1]->manager->car, undef);
+is($hotels[1]->manager->car,                  undef);
 
 # Office
-is(ref $hotels[0]->manager->office, 'Office');
+is(ref $hotels[0]->manager->office,             'Office');
 is($hotels[0]->manager->office->column('size'), '33');
-is($hotels[1]->manager->office, undef);
+is($hotels[1]->manager->office,                 undef);
 
 # TelefonNumber
 is(@{$hotels[0]->manager->telefon_numbers}, 2);
@@ -768,37 +778,35 @@ is($hotels[1]->manager->telefon_numbers->[1]->column('telefon_number'),
     '987654329');
 
 # Secretary
-is(@{$hotels[0]->manager->secretaries}, 2);
-is($hotels[0]->manager->secretaries->[1]->column('last_name'),
-    'Last2');
-is(@{$hotels[1]->manager->secretaries}, 0);
+is(@{$hotels[0]->manager->secretaries},                        2);
+is($hotels[0]->manager->secretaries->[1]->column('last_name'), 'Last2');
+is(@{$hotels[1]->manager->secretaries},                        0);
 
 # Parking lot
-is(ref $hotels[0]->parking_lot, 'ParkingLot');
+is(ref $hotels[0]->parking_lot,                        'ParkingLot');
 is($hotels[0]->parking_lot->column('number_of_spots'), 40);
-is(ref $hotels[1]->parking_lot, 'ParkingLot');
+is(ref $hotels[1]->parking_lot,                        'ParkingLot');
 is($hotels[1]->parking_lot->column('number_of_spots'), 56);
-is($hotels[2]->parking_lot, undef);
+is($hotels[2]->parking_lot,                            undef);
 
 # Apartment
-is(@{$hotels[0]->apartments},2);
+is(@{$hotels[0]->apartments},                   2);
 is($hotels[0]->apartments->[1]->column('name'), 'George Washington');
 
-is(@{$hotels[1]->apartments},2);
+is(@{$hotels[1]->apartments},                   2);
 is($hotels[1]->apartments->[1]->column('name'), 'George Washington');
 
 # Room
-is(@{$hotels[0]->apartments->[1]->rooms}, 3);
+is(@{$hotels[0]->apartments->[1]->rooms},                   3);
 is($hotels[0]->apartments->[1]->rooms->[1]->column('size'), 16);
 
-is(@{$hotels[1]->apartments->[1]->rooms}, 3);
+is(@{$hotels[1]->apartments->[1]->rooms},                   3);
 is($hotels[1]->apartments->[1]->rooms->[1]->column('size'), 15);
 
 # Employee
-is(@{$hotels[0]->employees},2);
+is(@{$hotels[0]->employees},                         2);
 is($hotels[0]->employees->[1]->column('first_name'), 'F2');
-is(@{$hotels[1]->employees},0);
-
+is(@{$hotels[1]->employees},                         0);
 
 
 ######################################################################
@@ -809,7 +817,7 @@ is(@{$hotels[1]->employees},0);
 
 # has_many relationship
 @hotels =
-  Hotel->find(
+  Hotel->new->find(
     with => ['apartments.rooms' => {where => [size => 70]}, 'apartments']);
 is(@hotels,                               3);
 is(@{$hotels[0]->apartments},             2);
@@ -824,7 +832,7 @@ is(@{$hotels[2]->apartments->[1]->rooms}, 0);
 
 
 # has_many relationship
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [
         'apartments.rooms' => {where => [size => 70]},
         'apartments'       => {where => [name => 'John F. Kennedy']}
@@ -841,7 +849,7 @@ is(@{$hotels[2]->apartments->[0]->rooms}, 0);
 
 # multi-level where
 @hotels =
-  Hotel->find(with => ['apartments' => {where => ['rooms.size' => 15]}]);
+  Hotel->new->find(with => ['apartments' => {where => ['rooms.size' => 15]}]);
 is(@hotels,                                                3);
 is(@{$hotels[0]->apartments},                              0);
 is(@{$hotels[1]->apartments},                              1);
@@ -852,7 +860,7 @@ is($hotels[2]->apartments->[0]->column('apartment_num_b'), 12);
 
 # Similar test, but now LOOKING FOR ROOMS THAT HAVE SAME SIZE IN 2nd APARTMENT
 @hotels =
-  Hotel->find(with => ['apartments' => {where => ['rooms.size' => 7]}]);
+  Hotel->new->find(with => ['apartments' => {where => ['rooms.size' => 7]}]);
 is(@hotels,                   3);
 is(@{$hotels[0]->apartments}, 0);
 is(@{$hotels[1]->apartments}, 0);
@@ -862,7 +870,8 @@ is($hotels[2]->apartments->[1]->column('apartment_num_b'), 12);
 
 
 # has_one relationship
-@hotels = Hotel->find(with => ['manager' => {where => [name => 'Lalolu']}]);
+@hotels =
+  Hotel->new->find(with => ['manager' => {where => [name => 'Lalolu']}]);
 is(@hotels,                             3);
 is($hotels[0]->manager->column('name'), 'Lalolu');
 is($hotels[1]->manager->column('name'), 'Lalolu');
@@ -875,7 +884,7 @@ is($hotels[2]->manager,                 undef);
 
 
 # No match at all
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
     where => ['manager.name' => 'Smith2']
 );
@@ -883,7 +892,7 @@ is(@hotels, 0);
 
 
 # One match
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
     where => ['manager.name' => 'Smith']
 );
@@ -899,7 +908,7 @@ is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71);
 # One matching hotel, "with" dominates "where" (so all apartments
 # with all rooms are loaded for the matching hotel (where
 # condition does not apply to subrequests for apartments and rooms)
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
     where => ['apartments.rooms.size' => 71]
 );
@@ -914,7 +923,7 @@ is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 71);
 
 
 # Similar test, but now two matching hotels
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
     where => ['apartments.rooms.size' => 10]
 );
@@ -931,7 +940,7 @@ is($hotels[0]->apartments->[0]->rooms->[0]->column('size'), 70);
 
 
 # Similar test, but now LOOKING FOR ROOMS WITH SAME SIZE IN ONE HOTEL
-@hotels = Hotel->find(
+@hotels = Hotel->new->find(
     with => [qw/manager manager.telefon_numbers apartments apartments.rooms/],
     where => ['apartments.rooms.size' => 70]
 );
@@ -947,7 +956,7 @@ is(@{$hotels[1]->apartments->[1]->rooms}, 3);
 
 
 # where: one-to-one -> one-to-one
-@rooms = Room->find(
+@rooms = Room->new->find(
     with  => [qw/ apartment apartment.hotel /],
     where => ['apartment.hotel.name' => 'President']
 );
@@ -962,27 +971,25 @@ is($rooms[3]->apartment->hotel->column('name'), 'President');
 ######################################################################
 
 @articles =
-  Article->find(
+  Article->new->find(
     with => [qw/main_category special_report.main_category.admin_histories/]);
-is($articles[0]->special_report, undef);
-is($articles[1]->special_report, undef);
-is( @{$articles[2]->special_report->main_category->admin_histories}, 2);
-is($articles[3]->special_report, undef);
-is($articles[4]->special_report, undef);
-is($articles[5]->special_report, undef);
-is($articles[6]->special_report, undef);
-is($articles[7]->special_report, undef);
+is($articles[0]->special_report,                                    undef);
+is($articles[1]->special_report,                                    undef);
+is(@{$articles[2]->special_report->main_category->admin_histories}, 2);
+is($articles[3]->special_report,                                    undef);
+is($articles[4]->special_report,                                    undef);
+is($articles[5]->special_report,                                    undef);
+is($articles[6]->special_report,                                    undef);
+is($articles[7]->special_report,                                    undef);
 
 is($articles[0]->main_category->column('title'), 'main category 4');
-is($articles[1]->main_category, undef);
-is($articles[2]->main_category, undef);
-is($articles[3]->main_category, undef);
-is($articles[4]->main_category, undef);
-is($articles[5]->main_category, undef);
-is($articles[6]->main_category, undef);
-is($articles[7]->main_category, undef);
-
-
+is($articles[1]->main_category,                  undef);
+is($articles[2]->main_category,                  undef);
+is($articles[3]->main_category,                  undef);
+is($articles[4]->main_category,                  undef);
+is($articles[5]->main_category,                  undef);
+is($articles[6]->main_category,                  undef);
+is($articles[7]->main_category,                  undef);
 
 
 # Allow lazy loading of data

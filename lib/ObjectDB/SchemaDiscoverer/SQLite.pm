@@ -16,15 +16,13 @@ sub discover {
         last if $sql;
     }
 
-    die 'SchemaDiscoverer::SQLite: table ' . $self->table . ' not found in DB'
+    die 'SchemaDiscoverer::SQLite: table \'' . $self->table . '\' not found in DB'
       unless $sql;
 
-    ### TO DO: Support for unique keys created by "create unique index"
+    ### TODO: Support for unique keys created by "create unique index"
     ### PRAGMAs index_list and index_info
-    ### TO DO: cache data in schema files for better cgi performance
+    ### TODO: cache data in schema files for better cgi performance
 
-
-    # Unique keys
     my $counter = 0;
     while ($sql =~ s/UNIQUE\((.*?)\)//) {
         my $unique = $1;

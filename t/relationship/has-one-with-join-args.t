@@ -24,7 +24,7 @@ ok($rel);
 is($rel->type, 'has_one');
 ok($rel->is_has_one);
 
-$rel->build(TestDB->init_conn);
+$rel->build(TestDB->conn);
 
 is($rel->foreign_table, 'articles');
 

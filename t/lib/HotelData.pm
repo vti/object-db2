@@ -13,7 +13,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $hotel = Hotel->create(
+    my $hotel = Hotel->new->create(
         name         => 'President',
         city         => 'New York',
         hotel_num_a  => 5,
@@ -67,7 +67,7 @@ sub populate {
     );
 
     # Create a second hotel to make tests a bit more demanding
-    my $hotel2 = Hotel->create(
+    my $hotel2 = Hotel->new->create(
         name        => 'President2',
         city        => 'London',
         street      => 'Berlin Street',
@@ -106,7 +106,7 @@ sub populate {
 
 
     # Create a third hotel
-    my $hotel3 = Hotel->create(
+    my $hotel3 = Hotel->new->create(
         name        => 'President3',
         city        => 'Paris',
         hotel_num_a => 7,
@@ -148,7 +148,7 @@ sub populate {
 sub cleanup {
     my $class = shift;
 
-    Hotel->delete;
+    Hotel->new->delete(all => 1);
 }
 
 1;

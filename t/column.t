@@ -7,20 +7,25 @@ use Test::More tests => 6;
 
 use lib 't/lib';
 
+use TestEnv;
 use Author;
+
+TestEnv->setup;
 
 my $author = Author->new;
 
 ok($author);
 
 ok(not defined $author->column(undef));
-ok(not defined $author->column('id'));
+ok(not defined $author->id);
 
-$author->column(id => 'boo');
-is($author->column('id'), 'boo');
+$author->id('boo');
+is($author->id, 'boo');
 
-$author->column(id => undef);
-ok(not defined $author->column('id'));
+$author->id(undef);
+ok(not defined $author->id);
 
-$author->column(id => 'bar');
-is($author->column('id'), 'bar');
+$author->id('bar');
+is($author->id, 'bar');
+
+TestEnv->teardown;

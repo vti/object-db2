@@ -14,7 +14,7 @@ use Article;
 
 TestEnv->setup;
 
-my $author = Author->create(
+my $author = Author->new->create(
     name     => 'foo',
     articles => [{title => 'bar'}, {title => 'baz'}]
 );
@@ -22,13 +22,13 @@ is(@{$author->articles},                    2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
 
-$author = Author->find(id => $author->id);
+$author = Author->new->find(id => $author->id);
 my @articles = $author->articles;
 is(@articles,                     2);
 is($articles[0]->column('title'), 'bar');
 is($articles[1]->column('title'), 'baz');
 
-$author = Author->find(id => $author->id);
+$author = Author->new->find(id => $author->id);
 ok($author->delete_related('articles' => where => [title => 'bar']));
 @articles = $author->articles;
 is(@articles,                     1);
@@ -38,18 +38,18 @@ is($articles[0]->column('title'), 'baz');
 is(@articles,                     1);
 is($articles[0]->column('title'), 'bar');
 
-$author = Author->find(id => $author->id);
+$author = Author->new->find(id => $author->id);
 my $article =
   $author->find_related('articles' => where => [title => 'bar'])->next;
 ok($article);
 is($article->column('title'), 'bar');
 
 $author->delete;
-ok(!Article->find->next);
+ok(!Article->new->find->next);
 
-$author = Author->create(name => 'spammer');
+$author = Author->new->create(name => 'spammer');
 
-$author = Author->create(
+$author = Author->new->create(
     name     => 'foo',
     articles => [
         {   title    => 'bar',
@@ -64,10 +64,10 @@ $author = Author->create(
     ]
 );
 
-@articles = Author->find_related('articles', ids => [$author->id]);
+@articles = Author->new->find_related('articles', ids => [$author->id]);
 is(@articles, 2);
 
-$author = Author->find(id => $author->id, with => 'articles');
+$author = Author->new->find(id => $author->id, with => 'articles');
 is(@{$author->articles},                    2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
@@ -95,7 +95,7 @@ is_deeply(
     }
 );
 
-$author = Author->find(
+$author = Author->new->find(
     id   => $author->id,
     with => [qw/articles.comments/]
 );
@@ -106,11 +106,11 @@ ok(not defined $author->articles->[1]->column('title'));
 is(@{$author->articles->[1]->comments}, 1);
 
 # Also works for list of authors
-my @authors = Author->find(with => [qw/articles.comments/]);
+my @authors = Author->new->find(with => [qw/articles.comments/]);
 ok(not defined $authors[1]->articles->[0]->column('title'));
 is(@{$authors[1]->articles->[0]->comments}, 2);
 
-$author = Author->find(
+$author = Author->new->find(
     id   => $author->id,
     with => [qw/articles articles.comments/]
 );
@@ -120,7 +120,7 @@ is(@{$author->articles->[0]->comments},     2);
 is($author->articles->[1]->column('title'), 'baz');
 is(@{$author->articles->[1]->comments},     1);
 
-$author = Author->find(
+$author = Author->new->find(
     id   => $author->id,
     with => [qw/articles articles.comments articles.comments.author/]
 );
@@ -133,7 +133,7 @@ is($author->articles->[1]->column('title'),                       'baz');
 is(@{$author->articles->[1]->comments},                           1);
 is($author->articles->[0]->comments->[0]->author->column('name'), 'spammer');
 
-@authors = Author->find(
+@authors = Author->new->find(
     where => [id => $author->id],
     with => [qw/articles articles.comments articles.comments.author/]
 );
@@ -150,6 +150,6 @@ is(@{$authors[0]->articles->[1]->comments},     1);
 is($authors[0]->articles->[0]->comments->[0]->author->column('name'),
     'spammer');
 
-Author->delete;
+Author->new->delete(all => 1);
 
 TestEnv->teardown;

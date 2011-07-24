@@ -16,14 +16,12 @@ Schema::AuthorData->populate;
 
 
 # Classic iterator
-my $authors = Schema::Author->find(with => ['articles.comments'],);
+my $authors = Schema::Author->new->find(with => ['articles.comments'],);
 
 
 # Now with rows_as_object option (for highest level) and
 # sub rows_as_objects {1} for related objects
-$authors = Schema::Author->find(
-    with => ['articles.comments'],
-);
+$authors = Schema::Author->new->find(with => ['articles.comments'],);
 
 # row(0) instead of ->[0]
 is($authors->row(0)->articles->row(0)->comments->row(0)->column('content'),
@@ -70,8 +68,8 @@ is($authors->row(0)->articles->row(0)->comments->number_of_rows, 6);
 
 # to_hash
 my $authors_serialized = $authors->to_hash;
-is($authors_serialized->[0]->{articles}->[0]->{comments}->[0]->{content}, 'comment 1-1-1');
-
+is($authors_serialized->[0]->{articles}->[0]->{comments}->[0]->{content},
+    'comment 1-1-1');
 
 
 Schema::AuthorData->cleanup;

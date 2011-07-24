@@ -21,12 +21,10 @@ use ObjectDB::Utils 'single_to_plural';
 
 use Data::Dumper;
 
-sub new {
-    my $self = shift->SUPER::new;
+sub BUILD {
+    my $self = shift;
 
-    $self->init(@_) if @_;
-
-    return $self;
+    $self->schema->build($self->conn);
 }
 
 sub is_modified { $_[0]->{is_modified} }
@@ -40,15 +38,9 @@ sub plural_class_name {
     return single_to_plural($class);
 }
 
-sub init {
+sub set_columns {
     my $self   = shift;
     my %params = @_;
-
-    if (my $conn = delete $params{conn}) {
-        $self->conn($conn);
-    }
-
-    $self->schema->build($self->conn);
 
     my $columns = {};
     while (my ($key, $value) = each %params) {
@@ -74,13 +66,9 @@ sub conn {
 
     return $self->{conn} = $_[0] if @_;
 
-    if (ref($self)) {
-        return $self->{conn} if $self->{conn};
+    Carp::croak(qq/Connector object is required/) unless $self->{conn};
 
-        return $self->{conn} = $self->init_conn;
-    }
-
-    return $self->init_conn;
+    return $self->{conn};
 }
 
 sub schema {
@@ -125,10 +113,15 @@ sub objectdb_lazy {
 }
 
 
-sub init_conn { }
-
 sub id {
     my $self = shift;
+
+    if (@_) {
+        for my $column ($self->schema->primary_key) {
+            $self->column($column => shift @_);
+        }
+        return $self;
+    }
 
     my @values = map { $self->column($_) } $self->schema->primary_key;
 
@@ -147,7 +140,8 @@ sub column {
         my %columns = @_;
         while (my ($key, $value) = each %columns) {
             if (defined $self->{columns}->{$key} && defined $value) {
-                $self->{is_modified} = 1 if $self->{columns}->{$key} ne $value;
+                $self->{is_modified} = 1
+                  if $self->{columns}->{$key} ne $value;
             }
             elsif (defined $self->{columns}->{$key} || defined $value) {
                 $self->{is_modified} = 1;
@@ -205,17 +199,16 @@ sub virtual_columns {
 }
 
 sub count {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $class->conn;
-    Carp::croak q/Connector is required/ unless $conn;
+    my $conn = $self->conn;
 
-    $class->schema->build($conn);
+    $self->schema->build($conn);
 
     my $sql = ObjectDB::SQL::Select->new;
 
-    my $table = $class->schema->table;
+    my $table = $self->schema->table;
 
     $sql->source($table);
     $sql->columns(\q/COUNT(*)/);
@@ -238,20 +231,19 @@ sub count {
 }
 
 sub create {
-    my $class  = shift;
-    my %params = @_;
+    my $self = shift;
 
-    my $self = ref($class) ? $class : $class->new(%params);
-
-    Carp::croak q/Connector required/ unless $self->conn;
+    if (@_) {
+        $self->set_columns(@_);
+    }
 
     die
       '->create: primary key column can NOT be NULL or has to be AUTOINCREMENT, table: '
-      . $class->schema->table
+      . $self->schema->table
       unless $self->_primary_key_columns_or_autoincrement;
 
     my $sql = ObjectDB::SQL::Insert->new;
-    $sql->table($class->schema->table);
+    $sql->table($self->schema->table);
     $sql->columns([$self->columns]);
     $sql->driver($self->conn->driver);
 
@@ -274,7 +266,7 @@ sub create {
 
             $self->_set_auto_increment_column($dbh);
 
-            $self->{is_in_db} = 1;
+            $self->{is_in_db}    = 1;
             $self->{is_modified} = 0;
 
             while (my ($key, $value) = each %{$self->{related}}) {
@@ -301,11 +293,16 @@ sub _set_auto_increment_column {
 
 sub create_related {
     my $self = shift;
-    my $name = shift;
-    my $data = shift;
+    my ($name, $data) = @_;
 
     my $rel = $self->schema->relationship($name);
     $rel->build($self->conn);
+
+    if (ref $data eq 'ARRAY'
+        && (!$rel->is_has_many && !$rel->is_has_and_belongs_to_many))
+    {
+        Carp::croak q/Relationship is not multiple/;
+    }
 
     my @params = ();
     while (my ($from, $to) = each %{$rel->map}) {
@@ -313,12 +310,6 @@ sub create_related {
     }
 
     push @params, @{$rel->where} if $rel->where;
-
-    if (ref $data eq 'ARRAY'
-        && (!$rel->is_has_many && !$rel->is_has_and_belongs_to_many))
-    {
-        Carp::croak q/Relationship is not multiple/;
-    }
 
     my $wantarray = wantarray;
     my $conn      = $self->conn;
@@ -328,16 +319,14 @@ sub create_related {
                 my $result;
                 $data = [$data] unless ref $data eq 'ARRAY';
                 foreach my $d (@$data) {
-                    push @$result, $rel->foreign_class->create(
-                        conn => $conn,
-                        %$d, @params
-                    );
+                    push @$result,
+                      $rel->foreign_class->new(conn => $conn)
+                      ->create(%$d, @params);
                 }
 
                 return $wantarray ? @$result : $result;
             }
             elsif ($rel->is_has_and_belongs_to_many) {
-
                 $data = [$data] unless ref $data eq 'ARRAY';
 
                 my $map_from = $rel->map_from;
@@ -351,9 +340,9 @@ sub create_related {
 
                 foreach my $d (@$data) {
                     my $object =
-                      $rel->foreign_class->find_or_create(conn => $conn, %$d);
-                    my $rel = $rel->map_class->create(
-                        conn             => $conn,
+                      $rel->foreign_class->new(conn => $conn)
+                      ->find_or_create(%$d);
+                    my $rel = $rel->map_class->new(conn => $conn)->create(
                         $from_foreign_pk => $self->column($from_pk),
                         $to_foreign_pk   => $object->column($to_pk)
                     );
@@ -361,7 +350,8 @@ sub create_related {
             }
             else {
                 return $self->{related}->{$name} =
-                  $rel->foreign_class->create(conn => $conn, %$data, @params);
+                  $rel->foreign_class->new(conn => $conn)
+                  ->create(%$data, @params);
             }
         }
     );
@@ -393,8 +383,7 @@ sub delete_related {
             }
         }
 
-        return $rel->map_class->delete(
-            conn => $self->conn,
+        return $rel->map_class->new(conn => $self->conn)->delete(
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -404,8 +393,7 @@ sub delete_related {
 
         delete $self->{related}->{$name};
 
-        return $rel->foreign_class->delete(
-            conn => $self->conn,
+        return $rel->foreign_class->new(conn => $self->conn)->delete(
             where => [$to => $self->column($from), @where],
             %params
         );
@@ -644,17 +632,17 @@ sub _resolve_max_min_n_per_group_multi_table {
     }
 
     #warn "$sql";
-
 }
 
 sub _resolve_multi_table {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
     my $where     = $params{where};
     my $sql       = $params{sql};
     my $col_alias = $params{col_alias};
-    my $conn      = $params{conn};
+
+    my $conn = $self->conn;
 
     return unless $where && @$where;
 
@@ -663,7 +651,7 @@ sub _resolve_multi_table {
         my $value = $where->[$i + 1];
 
         if ($key =~ m/\./) {
-            my $parent = $class;
+            my $parent = ref $self;
             my $source;
             my $one_to_many = 0;
             while ($key =~ s/(\w+)\.//) {
@@ -687,27 +675,19 @@ sub _resolve_multi_table {
 }
 
 sub find {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    if (ref $class && $class->columns) {
-        die
-          q/find method can only be performed on table object, not on row object/;
-    }
-
-    my $conn = delete $params{conn} || $class->conn;
-    Carp::croak q/Connector is required/ unless $conn;
-
-    $class->schema->build($conn);
-
     my $single = $params{first} || $params{single} ? 1 : 0;
+
+    my $conn = $self->conn;
 
     my $sql = ObjectDB::SQL::Select->new(driver => $conn->driver);
 
     my $main = {};
 
     if (my $maxmin = $params{max} || $params{min}) {
-        $class->_resolve_max_min_n_per_group(
+        $self->_resolve_max_min_n_per_group(
             {   sql  => $sql,
                 type => $params{max} ? 'max' : 'min',
                 %$maxmin
@@ -717,25 +697,24 @@ sub find {
 
     # Standard case
     else {
-        $sql->source($class->schema->table);
+        $sql->source($self->schema->table);
     }
 
     # Resolve "with" here to add columns needed to map related objects
     my $subreqs = [];
     my $with;
     if ($with = $params{with}) {
-        $with = $class->_normalize_with($with);
-        $class->_resolve_with(
+        $with = $self->_normalize_with($with);
+        $self->_resolve_with(
             main    => $main,
             with    => $with,
             sql     => $sql,
-            subreqs => $subreqs,
-            conn    => $conn
+            subreqs => $subreqs
         );
     }
 
     # Resolve columns
-    $main->{columns} = $class->_resolve_columns(
+    $main->{columns} = $self->_resolve_columns(
         {   columns => $params{columns},
             _mapping_columns =>
               [@{$main->{_mapping_columns} || []}, @{$params{map_to} || []}]
@@ -743,15 +722,15 @@ sub find {
     );
 
 
-    $sql->source($class->schema->table);    ### switch back to main source
+    $sql->source($self->schema->table);    ### switch back to main source
     $sql->columns([@{$main->{columns}}]);
 
     if (my $id = delete $params{id}) {
-        $class->_resolve_id($id, $sql);
+        $self->_resolve_id($id, $sql);
         $single = 1;
     }
     elsif (my $where = $params{where}) {
-        $class->_resolve_where(where => $where, sql => $sql, conn => $conn);
+        $self->_resolve_where(where => $where, sql => $sql);
     }
 
     $sql->limit($params{limit}) if $params{limit};
@@ -772,7 +751,7 @@ sub find {
 
             my $wantarray = wantarray;
 
-            if ($wantarray || $class->rows_as_object || $single) {
+            if ($wantarray || $self->rows_as_object || $single) {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
@@ -780,11 +759,10 @@ sub find {
 
                 # Prepare column inflation
                 my $inflation_method =
-                  $class->_inflate_columns($params{inflate});
+                  $self->_inflate_columns($params{inflate});
 
               OUTER_LOOP: foreach my $row (@$rows) {
-                    my $object = $class->_row_to_object(
-                        conn    => $conn,
+                    my $object = $self->_row_to_object(
                         row     => $row,
                         sql     => $sql,
                         with    => $with,
@@ -798,14 +776,12 @@ sub find {
                 }
 
                 if ($subreqs && @$subreqs) {
-                    $class->_fetch_subrequests(
+                    $self->_fetch_subrequests(
                         result  => \@result,
-                        conn    => $conn,
                         subreqs => $subreqs,
                         inflate => $params{inflate}
                     );
                 }
-
 
                 if ($wantarray) {
                     return @result;
@@ -813,7 +789,7 @@ sub find {
                 elsif ($single) {
                     $result[0];
                 }
-                elsif ($class->rows_as_object) {
+                elsif ($self->rows_as_object) {
                     my $rows_object = ObjectDB::Rows->new;
                     return $rows_object->rows(\@result);
                 }
@@ -824,8 +800,7 @@ sub find {
                         my @row = $sth->fetchrow_array;
                         return unless @row;
 
-                        return $class->_row_to_object(
-                            conn => $conn,
+                        return $self->_row_to_object(
                             row  => [@row],
                             sql  => $sql,
                             with => $with
@@ -887,10 +862,11 @@ sub _merge_arrays {
 
 
 sub _fetch_subrequests {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    my $conn    = $params{conn};
+    my $conn = $self->conn;
+
     my $subreqs = $params{subreqs};
     my @result  = @{$params{result}};
 
@@ -930,9 +906,8 @@ sub _fetch_subrequests {
         my $nested = delete $args->{nested} || [];
 
         my $related = [
-            $subreq_class->find_related(
+            $subreq_class->new(conn => $conn)->find_related(
                 $name,
-                conn    => $conn,
                 ids     => $ids,
                 with    => $nested,
                 inflate => $params{inflate},
@@ -986,25 +961,23 @@ sub _fetch_subrequests {
 }
 
 sub find_or_create {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
-
-    my $conn = delete $params{conn} || $class->conn;
 
     my @where;
     while (my ($key, $value) = each %params) {
         push @where, ($key, $value)
-          unless $class->schema->is_relationship($key);
+          unless $self->schema->is_relationship($key);
     }
 
-    my $self = $class->find(conn => $conn, where => [@where], single => 1);
-    return $self if $self;
+    my $find = $self->find(where => [@where], single => 1);
+    return $find if $find;
 
-    return $class->create(conn => $conn, %params);
+    return $self->create(%params);
 }
 
 sub find_related {
-    my $class    = shift;
+    my $self     = shift;
     my $rel_name = shift;
     my %params   = @_;
 
@@ -1012,16 +985,11 @@ sub find_related {
     my $passed_where = delete $params{where};
     my $passed_with  = delete $params{with};
 
-
-    # Connector
-    my $conn = $params{conn} || $class->conn;
-    Carp::croak q/Connector is required/ unless $conn;
-
+    my $conn = $self->conn;
 
     # Get relationship object
-    my $rel = $class->schema->relationship($rel_name);
+    my $rel = $self->schema->relationship($rel_name);
     $rel->build($conn);
-
 
     # Initialize
     my @where;
@@ -1030,8 +998,10 @@ sub find_related {
     my $ids;
 
 
+    $ids = delete $params{ids};
+
     # Get ids
-    if (ref $class) {
+    unless ($ids) {
 
         # Get values for mapping columns (ids)
         my $first = 1;
@@ -1039,19 +1009,15 @@ sub find_related {
         foreach my $from (@{$rel->map_from_cols}) {
             $map_from_concat .= '__' unless $first;
             $first = 0;
-            return unless defined $class->column($from);
-            $map_from_concat .= $class->column($from);
+            return unless defined $self->column($from);
+            $map_from_concat .= $self->column($from);
         }
         $ids = [$map_from_concat];
     }
-    else {
-        $ids = delete $params{ids};
-    }
-
 
     # Make sure that row object is returned in scalar context (not iterator
     # object) in case of belongs_to rel
-    if (ref $class && ($rel->is_belongs_to || $rel->is_belongs_to_one)) {
+    if ($rel->is_belongs_to || $rel->is_belongs_to_one) {
         $params{single} = 1;
     }
 
@@ -1073,7 +1039,6 @@ sub find_related {
         $find_class = $rel->foreign_class;
     }
 
-
     # Prepare where to search only for related objects
     my @map_to = @{$rel->map_to_cols};
     if (@map_to > 1) {
@@ -1088,9 +1053,7 @@ sub find_related {
 
     # Return results
     if ($rel->is_has_and_belongs_to_many) {
-
-        my @results = $find_class->find(
-            conn  => $conn,
+        my @results = $find_class->new(conn => $conn)->find(
             where => [@where],
             with  => [@with],
             %params
@@ -1108,8 +1071,7 @@ sub find_related {
 
     }
     else {
-        return $find_class->find(
-            conn  => $conn,
+        return $find_class->new(conn => $conn)->find(
             where => [@where],
             with  => [@with],
             %params
@@ -1142,11 +1104,7 @@ sub _update_instance {
 
     return $self unless $self->is_modified;
 
-    my $conn = $params{conn} || $self->conn;
-
-    Carp::croak q/Connector is required/ unless $conn;
-
-    $self->conn($conn);
+    my $conn = $self->conn;
 
     my @primary_or_unique_key = $self->_primary_or_unique_key_columns;
 
@@ -1174,7 +1132,7 @@ sub _update_instance {
             my $rv = $sth->execute(@{$sql->bind});
             return unless $rv && $rv eq '1';
 
-            $self->{is_in_db} = 1;
+            $self->{is_in_db}    = 1;
             $self->{is_modified} = 0;
         }
     );
@@ -1183,17 +1141,17 @@ sub _update_instance {
 }
 
 sub _update_objects {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    my $conn = $params{conn} || $class->conn;
+    my $conn = $self->conn;
 
     my %set     = @{$params{set}};
     my @columns = keys %set;
     my @values  = values %set;
 
     my $sql = ObjectDB::SQL::Update->new;
-    $sql->table($class->schema->table);
+    $sql->table($self->schema->table);
     $sql->columns(\@columns);
     $sql->values(\@values);
     $sql->where($params{where});
@@ -1220,22 +1178,18 @@ sub delete {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = delete $params{conn} || $self->conn;
-
-    if (ref($self) && !%params) {
-        $self->conn($conn) if $conn;
-
+    if (!%params) {
         return $self->_delete_instance;
     }
     else {
-        return $conn->txn(
+        return $self->conn->txn(
             sub {
                 my $dbh = shift;
 
                 my $count = 0;
-                my $found = $self->find(conn => $conn, %params);
+                my $found = $self->find(%params);
                 while (my $r = $found->next) {
-                    $r->delete(conn => $conn);
+                    $r->delete;
                     $count++;
                 }
 
@@ -1273,10 +1227,9 @@ sub _delete_instance {
                       %{$rel->map_class->schema->relationship($map_from)
                           ->map};
 
-                    $related = $rel->map_class->find(
-                        conn => $conn,
-                        where => [$to => $self->column($from)]
-                    );
+                    $related =
+                      $rel->map_class->new(conn => $conn)
+                      ->find(where => [$to => $self->column($from)]);
                 }
                 else {
                     $related = $self->find_related($name);
@@ -1285,7 +1238,7 @@ sub _delete_instance {
                 next unless $related;
 
                 while (my $r = $related->next) {
-                    $r->delete(conn => $conn);
+                    $r->delete;
                 }
             }
 
@@ -1409,16 +1362,17 @@ sub to_hash {
 }
 
 sub _resolve_where {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    $class = ref $class ? ref $class : $class;
+    my $class = ref $self;
 
     return unless $params{where} && @{$params{where}};
 
     my $where = [@{$params{where}}];
     my $sql   = $params{sql};
-    my $conn  = $params{conn};
+
+    my $conn = $self->conn;
 
     for (my $i = 0; $i < @$where; $i += 2) {
         my $key   = $where->[$i];
@@ -1468,16 +1422,17 @@ sub _resolve_where {
 }
 
 sub _resolve_with {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    $class = ref $class ? ref $class : $class;
+    my $conn = $self->conn;
+
+    my $class = ref $self;
 
     my $main    = $params{main};
     my $with    = $params{with};
     my $sql     = $params{sql};
     my $subreqs = $params{subreqs};
-    my $conn    = $params{conn};
 
     return unless $with;
 
@@ -1603,9 +1558,7 @@ sub _resolve_columns {
     $columns = $class->_merge_arrays($columns, $mapping_columns);
 
     return $columns;
-
 }
-
 
 sub _normalize_with {
     my $class = shift;
@@ -1677,12 +1630,13 @@ sub primary_key_values {
 }
 
 sub _row_to_object {
-    my $class  = shift;
+    my $self   = shift;
     my %params = @_;
 
-    $class = ref $class ? ref $class : $class;
+    my $class = ref $self;
 
-    my $conn    = $params{conn};
+    my $conn = $self->conn;
+
     my $row     = $params{row};
     my $sql     = $params{sql};
     my $with    = $params{with};
@@ -1690,8 +1644,7 @@ sub _row_to_object {
 
     my @columns = $sql->columns;
 
-    my $self = $class->new;
-    $self->conn($conn);
+    $self = $class->new(conn => $conn);
     foreach my $column (@columns) {
         $self->column($column => shift @$row);
     }
@@ -1723,8 +1676,7 @@ sub _row_to_object {
 
             next if $rel->is_type(qw/has_many has_and_belongs_to_many/);
 
-            my $object = $rel->foreign_class->new;
-            $object->conn($conn);
+            my $object = $rel->foreign_class->new(conn => $conn);
 
             my $source = shift @$sources;
 
@@ -1774,7 +1726,7 @@ sub _row_to_object {
       q/Not all columns of current row could be mapped to the object/
       if @$row;
 
-    $self->{is_in_db} = 1;
+    $self->{is_in_db}    = 1;
     $self->{is_modified} = 0;
 
     return $self;

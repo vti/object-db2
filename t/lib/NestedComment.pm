@@ -14,8 +14,9 @@ __PACKAGE__->schema('nested_comments')
 
 sub create {
     my $self = shift;
-    my $class = ref($self) ? ref($self) : $self;
-    $self = $class->new(@_) unless ref($self);
+    my $class = ref($self);
+
+    $self->set_columns(@_);
 
     my $rgt           = 1;
     my $level         = 0;
@@ -36,15 +37,13 @@ sub create {
         }
     }
 
-    $comment_count = $class->count(
-        conn        => $conn,
+    $comment_count = $class->new(conn => $conn)->count(
         master_type => $self->column('master_type'),
         master_id   => $self->column('master_id')
     );
 
     if ($comment_count) {
-        my $left = $class->find(
-            conn  => $conn,
+        my $left = $class->new(conn => $conn)->find(
             where => [
                 master_id   => $self->column('master_id'),
                 master_type => $self->column('master_type'),

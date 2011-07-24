@@ -17,13 +17,13 @@ HotelData->populate;
 
 
 # telefon_numbers are NOT prefetched, array ref should be returned
-my @hotels = Hotel->find(with => [qw/manager/]);
+my @hotels = Hotel->new->find(with => [qw/manager/]);
 is($hotels[0]->manager->telefon_numbers->[0]->column('telefon_number'),
     '123456789');
 
 
 # manager is not prefetched, a manager object should be returned
-@hotels = Hotel->find;
+@hotels = Hotel->new->find;
 is($hotels[0]->manager->column('name'), 'Lalolu');
 
 

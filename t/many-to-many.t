@@ -8,52 +8,53 @@ use Test::More tests => 17;
 use lib 't/lib';
 
 use TestEnv;
+use TestDB;
 
 use Article;
 
 TestEnv->setup;
 
-my $article = Article->create(
+my $article = Article->new->create(
     title => 'foo',
     tags  => [{name => 'bar'}, {name => 'baz'}]
 );
 
-is(Tag->count, 2, 'related objects created');
-is(ArticleTagMap->count(conn => TestDB->init_conn),
+is(Tag->new->count, 2, 'related objects created');
+is(ArticleTagMap->new(conn => TestDB->conn)->count,
     2, 'mapping objects created');
 
-Article->delete;
+Article->new->delete(all => 1);
 
-is(ArticleTagMap->count(conn => TestDB->init_conn),
+is(ArticleTagMap->new(conn => TestDB->conn)->count,
     0, 'mapping objects are deleted');
-is(Tag->count, 2, 'related objects are stil there');
+is(Tag->new->count, 2, 'related objects are stil there');
 
-Tag->delete;
+Tag->new->delete(all => 1);
 
-$article = Article->create(title => 'foo');
+$article = Article->new->create(title => 'foo');
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
-is(ArticleTagMap->count(conn => TestDB->init_conn), 2);
+is(ArticleTagMap->new(conn => TestDB->conn)->count, 2);
 
 $article->delete_related(tags => where => ['tags.name' => 'foo']);
-is(ArticleTagMap->count(conn => TestDB->init_conn), 2);
+is(ArticleTagMap->new(conn => TestDB->conn)->count, 2);
 
 $article->delete_related(tags => where => ['tags.name' => 'bar']);
-is(ArticleTagMap->count(conn => TestDB->init_conn), 1);
+is(ArticleTagMap->new(conn => TestDB->conn)->count, 1);
 
 $article->delete_related('tags');
-is(ArticleTagMap->count(conn => TestDB->init_conn), 0);
+is(ArticleTagMap->new(conn => TestDB->conn)->count, 0);
 
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
 
 # Create a second article to make tests more solid
-my $article2 = Article->create(title => 'foo2');
+my $article2 = Article->new->create(title => 'foo2');
 $article2->create_related(tags => [{name => 'bar2'}, {name => 'baz2'}]);
 
 
-my @articles = Article->find(where => ['tags.name' => 'foo']);
+my @articles = Article->new->find(where => ['tags.name' => 'foo']);
 is(@articles, 0);
 
-@articles = Article->find(where => ['tags.name' => 'bar']);
+@articles = Article->new->find(where => ['tags.name' => 'bar']);
 is(@articles, 1);
 
 
@@ -76,8 +77,8 @@ is(@tags, 1);
 is(@tags,                    2);
 is($tags[0]->column('name'), 'bar');
 
-Article->delete;
-Tag->delete;
+Article->new->delete(all => 1);
+Tag->new->delete(all => 1);
 
 #$article = Article->create(
 #conn      => $conn,
