@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 33;
+use Test::More tests => 31;
 
 use lib 't/lib';
 
@@ -74,7 +74,6 @@ is($articles[0]->author->column('name'), 'foo');
     with  => 'author'
 );
 is(@articles, 1);
-ok($articles[0]->{related}->{author});
 is($articles[0]->author->column('name'), 'baz');
 
 @articles = Article->new->find(
@@ -82,7 +81,6 @@ is($articles[0]->author->column('name'), 'baz');
     with  => ['author'      => {columns => 'id'}]
 );
 is(@articles, 1);
-ok($articles[0]->{related}->{author});
 ok(not defined $articles[0]->author->column('name'));
 
 Article->new->delete(all => 1);

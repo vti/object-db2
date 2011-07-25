@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 5;
 
 use lib 't/lib';
 
@@ -16,7 +16,6 @@ my $author = Author->new;
 
 ok($author);
 
-ok(not defined $author->column(undef));
 ok(not defined $author->id);
 
 $author->id('boo');

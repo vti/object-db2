@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 32;
+use Test::More tests => 29;
 
 use lib 't/lib';
 
@@ -79,7 +79,6 @@ Author->new->set_columns(name => 'baz', author_admin => {beard => 1})->create;
 
 my @authors = Author->new->find(where => ['author_admin.beard' => 1]);
 is(@authors, 2);
-ok(!$authors[0]->{related}->{author_admin});
 is($authors[0]->author_admin->column('beard'), 1);
 
 @authors = Author->new->find(
@@ -87,7 +86,6 @@ is($authors[0]->author_admin->column('beard'), 1);
     with  => 'author_admin'
 );
 is(@authors, 1);
-ok($authors[0]->{related}->{author_admin});
 is($authors[0]->author_admin->column('beard'), 0);
 
 @authors = Author->new->find(
@@ -95,7 +93,6 @@ is($authors[0]->author_admin->column('beard'), 0);
     with  => ['author_admin'       => {columns => 'author_id'}]
 );
 is(@authors, 1);
-ok($authors[0]->{related}->{author_admin});
 ok(not defined $authors[0]->author_admin->column('beard'));
 
 Author->new->delete(all => 1);

@@ -5,8 +5,6 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
-#__PACKAGE__->attr('rows');
-
 sub BUILD {
     my $self = shift;
 
@@ -69,8 +67,6 @@ sub to_hash {
     }
 
     return [@objects];
-
 }
-
 
 1;

@@ -62,7 +62,7 @@ $author->update_column(name => 'foo');
 $author = Author->new->find(id => $author->id);
 is($author->name, 'foo');
 
-is(Author->new->update(set => [name => 'bar'], where => [name => 'bar']), '0E0');
+is(Author->new->update(set => [name => 'bar'], where => [name => 'bar']), 0);
 $author = Author->new->find(id => $author->id);
 ok($author);
 is($author->name, 'foo');
