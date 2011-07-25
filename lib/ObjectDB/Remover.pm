@@ -10,10 +10,9 @@ use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 use ObjectDB::Finder;
 use ObjectDB::SQL::Delete;
 
-sub conn           { $_[0]->{conn} }
-sub schema         { $_[0]->{schema} }
-sub namespace      { $_[0]->{namespace} }
-sub rows_as_object { $_[0]->{rows_as_object} }
+sub conn      { $_[0]->{conn} }
+sub schema    { $_[0]->{schema} }
+sub namespace { $_[0]->{namespace} }
 
 sub delete {
     my $self   = shift;
@@ -126,7 +125,10 @@ sub _delete_instance {
             my $sql = ObjectDB::SQL::Delete->new;
             $sql->table($self->schema->table);
             $sql->where(
-                [map { $_ => $self->{columns}->get($_) } @primary_or_unique_key]);
+                [   map { $_ => $self->{columns}->get($_) }
+                      @primary_or_unique_key
+                ]
+            );
 
             warn "$sql" if DEBUG;
 
@@ -147,12 +149,11 @@ sub _finder {
     my $self = shift;
 
     $self->{finder} ||= ObjectDB::Finder->new(
-        namespace      => $self->namespace,
-        conn           => $self->conn,
-        schema         => $self->schema,
-        rows_as_object => $self->rows_as_object,
-        columns        => $self->{columns},
-        related        => $self->{related},
+        namespace => $self->namespace,
+        conn      => $self->conn,
+        schema    => $self->schema,
+        columns   => $self->{columns},
+        related   => $self->{related},
     );
 
     return $self->{finder};

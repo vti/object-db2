@@ -16,7 +16,6 @@ use ObjectDB::Counter;
 use ObjectDB::Creator;
 use ObjectDB::Finder;
 use ObjectDB::Remover;
-use ObjectDB::Rows;
 use ObjectDB::Schema;
 use ObjectDB::Updater;
 use ObjectDB::Utils 'single_to_plural';
@@ -73,13 +72,6 @@ sub namespace {
     # Overwrite this method in subclass to allow use of short class names
     # e.g. when defining foreign_class in relationship
     # e.g. sub namespace { 'My::Schema::Path' }
-    return undef;
-}
-
-sub rows_as_object {
-
-    # Overwrite this method to turn rows_as_object on
-    # sub rows_as_object {1;}
     return undef;
 }
 
@@ -184,16 +176,6 @@ sub related {
 
     my $related = $self->{related}->get($name);
 
-    # Rows as objects (optional - when method rows_as_object
-    # returns true, lazy - objects created only when method related
-    # or aliases are called)
-    if ($self->rows_as_object && $related && ref $related eq 'ARRAY') {
-        my $rows = ObjectDB::Rows->new;
-        $rows->rows($related);
-        $related = $rows;
-        $self->{related}->set($name => $related);
-    }
-
     return $related if $related;
 
     return if defined $related && $related == 0;
@@ -203,7 +185,8 @@ sub related {
       if $ENV{OBJECTDB_FORCE_PREFETCH};
 
     if ($rel->is_type(qw/has_one belongs_to/)) {
-        $self->{related}->set($name => $self->find_related($name, first => 1));
+        $self->{related}
+          ->set($name => $self->find_related($name, first => 1));
         return $self->{related}->get($name);
     }
 
@@ -341,12 +324,11 @@ sub _build {
         my $class_name = 'ObjectDB::' . ucfirst($name);
 
         $class_name->new(
-            namespace      => $self->namespace,
-            conn           => $self->conn,
-            schema         => $self->schema,
-            columns        => $self->{columns},
-            related        => $self->{related},
-            rows_as_object => $self->rows_as_object
+            namespace => $self->namespace,
+            conn      => $self->conn,
+            schema    => $self->schema,
+            columns   => $self->{columns},
+            related   => $self->{related}
         );
     };
 

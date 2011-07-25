@@ -15,10 +15,8 @@ sub schema { $_[0]->{schema} }
 sub update {
     my $self = shift;
 
-    # Row object
     return $self->_update_instance(@_) unless $self->{columns}->is_empty;
 
-    # Class or table object
     return $self->_update_objects(@_);
 }
 

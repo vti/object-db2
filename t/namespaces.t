@@ -57,18 +57,11 @@ is(Schema::Tag->schema->relationship('articles')->foreign_table, 'articles');
 is(Schema::Tag->schema->relationship('articles')->class, 'Schema::Tag');
 
 
-
 Schema::AuthorData->populate;
 
-my $authors = Schema::Author->new->find(
-    rows_as_object => 1,
-    with           => ['articles.comments']
-);
-is(ref $authors->row(0)->articles->row(0), 'Schema::Article');
-is(ref $authors->row(0)->articles->row(0)->comments->row(0),
-    'Schema::Comment');
-
-
+my @authors = Schema::Author->new->find(with => ['articles.comments']);
+is(ref $authors[0]->articles->[0],                'Schema::Article');
+is(ref $authors[0]->articles->[0]->comments->[0], 'Schema::Comment');
 
 #is(ref $authors[0]->tags->[0], 'Schema::Tag'); ### TO DO in ObjectDB
 

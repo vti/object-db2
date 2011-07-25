@@ -11,10 +11,18 @@ require Carp;
 use ObjectDB::Iterator;
 use ObjectDB::SQL::Select;
 
-sub schema         { $_[0]->{schema} }
-sub conn           { $_[0]->{conn} }
-sub rows_as_object { $_[0]->{rows_as_object} }
-sub namespace      { $_[0]->{namespace} }
+sub schema    { $_[0]->{schema} }
+sub conn      { $_[0]->{conn} }
+sub namespace { $_[0]->{namespace} }
+
+sub sql {
+    my $self = shift;
+
+    $self->{sql}
+      ||= ObjectDB::SQL::Select->new(driver => $self->conn->driver);
+
+    return $self->{sql};
+}
 
 sub find {
     my $self   = shift;
@@ -24,13 +32,13 @@ sub find {
 
     my $conn = $self->conn;
 
-    my $sql = ObjectDB::SQL::Select->new(driver => $conn->driver);
+    my $sql = $self->sql;
 
     my $main = {};
 
     if (my $maxmin = $params{max} || $params{min}) {
         $self->_resolve_max_min_n_per_group(
-            {   sql  => $sql,
+            {   sql => $sql,
                 type => $params{max} ? 'max' : 'min',
                 %$maxmin
             }
@@ -93,7 +101,7 @@ sub find {
 
             my $wantarray = wantarray;
 
-            if ($wantarray || $self->rows_as_object || $single) {
+            if ($wantarray || $single) {
                 my $rows = $sth->fetchall_arrayref;
                 return unless $rows && @$rows;
 
@@ -101,7 +109,8 @@ sub find {
 
                 # Prepare column inflation
                 my $inflation_method =
-                  $self->_inflate_columns($self->schema->class, $params{inflate});
+                  $self->_inflate_columns($self->schema->class,
+                    $params{inflate});
 
               OUTER_LOOP: foreach my $row (@$rows) {
                     my $object = $self->_row_to_object(
@@ -131,10 +140,8 @@ sub find {
                 elsif ($single) {
                     $result[0];
                 }
-                elsif ($self->rows_as_object) {
-                    my $rows_object = ObjectDB::Rows->new;
-                    return $rows_object->rows(\@result);
-                }
+
+                # TODO
             }
             else {
                 return ObjectDB::Iterator->new(
@@ -275,7 +282,7 @@ sub find_related {
 # might consume a lot of resources in cases that amount of data is much bigger
 # (not tested so far)
 sub _resolve_max_min_n_per_group {
-    my $self  = shift;
+    my $self   = shift;
     my $params = shift;
 
     # Get params
@@ -359,7 +366,7 @@ sub _resolve_max_min_n_per_group {
 ### a more complex query is required in case that grouping
 ### is performed based on data in other tables
 sub _resolve_max_min_n_per_group_multi_table {
-    my $self  = shift;
+    my $self   = shift;
     my $params = shift;
 
     # Get params
@@ -465,8 +472,6 @@ sub _resolve_max_min_n_per_group_multi_table {
     else {
         $sql->having(\qq/COUNT(*) < $top/);
     }
-
-    #warn "$sql";
 }
 
 sub _resolve_multi_table {
@@ -513,7 +518,6 @@ sub _resolve_id {
     my $class = shift;
     my $id    = shift;
     my $sql   = shift;
-
 
     if (ref $id ne 'ARRAY' && ref $id ne 'HASH') {
         my @primary_key = $class->schema->primary_key;
@@ -756,8 +760,8 @@ sub _resolve_with {
                 push @{$parent_args->{_mapping_columns}}, keys %{$rel->map};
 
 
-                # Save mapping data in subrequest, preceding main or one-to-one
-                # object can access this data via "child_args"
+               # Save mapping data in subrequest, preceding main or one-to-one
+               # object can access this data via "child_args"
                 $args->{map_from} = $rel->map_from_cols;
                 $args->{map_to}   = $rel->map_to_cols;
 
@@ -842,7 +846,7 @@ sub _resolve_columns {
 
 sub _normalize_with {
     my $self = shift;
-    my $with  = shift;
+    my $with = shift;
 
     $with = ref $with eq 'ARRAY' ? [@$with] : [$with];
 
@@ -965,7 +969,8 @@ sub _row_to_object {
                     foreach my $map_from_col (@{$child_args->{map_from}}) {
                         $map_from_concat .= '__' unless $first;
                         $first = 0;
-                        $map_from_concat .= $rel_object->column($map_from_col);
+                        $map_from_concat
+                          .= $rel_object->column($map_from_col);
                     }
                     push @{$child_args->{pk}}, $map_from_concat;
                 }
@@ -995,7 +1000,7 @@ sub _execute_code_ref {
 }
 
 sub _inflate_columns {
-    my $self    = shift;
+    my $self = shift;
     my ($class, $inflate) = @_;
 
     return unless $inflate;
