@@ -16,8 +16,6 @@ sub create {
     my $self = shift;
     my $class = ref($self);
 
-    $self->set_columns(@_);
-
     my $rgt           = 1;
     my $level         = 0;
     my $comment_count = 0;

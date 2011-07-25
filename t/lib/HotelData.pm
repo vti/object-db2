@@ -13,7 +13,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $hotel = Hotel->new->create(
+    my $hotel = Hotel->new->set_columns(
         name         => 'President',
         city         => 'New York',
         hotel_num_a  => 5,
@@ -64,10 +64,10 @@ sub populate {
             office => {size       => 33,  floor => 3},
             car    => {horsepower => 300, brand => 'Porsche'}
         }
-    );
+    )->create;
 
     # Create a second hotel to make tests a bit more demanding
-    my $hotel2 = Hotel->new->create(
+    my $hotel2 = Hotel->new->set_columns(
         name        => 'President2',
         city        => 'London',
         street      => 'Berlin Street',
@@ -102,11 +102,11 @@ sub populate {
                 {tel_num_c => 1112, telefon_number => '987654329'}
             ]
         }
-    );
+    )->create;
 
 
     # Create a third hotel
-    my $hotel3 = Hotel->new->create(
+    my $hotel3 = Hotel->new->set_columns(
         name        => 'President3',
         city        => 'Paris',
         hotel_num_a => 7,
@@ -139,7 +139,7 @@ sub populate {
                 {tel_num_c => 3222, telefon_number => '33445566'}
             ]
         }
-    );
+    )->create;
 
     return ($hotel, $hotel2, $hotel3);
 

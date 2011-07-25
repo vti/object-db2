@@ -22,7 +22,7 @@ ok(!$author);
 
 is(Author->new->count, 0);
 
-$author = Author->new->create(name => 'foo');
+$author = Author->new->set_columns(name => 'foo')->create;
 ok($author);
 ok($author->is_in_db);
 ok(!$author->is_modified);
@@ -84,7 +84,7 @@ ok(!$author->is_in_db);
 $author = Author->new->find(id => $author->id);
 ok(!$author);
 
-$author = Author->new->create(name => 'bar');
+$author = Author->new->set_columns(name => 'bar')->create;
 ok($author);
 
 is(Author->new->count, 1);
@@ -95,9 +95,9 @@ is(Author->new->delete(all => 1), 1);
 ok(!Author->new->find(id => $author->id));
 is(Author->new->count, 0);
 
-Author->new->create(name => 'foo');
-Author->new->create(name => 'bar');
-Author->new->create(name => 'baz');
+Author->new->set_columns(name => 'foo')->create;
+Author->new->set_columns(name => 'bar')->create;
+Author->new->set_columns(name => 'baz')->create;
 is(Author->new->count, 3);
 my @authors = Author->new->find(order_by => 'name DESC');
 is($authors[0]->name, 'foo');

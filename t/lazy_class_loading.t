@@ -23,11 +23,11 @@ is($ENV{OBJECTDB_BUILT_SCHEMAS}, 1);
 
 
 # "create" hotel, only Hotel class should be loaded
-my $hotel = Hotel->new->create(
+my $hotel = Hotel->new->set_columns(
     name        => 'President',
     city        => 'New York',
     hotel_num_a => 5
-);
+)->create;
 my @hotels = Hotel->new->find(where => [name => 'President']);
 is($ENV{OBJECTDB_BUILT_SCHEMAS}, 1);
 is($hotels[0]->column('city'),   'New York');

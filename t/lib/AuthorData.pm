@@ -21,7 +21,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $author = Author->new->create(
+    my $author = Author->new->set_columns(
         name     => 'author 1',
         articles => [
             {   title    => 'article 1-1',
@@ -51,18 +51,20 @@ sub populate {
 
                 ]
             },
-            {   title    => 'article 1-2',
-                tags     => [   {   name=>'Tag1'},
-                                {   name=>'Tag2'},
-                                {   name => 'Tag3',
-                                    admin_histories => [{
-                                        admin_name => 'Andre2',
-                                        from       => '2010-02-01',
-                                        till       => '2010-03-01'
-                                    }]
+            {   title => 'article 1-2',
+                tags  => [
+                    {name => 'Tag1'},
+                    {name => 'Tag2'},
+                    {   name            => 'Tag3',
+                        admin_histories => [
+                            {   admin_name => 'Andre2',
+                                from       => '2010-02-01',
+                                till       => '2010-03-01'
+                            }
+                          ]
 
-                                }
-                            ]
+                    }
+                ]
             },
             {   title    => 'article 1-3',
                 comments => [
@@ -73,13 +75,12 @@ sub populate {
             },
             {   title          => 'article 1-4',
                 to_do_articles => [{to_do => 'to do 4'}],
-                tags           => [{name=>'Tag4'},{name=>'Tag5'}]
+                tags           => [{name => 'Tag4'}, {name => 'Tag5'}]
             }
         ]
-    );
+    )->create;
 
-
-    my $author2 = Author->new->create(
+    my $author2 = Author->new->set_columns(
         name     => 'author 2',
         articles => [
             {   title    => 'article 2-1',
@@ -95,7 +96,7 @@ sub populate {
                         creation_date => '2004-06-04'
                     }
                 ],
-                tags => [{name=>'Tag10'},{name=>'Tag11'}]
+                tags => [{name => 'Tag10'}, {name => 'Tag11'}]
             },
             {title => 'article 2-2'},
             {   title    => 'article 2-3',
@@ -109,14 +110,17 @@ sub populate {
                 to_do_articles => [{to_do => 'to do 4'}]
             }
         ]
-    );
+    )->create;
 
 
     # main category
-    my $category_1 = MainCategory->new->create(title => 'main category 1');
-    my $category_2 = MainCategory->new->create(title => 'main category 2');
-    my $category_3 = MainCategory->new->create(title => 'main category 3');
-    my $category_4 = MainCategory->new->create(
+    my $category_1 =
+      MainCategory->new->set_columns(title => 'main category 1')->create;
+    my $category_2 =
+      MainCategory->new->set_columns(title => 'main category 2')->create;
+    my $category_3 =
+      MainCategory->new->set_columns(title => 'main category 3')->create;
+    my $category_4 = MainCategory->new->set_columns(
         title           => 'main category 4',
         admin_histories => [
             {   admin_name => 'Andre1',
@@ -129,11 +133,11 @@ sub populate {
             }
 
         ]
-    );
+    )->create;
 
     # special report
-    my $special_report_1 = SpecialReport->new->create(title => 'special report 1');
-
+    my $special_report_1 =
+      SpecialReport->new->set_columns(title => 'special report 1')->create;
 
 
     $author->articles->[0]

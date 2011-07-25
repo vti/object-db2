@@ -18,8 +18,9 @@ TestEnv->setup;
 my $article = Article->new->find(id => 999, with => 'author');
 ok(!$article, 'unknown id');
 
-my $author = Author->new->create(name => 'foo');
-$article = Article->new->create(author_id => $author->id, title => 'bar');
+my $author = Author->new->set_columns(name => 'foo')->create;
+$article =
+  Article->new->set_columns(author_id => $author->id, title => 'bar')->create;
 
 $article = Article->new->find(id => $article->id, with => 'author');
 ok($article, 'find with related object');
@@ -56,12 +57,12 @@ ok(Author->new->find(id => $author->id), 'related object available');
 Author->new->delete(all => 1);
 Article->new->delete(all => 1);
 
-$author = Author->new->create(name => 'foo');
-Article->new->create(title => 'foo', author_id => $author->id);
-$author = Author->new->create(name => 'bar');
-Article->new->create(title => 'bar', author_id => $author->id);
-$author = Author->new->create(name => 'baz');
-Article->new->create(title => 'baz', author_id => $author->id);
+$author = Author->new->set_columns(name => 'foo')->create;
+Article->new->set_columns(title => 'foo', author_id => $author->id)->create;
+$author = Author->new->set_columns(name => 'bar')->create;
+Article->new->set_columns(title => 'bar', author_id => $author->id)->create;
+$author = Author->new->set_columns(name => 'baz')->create;
+Article->new->set_columns(title => 'baz', author_id => $author->id)->create;
 
 my @articles = Article->new->find(where => ['author.name' => 'foo']);
 is(@articles, 1);
@@ -87,10 +88,10 @@ ok(not defined $articles[0]->author->column('name'));
 Article->new->delete(all => 1);
 Author->new->delete(all => 1);
 
-$author = Author->new->create(
+$author = Author->new->set_columns(
     name     => 'foo',
     articles => {title => 'bar', comments => {content => 'baz'}}
-);
+)->create;
 my @comments = Comment->new->find(with => 'article');
 is(@comments,                              1);
 is($comments[0]->column('content'),        'baz');

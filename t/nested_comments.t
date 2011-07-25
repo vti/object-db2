@@ -23,31 +23,30 @@ my ($c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9);
 
 $master = Article->new->set_columns(category_id => 1, title => 'bar')->create;
 
-$c1 = NestedComment->new->create(
-
+$c1 = NestedComment->new->set_columns(
     master_id   => $master->id,
     master_type => 'article',
     content     => 1
-);
+)->create;
 is($c1->lft,   2);
 is($c1->rgt,   3);
 is($c1->level, 0);
 
-$c2 = NestedComment->new->create(
+$c2 = NestedComment->new->set_columns(
     master_id   => $master->id,
     master_type => 'article',
     content     => 2
 
-);
+)->create;
 is($c2->lft,   4);
 is($c2->rgt,   5);
 is($c2->level, 0);
 
-$c3 = NestedComment->new->create(
+$c3 = NestedComment->new->set_columns(
     master_id   => $master->id,
     master_type => 'article',
     content     => 3
-);
+)->create;
 is($c3->lft,   6);
 is($c3->rgt,   7);
 is($c3->level, 0);

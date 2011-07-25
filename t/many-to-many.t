@@ -14,10 +14,10 @@ use Article;
 
 TestEnv->setup;
 
-my $article = Article->new->create(
+my $article = Article->new->set_columns(
     title => 'foo',
     tags  => [{name => 'bar'}, {name => 'baz'}]
-);
+)->create;
 
 is(Tag->new->count, 2, 'related objects created');
 is(ArticleTagMap->new(conn => TestDB->conn)->count,
@@ -31,7 +31,7 @@ is(Tag->new->count, 2, 'related objects are stil there');
 
 Tag->new->delete(all => 1);
 
-$article = Article->new->create(title => 'foo');
+$article = Article->new->set_columns(title => 'foo')->create;
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
 is(ArticleTagMap->new(conn => TestDB->conn)->count, 2);
 
@@ -47,7 +47,7 @@ is(ArticleTagMap->new(conn => TestDB->conn)->count, 0);
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
 
 # Create a second article to make tests more solid
-my $article2 = Article->new->create(title => 'foo2');
+my $article2 = Article->new->set_columns(title => 'foo2')->create;
 $article2->create_related(tags => [{name => 'bar2'}, {name => 'baz2'}]);
 
 

@@ -17,7 +17,10 @@ TestEnv->setup;
 my $author = Author->new->find(id => 999, with => 'author_admin');
 ok(!$author, 'unknown id');
 
-$author = Author->new->create(name => 'foo', author_admin => {beard => 1});
+$author = Author->new->set_columns(
+    name         => 'foo',
+    author_admin => {beard => 1}
+)->create;
 ok($author,               'create with related object');
 ok($author->author_admin, 'related object is saved after creation');
 is($author->author_admin->column('beard'),
@@ -53,7 +56,8 @@ is($author->author_admin->column('beard'), 0, 'related object is updated');
 
 ok($author->delete_related('author_admin'), 'delete related object');
 ok(!$author->author_admin,                  'related object is removed');
-ok(!AuthorAdmin->new->find(id => $author->id), 'related object is not available');
+ok(!AuthorAdmin->new->find(id => $author->id),
+    'related object is not available');
 
 $author->create_related(author_admin => {beard => 0});
 ok($author->author_admin, 'create related object');
@@ -66,19 +70,22 @@ is($author_admin->column('beard'), 0, 'related object has right columns');
 
 ok($author->delete, 'delete object');
 ok(!Author->new->find(id => $author->id), 'object not available');
-ok(!AuthorAdmin->new->find(id => $author->id), 'related object not available');
+ok(!AuthorAdmin->new->find(id => $author->id),
+    'related object not available');
 
-Author->new->create(name => 'foo', author_admin => {beard => 1});
-Author->new->create(name => 'bar', author_admin => {beard => 0});
-Author->new->create(name => 'baz', author_admin => {beard => 1});
+Author->new->set_columns(name => 'foo', author_admin => {beard => 1})->create;
+Author->new->set_columns(name => 'bar', author_admin => {beard => 0})->create;
+Author->new->set_columns(name => 'baz', author_admin => {beard => 1})->create;
 
 my @authors = Author->new->find(where => ['author_admin.beard' => 1]);
 is(@authors, 2);
 ok(!$authors[0]->{related}->{author_admin});
 is($authors[0]->author_admin->column('beard'), 1);
 
-@authors =
-  Author->new->find(where => ['author_admin.beard' => 0], with => 'author_admin');
+@authors = Author->new->find(
+    where => ['author_admin.beard' => 0],
+    with  => 'author_admin'
+);
 is(@authors, 1);
 ok($authors[0]->{related}->{author_admin});
 is($authors[0]->author_admin->column('beard'), 0);

@@ -14,7 +14,7 @@ sub populate {
     my $class = shift;
 
     # Create data
-    my $author = Schema::Author->new->create(
+    my $author = Schema::Author->new->set_columns(
         name     => 'author 1',
         articles => [
             {   title    => 'article 1-1',
@@ -51,7 +51,7 @@ sub populate {
             },
             {title => 'article 1-4'}
         ]
-    );
+    )->create;
 
     return ($author);
 

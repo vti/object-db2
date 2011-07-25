@@ -14,10 +14,10 @@ use Article;
 
 TestEnv->setup;
 
-my $author = Author->new->create(
+my $author = Author->new->set_columns(
     name     => 'foo',
     articles => [{title => 'bar'}, {title => 'baz'}]
-);
+)->create;
 is(@{$author->articles},                    2);
 is($author->articles->[0]->column('title'), 'bar');
 is($author->articles->[1]->column('title'), 'baz');
@@ -47,9 +47,9 @@ is($article->column('title'), 'bar');
 $author->delete;
 ok(!Article->new->find->next);
 
-$author = Author->new->create(name => 'spammer');
+$author = Author->new->set_columns(name => 'spammer')->create;
 
-$author = Author->new->create(
+$author = Author->new->set_columns(
     name     => 'foo',
     articles => [
         {   title    => 'bar',
@@ -62,7 +62,7 @@ $author = Author->new->create(
             comments => {author_id => $author->id, content => 'baz'}
         }
     ]
-);
+)->create;
 
 @articles = Author->new->find_related('articles', ids => [$author->id]);
 is(@articles, 2);

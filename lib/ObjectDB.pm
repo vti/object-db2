@@ -232,10 +232,6 @@ sub count {
 sub create {
     my $self = shift;
 
-    if (@_) {
-        $self->set_columns(@_);
-    }
-
     die
       '->create: primary key column can NOT be NULL or has to be AUTOINCREMENT, table: '
       . $self->schema->table
@@ -320,7 +316,7 @@ sub create_related {
                 foreach my $d (@$data) {
                     push @$result,
                       $rel->foreign_class->new(conn => $conn)
-                      ->create(%$d, @params);
+                      ->set_columns(%$d, @params)->create;
                 }
 
                 return $wantarray ? @$result : $result;
@@ -341,16 +337,16 @@ sub create_related {
                     my $object =
                       $rel->foreign_class->new(conn => $conn)
                       ->find_or_create(%$d);
-                    my $rel = $rel->map_class->new(conn => $conn)->create(
+                    my $rel = $rel->map_class->new(conn => $conn)->set_columns(
                         $from_foreign_pk => $self->column($from_pk),
                         $to_foreign_pk   => $object->column($to_pk)
-                    );
+                    )->create;
                 }
             }
             else {
                 return $self->{related}->{$name} =
                   $rel->foreign_class->new(conn => $conn)
-                  ->create(%$data, @params);
+                  ->set_columns(%$data, @params)->create;
             }
         }
     );
@@ -967,7 +963,7 @@ sub find_or_create {
     my $find = $self->find(where => [@where], single => 1);
     return $find if $find;
 
-    return $self->create(%params);
+    return $self->set_columns(%params)->create;
 }
 
 sub find_related {
