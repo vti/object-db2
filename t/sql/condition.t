@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More tests => 30;
 
 use_ok('ObjectDB::SQL::Condition');
 
@@ -61,6 +61,22 @@ $cond->cond(
 is($cond->to_string,
     "((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
 is_deeply($cond->bind, ['boo', 'bar']);
+
+$cond = ObjectDB::SQL::Condition->new;
+$cond->cond(
+    [   -or => [
+            a => 1,
+            b => 2
+        ],
+        -or => [
+            c => 1,
+            d => 2
+        ]
+    ]
+);
+
+is($cond->to_string, "((`a` = ? OR `b` = ?) AND (`c` = ? OR `d` = ?))");
+is_deeply($cond->bind, [1, 2, 1, 2]);
 
 $cond = ObjectDB::SQL::Condition->new;
 $cond->logic('OR');

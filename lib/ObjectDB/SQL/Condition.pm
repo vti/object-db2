@@ -85,12 +85,12 @@ sub build {
 
     $self->{_bind} = $self->{bind};
 
-    return $self->_build($cond, $prefix);
+    return $self->_build($self->logic, $cond, $prefix);
 }
 
 sub _build {
     my $self = shift;
-    my ($cond, $prefix) = @_;
+    my ($logic, $cond, $prefix) = @_;
 
     $cond = [$cond] unless ref $cond eq 'ARRAY';
 
@@ -100,7 +100,7 @@ sub _build {
     while (my ($key, $value) = @{$cond}[$count, $count + 1]) {
         last unless $key;
 
-        $string .= " " . $self->{logic} . " " unless $count == 0;
+        $string .= " " . $logic . " " unless $count == 0;
         if (ref $key eq 'SCALAR') {
             $string .= $$key;
 
@@ -116,8 +116,9 @@ sub _build {
 
             # -and -or
             if ($self->logic_switched($key)) {
-                $string .= $self->_build($value, $prefix);
-                last;
+                $string .= $self->_build($self->logic, $value, $prefix);
+                $count += 2;
+                next;
             }
 
             # Process key
