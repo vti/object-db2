@@ -1697,8 +1697,6 @@ sub _row_to_object {
 
     _execute_code_ref($walker, $self, $with, $inflate);
 
-    #use Data::Dumper;
-    #warn Dumper $row;
     Carp::croak
       q/Not all columns of current row could be mapped to the object/
       if @$row;
@@ -1713,7 +1711,6 @@ sub _execute_code_ref {
     my $code_ref = shift;
     $code_ref->($code_ref, @_);
 }
-
 
 sub _inflate_columns {
     my $self    = shift;
@@ -1746,6 +1743,5 @@ sub _inflate_columns {
 
     return;
 }
-
 
 1;
