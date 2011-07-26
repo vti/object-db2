@@ -32,24 +32,18 @@ sub find {
 
     my $conn = $self->conn;
 
-    my $sql = $self->sql;
-
     my $main = {};
 
+    my $sql = $self->sql;
     $sql->source($self->schema->table);
 
-    # Resolve "with" here to add columns needed to map related objects
-    my $subreqs = [];
-    my $with;
-    if ($with = $params{with}) {
-        $with = $self->_normalize_with($with);
-        $self->_resolve_with(
-            main    => $main,
-            with    => $with,
-            sql     => $sql,
-            subreqs => $subreqs
-        );
-    }
+    my $with = $self->_normalize_with($params{with});
+
+    my $subreqs = $self->_resolve_with(
+        main    => $main,
+        with    => $with,
+        sql     => $sql
+    );
 
     # Resolve columns
     $main->{columns} = $self->_resolve_columns(
@@ -76,6 +70,8 @@ sub find {
 
     $sql->order_by($params{order_by}) if $params{order_by};
 
+    my $wantarray = wantarray;
+
     return $conn->txn(
         sub {
             my ($dbh) = @_;
@@ -87,51 +83,7 @@ sub find {
             my $rv = $sth->execute(@{$sql->bind});
             die 'execute failed' unless $rv;
 
-            my $wantarray = wantarray;
-
-            if ($wantarray || $single) {
-                my $rows = $sth->fetchall_arrayref;
-                return unless $rows && @$rows;
-
-                my @result;
-
-                # Prepare column inflation
-                my $inflation_method =
-                  $self->_inflate_columns($self->schema->class,
-                    $params{inflate});
-
-              OUTER_LOOP: foreach my $row (@$rows) {
-                    my $object = $self->_row_to_object(
-                        row     => $row,
-                        sql     => $sql,
-                        with    => $with,
-                        inflate => $params{inflate}
-                    );
-
-                    # Column inflation
-                    $object->$inflation_method if $inflation_method;
-
-                    push @result, $object;
-                }
-
-                if ($subreqs && @$subreqs) {
-                    $self->_fetch_subrequests(
-                        result  => \@result,
-                        subreqs => $subreqs,
-                        inflate => $params{inflate}
-                    );
-                }
-
-                if ($wantarray) {
-                    return @result;
-                }
-                elsif ($single) {
-                    $result[0];
-                }
-
-                # TODO
-            }
-            else {
+            if (!$wantarray && !$single) {
                 return ObjectDB::Iterator->new(
                     cb => sub {
                         my @row = $sth->fetchrow_array;
@@ -145,6 +97,40 @@ sub find {
                     }
                 );
             }
+
+            my $rows = $sth->fetchall_arrayref;
+            return unless $rows && @$rows;
+
+            my @result;
+
+            # Prepare column inflation
+            my $inflation_method =
+              $self->_inflate_columns($self->schema->class,
+                $params{inflate});
+
+          OUTER_LOOP: foreach my $row (@$rows) {
+                my $object = $self->_row_to_object(
+                    row     => $row,
+                    sql     => $sql,
+                    with    => $with,
+                    inflate => $params{inflate}
+                );
+
+                # Column inflation
+                $object->$inflation_method if $inflation_method;
+
+                push @result, $object;
+            }
+
+            $self->_fetch_subrequests(
+                result  => \@result,
+                subreqs => $subreqs,
+                inflate => $params{inflate}
+            );
+
+            return @result if $wantarray;
+
+            return $result[0];
         }
     );
 }
@@ -266,12 +252,12 @@ sub find_related {
 }
 
 sub _resolve_id {
-    my $class = shift;
+    my $self = shift;
     my $id    = shift;
     my $sql   = shift;
 
     if (ref $id ne 'ARRAY' && ref $id ne 'HASH') {
-        my @primary_key = $class->schema->primary_key;
+        my @primary_key = $self->schema->primary_key;
         die
           'FIND: id param has to be array or hash ref if there is more than one primary key column (e.g. id=>{ pk1 => 1, pk2 => 2 })'
           unless (@primary_key == 1);
@@ -285,12 +271,12 @@ sub _resolve_id {
         %where = %$id;
     }
     else {
-        my @pk_cols = $class->schema->primary_key;
+        my @pk_cols = $self->schema->primary_key;
         %where = ($pk_cols[0] => $id);
     }
 
-    unless ($class->schema->is_primary_key(keys %where)
-        || $class->schema->is_unique_key(keys %where))
+    unless ($self->schema->is_primary_key(keys %where)
+        || $self->schema->is_unique_key(keys %where))
     {
         die 'FIND: passed columns do not form primary or unique key';
     }
@@ -300,8 +286,7 @@ sub _resolve_id {
 
 sub _merge_arrays {
     my $self   = shift;
-    my $array1 = shift;
-    my $array2 = shift;
+    my ($array1, $array2) = @_;
 
     my %array_values;
     foreach my $value (@$array1, @$array2) {
@@ -319,6 +304,8 @@ sub _fetch_subrequests {
 
     my $subreqs = $params{subreqs};
     my @result  = @{$params{result}};
+
+    return unless $subreqs && @$subreqs;
 
     foreach my $subreq (@$subreqs) {
         my $name         = $subreq->[0];
@@ -472,9 +459,10 @@ sub _resolve_with {
     my $main    = $params{main};
     my $with    = $params{with};
     my $sql     = $params{sql};
-    my $subreqs = $params{subreqs};
 
-    return unless $with;
+    my $subreqs = [];
+
+    return $subreqs unless $with && @$with;
 
     my $walker = sub {
         my ($code_ref, $class, $with, $passed_rel_chain, $passed_table_chain,
@@ -558,6 +546,8 @@ sub _resolve_with {
     };
 
     _execute_code_ref($walker, $self->schema->class, $with);
+
+    return $subreqs;
 }
 
 sub _resolve_columns {
@@ -596,7 +586,9 @@ sub _resolve_columns {
 
 sub _normalize_with {
     my $self = shift;
-    my $with = shift;
+    my ($with) = @_;
+
+    return [] unless $with;
 
     $with = ref $with eq 'ARRAY' ? [@$with] : [$with];
 
