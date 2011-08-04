@@ -1,45 +1,35 @@
 #!/usr/bin/env perl
 
-use 5.008007;
-
 use strict;
 use warnings;
 
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-my ($mm) = $ExtUtils::MakeMaker::VERSION =~ /^([^_]+)/;
+name 'ObjectDB';
 
-WriteMakefile(
-    NAME         => 'ObjectDB',
-    VERSION_FROM => 'lib/ObjectDB.pm',
-    ABSTRACT     => 'Lightweight Object-relational mapper',
-    AUTHOR       => 'Viacheslav Tykhanovskyi <vti@cpan.org>',
+version_from 'lib/ObjectDB.pm';
+author 'Viacheslav Tykhanovskyi <vti@cpan.org>';
+abstract 'Lightweight Object-relational mapper';
+license 'artistic_2';
+perl_version '5.008007';
 
-    ($mm < 6.3002 ? () : ('LICENSE' => 'artistic_2')),
+requires 'Carp';
+requires 'Class::Load';
+requires 'DBI';
+requires 'DBIx::Connector' => '0.36';
+requires 'Scalar::Util';
 
-    (   $mm < 6.46
-        ? ()
-        : ( META_MERGE => {
-                requires  => {perl => '5.008007'},
-                resources => {
-                    license    => 'http://dev.perl.org/licenses/',
-                    repository => 'http://github.com/vti/object-db2'
-                },
-                no_index => {directory => [qw/t/]}
-            },
-            META_ADD => {
-                build_requires     => {},
-                configure_requires => {}
-            },
-        )
-    ),
+test_requires 'DBD::SQLite';
 
-    PREREQ_PM => {
-        'Carp'            => '0',
-        'Class::Load'     => '0',
-        'DBI'             => '0',
-        'DBIx::Connector' => '0.36',
-        'Scalar::Util'    => '0',
-    },
-    test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
-);
+tests 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t';
+
+no_index directory => 't';
+
+resources
+  bugtracker => 'http://github.com/vti/object-db2/issues',
+  repository => 'http://github.com/vti/object-db2/',
+  license    => 'http://dev.perl.org/licenses/';
+
+auto_install;
+
+WriteAll;
