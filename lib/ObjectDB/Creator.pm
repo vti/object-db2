@@ -27,11 +27,6 @@ sub sql {
 sub create {
     my $self = shift;
 
-    die
-      '->create: primary key column can NOT be NULL or has to be AUTOINCREMENT, table: '
-      . $self->schema->table
-      unless $self->columns->have_pk_or_ai_columns;
-
     my $sql = $self->sql;
 
     $sql->table($self->schema->table);
