@@ -57,8 +57,6 @@ sub build {
     $self->auto_discover(@_) unless $self->columns;
 
     my $class = $self->class;
-    Carp::croak qq/No primary key defined in class $class/
-      unless $self->primary_key;
 
     # Prevent recursive discovery
     $self->{is_built} = 1;
