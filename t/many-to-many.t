@@ -20,12 +20,12 @@ my $article = Article->new->set_columns(
 )->create;
 
 is(Tag->new->count, 2, 'related objects created');
-is(ArticleTagMap->new(conn => TestDB->conn)->count,
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count,
     2, 'mapping objects created');
 
 Article->new->delete(all => 1);
 
-is(ArticleTagMap->new(conn => TestDB->conn)->count,
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count,
     0, 'mapping objects are deleted');
 is(Tag->new->count, 2, 'related objects are stil there');
 
@@ -33,16 +33,16 @@ Tag->new->delete(all => 1);
 
 $article = Article->new->set_columns(title => 'foo')->create;
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
-is(ArticleTagMap->new(conn => TestDB->conn)->count, 2);
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count, 2);
 
 $article->delete_related(tags => where => ['tags.name' => 'foo']);
-is(ArticleTagMap->new(conn => TestDB->conn)->count, 2);
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count, 2);
 
 $article->delete_related(tags => where => ['tags.name' => 'bar']);
-is(ArticleTagMap->new(conn => TestDB->conn)->count, 1);
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count, 1);
 
 $article->delete_related('tags');
-is(ArticleTagMap->new(conn => TestDB->conn)->count, 0);
+is(ArticleTagMap->new(dbh => TestDB->dbh)->count, 0);
 
 $article->create_related(tags => [{name => 'bar'}, {name => 'baz'}]);
 
@@ -81,15 +81,15 @@ Article->new->delete(all => 1);
 Tag->new->delete(all => 1);
 
 #$article = Article->create(
-#conn      => $conn,
+#dbh      => $dbh,
 #title     => 'foo',
 #tags => [{name => 'bar'}, {name => 'baz'}]
 #);
 
-#Article->find(conn => $conn, with => 'tags');
+#Article->find(dbh => $dbh, with => 'tags');
 #is($article->tags->[0]->column('name'), '');
 
-#Article->delete(conn => $conn);
-#Tag->delete(conn => $conn);
+#Article->delete(dbh => $dbh);
+#Tag->delete(dbh => $dbh);
 
 TestEnv->teardown;

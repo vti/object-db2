@@ -13,7 +13,7 @@ use ObjectDB::Columns;
 use ObjectDB::SQL::Insert;
 
 sub schema  { $_[0]->{schema} }
-sub conn    { $_[0]->{conn} }
+sub dbh    { $_[0]->{dbh} }
 sub columns { $_[0]->{columns} }
 
 sub sql {
@@ -31,42 +31,40 @@ sub create {
 
     $sql->table($self->schema->table);
     $sql->columns([$self->columns->names]);
-    $sql->driver($self->conn->driver);
+    my $driver = $self->dbh->{'Driver'}->{'Name'};
+    $sql->driver($driver);
 
-    return $self->conn->txn(
-        sub {
-            my $dbh = shift;
+    my $dbh = $self->dbh;
 
-            my @values = $self->columns->values;
+    # TODO txn
+    my @values = $self->columns->values;
 
-            if (DEBUG) {
-                warn "$sql";
-                warn join(', ', @values);
-            }
+    if (DEBUG) {
+        warn "$sql";
+        warn join(', ', @values);
+    }
 
-            my $sth = $dbh->prepare("$sql");
-            return unless $sth;
+    my $sth = $dbh->prepare("$sql");
+    return unless $sth;
 
-            my $rv = $sth->execute(@values);
-            return unless $rv && $rv eq '1';
+    my $rv = $sth->execute(@values);
+    return unless $rv && $rv eq '1';
 
-            $self->_set_auto_increment_column($dbh);
+    $self->_set_auto_increment_column($dbh);
 
-            $self->{columns}->not_modified;
+    $self->{columns}->not_modified;
 
-            foreach my $name ($self->{related}->names) {
-                my $value = $self->{related}->get($name);
-                next if blessed($value);
+    foreach my $name ($self->{related}->names) {
+        my $value = $self->{related}->get($name);
+        next if blessed($value);
 
-                my $rel_object =
-                  $self->create_related($name => $value);
+        my $rel_object =
+          $self->create_related($name => $value);
 
-                $self->{related}->set($name => $rel_object);
-            }
+        $self->{related}->set($name => $rel_object);
+    }
 
-            return $self;
-        }
-    );
+    return $self;
 }
 
 sub create_related {
@@ -74,7 +72,7 @@ sub create_related {
     my ($name, $data) = @_;
 
     my $rel = $self->schema->relationship($name);
-    $rel->build($self->conn);
+    $rel->build($self->dbh);
 
     if (ref $data eq 'ARRAY'
         && (!$rel->is_has_many && !$rel->is_has_and_belongs_to_many))
@@ -90,55 +88,54 @@ sub create_related {
     push @params, @{$rel->where} if $rel->where;
 
     my $wantarray = wantarray;
-    my $conn      = $self->conn;
-    return $conn->txn(
-        sub {
-            if ($rel->is_has_many) {
-                my $result;
-                $data = [$data] unless ref $data eq 'ARRAY';
-                foreach my $d (@$data) {
-                    push @$result,
-                      $rel->foreign_class->new(conn => $conn)
-                      ->set_columns(%$d, @params)->create;
-                }
 
-                return $wantarray ? @$result : $result;
-            }
-            elsif ($rel->is_has_and_belongs_to_many) {
-                $data = [$data] unless ref $data eq 'ARRAY';
+    my $dbh = $self->dbh;
 
-                my $map_from = $rel->map_from;
-                my $map_to   = $rel->map_to;
-
-                my ($from_foreign_pk, $from_pk) =
-                  %{$rel->map_class->schema->relationship($map_from)->map};
-
-                my ($to_foreign_pk, $to_pk) =
-                  %{$rel->map_class->schema->relationship($map_to)->map};
-
-                foreach my $d (@$data) {
-                    my $object =
-                      $rel->foreign_class->new(conn => $conn)
-                      ->find_or_create(%$d);
-                    my $rel = $rel->map_class->new(conn => $conn)->set_columns(
-                        $from_foreign_pk => $self->{columns}->get($from_pk),
-                        $to_foreign_pk   => $object->column($to_pk)
-                    )->create;
-                }
-
-                # TODO
-            }
-            else {
-                my $rel_object =
-                  $rel->foreign_class->new(conn => $conn)
-                  ->set_columns(%$data, @params)->create;
-
-                $self->{related}->set($name => $rel_object);
-
-                return $rel_object;
-            }
+    # TODO txn
+    if ($rel->is_has_many) {
+        my $result;
+        $data = [$data] unless ref $data eq 'ARRAY';
+        foreach my $d (@$data) {
+            push @$result,
+              $rel->foreign_class->new(dbh => $dbh)
+              ->set_columns(%$d, @params)->create;
         }
-    );
+
+        return $wantarray ? @$result : $result;
+    }
+    elsif ($rel->is_has_and_belongs_to_many) {
+        $data = [$data] unless ref $data eq 'ARRAY';
+
+        my $map_from = $rel->map_from;
+        my $map_to   = $rel->map_to;
+
+        my ($from_foreign_pk, $from_pk) =
+          %{$rel->map_class->schema->relationship($map_from)->map};
+
+        my ($to_foreign_pk, $to_pk) =
+          %{$rel->map_class->schema->relationship($map_to)->map};
+
+        foreach my $d (@$data) {
+            my $object =
+              $rel->foreign_class->new(dbh => $dbh)
+              ->find_or_create(%$d);
+            my $rel = $rel->map_class->new(dbh => $dbh)->set_columns(
+                $from_foreign_pk => $self->{columns}->get($from_pk),
+                $to_foreign_pk   => $object->column($to_pk)
+            )->create;
+        }
+
+        # TODO
+    }
+    else {
+        my $rel_object =
+          $rel->foreign_class->new(dbh => $dbh)
+          ->set_columns(%$data, @params)->create;
+
+        $self->{related}->set($name => $rel_object);
+
+        return $rel_object;
+    }
 }
 
 sub _set_auto_increment_column {

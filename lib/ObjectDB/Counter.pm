@@ -10,15 +10,15 @@ use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 use ObjectDB::SQL::Select;
 
 sub schema { $_[0]->{schema} }
-sub conn   { $_[0]->{conn} }
+sub dbh   { $_[0]->{dbh} }
 
 sub count {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
-    $self->schema->build($conn);
+    $self->schema->build($dbh);
 
     my $sql = ObjectDB::SQL::Select->new;
 
@@ -31,17 +31,11 @@ sub count {
 
     warn "$sql" if DEBUG;
 
-    return $conn->run(
-        sub {
-            my $dbh = shift;
+    my $hash_ref = $dbh->selectrow_hashref("$sql", {}, @{$sql->bind});
+    return unless $hash_ref && ref $hash_ref eq 'HASH';
 
-            my $hash_ref = $dbh->selectrow_hashref("$sql", {}, @{$sql->bind});
-            return unless $hash_ref && ref $hash_ref eq 'HASH';
-
-            my @values = values %$hash_ref;
-            return shift @values;
-        }
-    );
+    my @values = values %$hash_ref;
+    return shift @values;
 }
 
 1;

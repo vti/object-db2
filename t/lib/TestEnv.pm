@@ -9,9 +9,9 @@ use TestDB;
 sub setup {
     shift;
 
-    my $conn = TestDB->conn;
+    my $dbh = TestDB->dbh;
 
-    my $driver = $conn->driver;
+    my $driver = $dbh->{'Driver'}->{'Name'};
 
     my $filename;
     if ($driver =~ m/SQLite/) {
@@ -33,7 +33,6 @@ sub setup {
 
     my @sql = split(/\s*;\s*/, $schema);
 
-    my $dbh = $conn->dbh;
     foreach my $sql (@sql) {
         next unless $sql;
 

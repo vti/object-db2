@@ -23,7 +23,7 @@ ok($rel);
 is($rel->type, 'has_many');
 ok($rel->is_has_many);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->dbh);
 
 is($rel->foreign_table, 'articles');
 

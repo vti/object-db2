@@ -24,7 +24,7 @@ use Scalar::Util qw(blessed);
 sub BUILD {
     my $self = shift;
 
-    $self->schema->build($self->conn);
+    $self->schema->build($self->dbh);
 
     $self->{columns} ||= ObjectDB::Columns->new(schema => $self->schema);
     $self->{related} ||= ObjectDB::Related->new;
@@ -41,14 +41,14 @@ sub plural_class_name {
     return single_to_plural($class);
 }
 
-sub conn {
+sub dbh {
     my $self = shift;
 
-    return $self->{conn} = $_[0] if @_;
+    return $self->{dbh} = $_[0] if @_;
 
-    Carp::croak(qq/Connector object is required/) unless $self->{conn};
+    Carp::croak(qq/dbh object is required/) unless $self->{dbh};
 
-    return $self->{conn};
+    return $self->{dbh};
 }
 
 sub schema {
@@ -175,7 +175,7 @@ sub related {
     my ($name) = @_;
 
     my $rel = $self->schema->relationship($name);
-    $rel->build($self->conn);
+    $rel->build($self->dbh);
 
     my $related = $self->{related}->get($name);
 
@@ -328,7 +328,7 @@ sub _build {
 
         $class_name->new(
             namespace => $self->namespace,
-            conn      => $self->conn,
+            dbh       => $self->dbh,
             schema    => $self->schema,
             columns   => $self->{columns},
             related   => $self->{related}

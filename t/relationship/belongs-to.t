@@ -23,7 +23,7 @@ ok($rel);
 is($rel->type, 'belongs_to');
 ok($rel->is_belongs_to);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->dbh);
 
 is($rel->foreign_table, 'authors');
 

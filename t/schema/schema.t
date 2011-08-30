@@ -71,10 +71,8 @@ use_ok('ObjectDB::Schema');
 
 TestEnv->setup;
 
-my $conn = TestDB->conn;
-
 my $schema = ObjectDB::Schema->new(class => 'Author');
-$schema->build(TestDB->conn);
+$schema->build(TestDB->dbh);
 $schema->has_one('foo');
 $schema->belongs_to('bar');
 
@@ -107,43 +105,43 @@ is_deeply([$schema->child_relationships], [qw/foo/]);
 $result = $schema->has_one(['xyz', 'yzx', 'zyx']);
 is_deeply([sort $schema->child_relationships], [sort qw/foo xyz yzx zyx/]);
 
-Dummy->schema->build(TestDB->conn);
+Dummy->schema->build(TestDB->dbh);
 is(Dummy->schema->class,          'Dummy');
 is(Dummy->schema->table,          'dummies');
 is(Dummy->schema->auto_increment, 'id');
 
-Dummy::Deeper->schema->build(TestDB->conn);
+Dummy::Deeper->schema->build(TestDB->dbh);
 is(Dummy::Deeper->schema->class, 'Dummy::Deeper');
 is(Dummy::Deeper->schema->table, 'deepers');
 
-DummyParent->schema->build(TestDB->conn);
+DummyParent->schema->build(TestDB->dbh);
 is(DummyParent->schema->class, 'DummyParent');
 is(DummyParent->schema->table, 'passed_a_table_name');
 is(DummyParent->schema->relationship('dummy_childs')->table,
     'passed_a_table_name');
 
-DummyChild->schema->build(TestDB->conn);
-is(DummyChild->schema->relationship('best_friend')->build(TestDB->conn)->foreign_class,
+DummyChild->schema->build(TestDB->dbh);
+is(DummyChild->schema->relationship('best_friend')->build(TestDB->dbh)->foreign_class,
     'Best::Friend');
 
-DummyChild2->schema->build(TestDB->conn);
-is(DummyChild2->schema->relationship('best_friend')->build(TestDB->conn)->foreign_class,
+DummyChild2->schema->build(TestDB->dbh);
+is(DummyChild2->schema->relationship('best_friend')->build(TestDB->dbh)->foreign_class,
     'Best::Friend');
 
-DummyWithTable->schema->build(TestDB->conn);
+DummyWithTable->schema->build(TestDB->dbh);
 is(DummyWithTable->schema->table, 'foo');
 is_deeply([DummyWithTable->schema->primary_key], [qw/foo bar/]);
 is_deeply([DummyWithTable->schema->columns],     [qw/foo bar/]);
 
-Dummy::InNamespace->schema->build(TestDB->conn);
+Dummy::InNamespace->schema->build(TestDB->dbh);
 is(Dummy::InNamespace->schema->class, 'Dummy::InNamespace');
 is(Dummy::InNamespace->schema->table, 'in_namespaces');
 
-Dummy::InNamespace::Item->schema->build(TestDB->conn);
+Dummy::InNamespace::Item->schema->build(TestDB->dbh);
 is(Dummy::InNamespace::Item->schema->class, 'Dummy::InNamespace::Item');
 is(Dummy::InNamespace::Item->schema->table, 'in_namespace-items');
 
-BigMan->schema->build(TestDB->conn);
+BigMan->schema->build(TestDB->dbh);
 is(BigMan->schema->class, 'BigMan');
 is(BigMan->schema->table, 'big_men');
 

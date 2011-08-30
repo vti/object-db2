@@ -12,14 +12,14 @@ use ObjectDB::Iterator;
 use ObjectDB::SQL::Select;
 
 sub schema    { $_[0]->{schema} }
-sub conn      { $_[0]->{conn} }
+sub dbh      { $_[0]->{dbh} }
 sub namespace { $_[0]->{namespace} }
 
 sub sql {
     my $self = shift;
 
-    $self->{sql}
-      ||= ObjectDB::SQL::Select->new(driver => $self->conn->driver);
+    my $driver = $self->dbh->{'Driver'}->{'Name'};
+    $self->{sql} ||= ObjectDB::SQL::Select->new(driver => $driver);
 
     return $self->{sql};
 }
@@ -30,7 +30,7 @@ sub find {
 
     my $single = $params{first} || $params{single} ? 1 : 0;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my $main = {};
 
@@ -72,67 +72,62 @@ sub find {
 
     my $wantarray = wantarray;
 
-    return $conn->txn(
-        sub {
-            my ($dbh) = @_;
+    # TODO txn
+    warn "$sql" if $ENV{OBJECTDB_DEBUG};
+    my $sth = $dbh->prepare("$sql");
+    return unless $sth;
 
-            warn "$sql" if $ENV{OBJECTDB_DEBUG};
-            my $sth = $dbh->prepare("$sql");
-            return unless $sth;
+    my $rv = $sth->execute(@{$sql->bind});
+    die 'execute failed' unless $rv;
 
-            my $rv = $sth->execute(@{$sql->bind});
-            die 'execute failed' unless $rv;
+    if (!$wantarray && !$single) {
+        return ObjectDB::Iterator->new(
+            cb => sub {
+                my @row = $sth->fetchrow_array;
+                return unless @row;
 
-            if (!$wantarray && !$single) {
-                return ObjectDB::Iterator->new(
-                    cb => sub {
-                        my @row = $sth->fetchrow_array;
-                        return unless @row;
-
-                        return $self->_row_to_object(
-                            row  => [@row],
-                            sql  => $sql,
-                            with => $with
-                        );
-                    }
+                return $self->_row_to_object(
+                    row  => [@row],
+                    sql  => $sql,
+                    with => $with
                 );
             }
+        );
+    }
 
-            my $rows = $sth->fetchall_arrayref;
-            return unless $rows && @$rows;
+    my $rows = $sth->fetchall_arrayref;
+    return unless $rows && @$rows;
 
-            my @result;
+    my @result;
 
-            # Prepare column inflation
-            my $inflation_method =
-              $self->_inflate_columns($self->schema->class,
-                $params{inflate});
+    # Prepare column inflation
+    my $inflation_method =
+      $self->_inflate_columns($self->schema->class,
+        $params{inflate});
 
-          OUTER_LOOP: foreach my $row (@$rows) {
-                my $object = $self->_row_to_object(
-                    row     => $row,
-                    sql     => $sql,
-                    with    => $with,
-                    inflate => $params{inflate}
-                );
+  OUTER_LOOP: foreach my $row (@$rows) {
+        my $object = $self->_row_to_object(
+            row     => $row,
+            sql     => $sql,
+            with    => $with,
+            inflate => $params{inflate}
+        );
 
-                # Column inflation
-                $object->$inflation_method if $inflation_method;
+        # Column inflation
+        $object->$inflation_method if $inflation_method;
 
-                push @result, $object;
-            }
+        push @result, $object;
+    }
 
-            $self->_fetch_subrequests(
-                result  => \@result,
-                subreqs => $subreqs,
-                inflate => $params{inflate}
-            );
-
-            return @result if $wantarray;
-
-            return $result[0];
-        }
+    $self->_fetch_subrequests(
+        result  => \@result,
+        subreqs => $subreqs,
+        inflate => $params{inflate}
     );
+
+    return @result if $wantarray;
+
+    return $result[0];
 }
 
 sub find_related {
@@ -144,11 +139,11 @@ sub find_related {
     my $passed_where = delete $params{where};
     my $passed_with  = delete $params{with};
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     # Get relationship object
     my $rel = $self->schema->relationship($rel_name);
-    $rel->build($conn);
+    $rel->build($dbh);
 
     # Initialize
     my @where;
@@ -209,7 +204,7 @@ sub find_related {
 
     # Return results
     if ($rel->is_has_and_belongs_to_many) {
-        my @results = $find_class->new(conn => $conn)->find(
+        my @results = $find_class->new(dbh => $dbh)->find(
             where => [@where],
             with  => [@with],
             %params
@@ -227,7 +222,7 @@ sub find_related {
     }
     else {
         if (wantarray) {
-            my @rel_object = $find_class->new(conn => $conn)->find(
+            my @rel_object = $find_class->new(dbh => $dbh)->find(
                 where => [@where],
                 with  => [@with],
                 %params
@@ -238,7 +233,7 @@ sub find_related {
             return @rel_object;
         }
         else {
-            my $rel_object = $find_class->new(conn => $conn)->find(
+            my $rel_object = $find_class->new(dbh => $dbh)->find(
                 where => [@where],
                 with  => [@with],
                 %params
@@ -300,7 +295,7 @@ sub _fetch_subrequests {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my $subreqs = $params{subreqs};
     my @result  = @{$params{result}};
@@ -344,7 +339,7 @@ sub _fetch_subrequests {
         my $nested = delete $args->{nested} || [];
 
         my $related = [
-            $subreq_class->new(conn => $conn)->find_related(
+            $subreq_class->new(dbh => $dbh)->find_related(
                 $name,
                 ids     => $ids,
                 with    => $nested,
@@ -406,7 +401,7 @@ sub _resolve_where {
     my $where = [@{$params{where}}];
     my $sql   = $params{sql};
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     for (my $i = 0; $i < @$where; $i += 2) {
         my $key   = $where->[$i];
@@ -419,7 +414,7 @@ sub _resolve_where {
             while ($key =~ s/(\w+)\.//) {
                 my $name = $1;
                 my $rel  = $parent->schema->relationship($name);
-                $rel->build($conn);
+                $rel->build($dbh);
 
                 if ($rel->is_has_many || $rel->is_has_and_belongs_to_many) {
                     $one_to_many = 1;
@@ -454,7 +449,7 @@ sub _resolve_with {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my $main    = $params{main};
     my $with    = $params{with};
@@ -478,7 +473,7 @@ sub _resolve_with {
               $passed_table_chain ? [@$passed_table_chain] : [];
 
             my $rel = $class->schema->relationship($name);
-            $rel->build($conn);
+            $rel->build($dbh);
 
             my $parent_args = $parent_with_args || $main;
 
@@ -647,7 +642,7 @@ sub _row_to_object {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my $row     = $params{row};
     my $sql     = $params{sql};
@@ -656,7 +651,7 @@ sub _row_to_object {
 
     my @columns = $sql->columns;
 
-    my $object = $self->schema->class->new(conn => $conn);
+    my $object = $self->schema->class->new(dbh => $dbh);
     foreach my $column (@columns) {
         $object->column($column => shift @$row);
     }
@@ -680,7 +675,7 @@ sub _row_to_object {
 
             next if $rel->is_type(qw/has_many has_and_belongs_to_many/);
 
-            my $rel_object = $rel->foreign_class->new(conn => $conn);
+            my $rel_object = $rel->foreign_class->new(dbh => $dbh);
 
             my $source = shift @$sources;
 

@@ -12,12 +12,12 @@ use Schema::AuthorData;
 
 TestEnv->setup;
 
-my $conn = TestDB->conn;
+my $dbh = TestDB->dbh;
 
 
 # one-to-many
 use Schema::Article;
-Schema::Article->schema->relationship('comments')->build($conn);
+Schema::Article->schema->relationship('comments')->build($dbh);
 is(Schema::Article->schema->relationship('comments')->foreign_class,
     'Schema::Comment');
 is(Schema::Article->schema->relationship('comments')->foreign_table,
@@ -28,7 +28,7 @@ is(Schema::Article->schema->relationship('comments')->class,
 
 # many-to-one
 use Schema::Comment;
-Schema::Comment->schema->relationship('article')->build($conn);
+Schema::Comment->schema->relationship('article')->build($dbh);
 is(Schema::Comment->schema->relationship('article')->foreign_class,
     'Schema::Article');
 is(Schema::Comment->schema->relationship('article')->foreign_table,
@@ -38,7 +38,7 @@ is(Schema::Comment->schema->relationship('article')->class,
 
 
 # many-to-many
-Schema::Article->schema->relationship('tags')->build($conn);
+Schema::Article->schema->relationship('tags')->build($dbh);
 is(Schema::Article->schema->relationship('tags')->map_class,
     'Schema::ArticleTagMap');
 is(Schema::Article->schema->relationship('tags')->foreign_class,
@@ -48,7 +48,7 @@ is(Schema::Article->schema->relationship('tags')->class, 'Schema::Article');
 
 
 use Schema::Tag;
-Schema::Tag->schema->relationship('articles')->build($conn);
+Schema::Tag->schema->relationship('articles')->build($dbh);
 is(Schema::Tag->schema->relationship('articles')->map_class,
     'Schema::ArticleTagMap');
 is(Schema::Tag->schema->relationship('articles')->foreign_class,

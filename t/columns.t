@@ -12,7 +12,7 @@ use TestEnv;
 
 TestEnv->setup;
 
-Author->schema->build(TestDB->conn);
+Author->schema->build(TestDB->dbh);
 
 my $columns = ObjectDB::Columns->new(schema => Author->schema);
 ok $columns->is_empty;

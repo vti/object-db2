@@ -9,7 +9,7 @@ use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 
 use ObjectDB::SQL::Update;
 
-sub conn   { $_[0]->{conn} }
+sub dbh   { $_[0]->{dbh} }
 sub schema { $_[0]->{schema} }
 
 sub update {
@@ -34,7 +34,7 @@ sub _update_instance {
 
     return $self unless $self->{columns}->is_modified;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my @primary_or_unique_key = $self->{columns}->pk_or_uk_columns;
 
@@ -52,19 +52,13 @@ sub _update_instance {
 
     warn "$sql" if DEBUG;
 
-    $self->conn->run(
-        sub {
-            my $dbh = shift;
+    my $sth = $dbh->prepare("$sql");
+    return unless $sth;
 
-            my $sth = $dbh->prepare("$sql");
-            return unless $sth;
+    my $rv = $sth->execute(@{$sql->bind});
+    return unless $rv && $rv eq '1';
 
-            my $rv = $sth->execute(@{$sql->bind});
-            return unless $rv && $rv eq '1';
-
-            $self->{columns}->not_modified;
-        }
-    );
+    $self->{columns}->not_modified;
 
     return $self;
 }
@@ -73,7 +67,7 @@ sub _update_objects {
     my $self   = shift;
     my %params = @_;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     my %set     = @{$params{set}};
     my @columns = keys %set;
@@ -90,21 +84,15 @@ sub _update_objects {
         warn join(', ', @{$sql->bind});
     }
 
-    return $conn->run(
-        sub {
-            my $dbh = shift;
+    my $sth = $dbh->prepare("$sql");
+    return unless $sth;
 
-            my $sth = $dbh->prepare("$sql");
-            return unless $sth;
+    my $rv = $sth->execute(@{$sql->bind});
+    return unless $rv;
 
-            my $rv = $sth->execute(@{$sql->bind});
-            return unless $rv;
+    return 0 if $rv eq '0E0';
 
-            return 0 if $rv eq '0E0';
-
-            return $rv;
-        }
-    );
+    return $rv;
 }
 
 1;

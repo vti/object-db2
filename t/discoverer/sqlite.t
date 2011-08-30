@@ -18,7 +18,7 @@ use_ok('ObjectDB::SchemaDiscoverer');
 
 TestEnv->setup;
 
-my $dbh = TestDB->conn->dbh;
+my $dbh = TestDB->dbh;
 
 my $d;
 

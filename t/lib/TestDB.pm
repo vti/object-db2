@@ -5,14 +5,14 @@ use warnings;
 
 use base 'ObjectDB';
 
-use ObjectDB::Connector;
+use DBI;
 
-our $CONN;
+our $DBH;
 
-sub conn {
+sub dbh {
     my $class = shift;
 
-    return $CONN if $CONN;
+    return $DBH if $DBH;
 
     my @args = ();
 
@@ -24,16 +24,16 @@ sub conn {
         push @args, 'dbi:SQLite:' . ':memory:';
     }
 
-    my $conn = ObjectDB::Connector->new(@args);
-    die $DBI::errorstr unless $conn;
+    my $dbh = DBI->connect(@args);
+    die $DBI::errorstr unless $dbh;
 
     unless ($ENV{TEST_MYSQL}) {
-        $conn->run(sub { $_->do("PRAGMA default_synchronous = OFF") });
-        $conn->run(sub { $_->do("PRAGMA temp_store = MEMORY") });
+        $dbh->do("PRAGMA default_synchronous = OFF");
+        $dbh->do("PRAGMA temp_store = MEMORY");
     }
 
-    $CONN = $conn;
-    return $conn;
+    $DBH = $dbh;
+    return $dbh;
 }
 
 1;

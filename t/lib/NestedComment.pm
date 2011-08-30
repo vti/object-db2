@@ -20,7 +20,7 @@ sub create {
     my $level         = 0;
     my $comment_count = 0;
 
-    my $conn = $self->conn;
+    my $dbh = $self->dbh;
 
     if ($self->column('parent_id')) {
         my $parent = $self->find_related('parent');
@@ -35,13 +35,13 @@ sub create {
         }
     }
 
-    $comment_count = $class->new(conn => $conn)->count(
+    $comment_count = $class->new(dbh => $dbh)->count(
         master_type => $self->column('master_type'),
         master_id   => $self->column('master_id')
     );
 
     if ($comment_count) {
-        my $left = $class->new(conn => $conn)->find(
+        my $left = $class->new(dbh => $dbh)->find(
             where => [
                 master_id   => $self->column('master_id'),
                 master_type => $self->column('master_type'),
@@ -53,12 +53,12 @@ sub create {
 
         $rgt = $left->column('rgt') if $left;
 
-        $class->new(conn => $conn)->update(
+        $class->new(dbh => $dbh)->update(
             set   => [rgt => \'rgt + 2'],
             where => [rgt => {'>' => $rgt}]
         );
 
-        $class->new(conn => $conn)->update(
+        $class->new(dbh => $dbh)->update(
             set   => [lft => \'lft + 2'],
             where => [lft => {'>' => $rgt}]
         );

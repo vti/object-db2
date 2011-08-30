@@ -22,7 +22,7 @@ ok($rel);
 is($rel->type, 'has_and_belongs_to_many');
 ok($rel->is_has_and_belongs_to_many);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->dbh);
 
 is($rel->foreign_table, 'tags');
 
@@ -72,7 +72,7 @@ ok($rel);
 is($rel->type, 'has_and_belongs_to_many');
 ok($rel->is_has_and_belongs_to_many);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->dbh);
 
 is($rel->foreign_table, 'articles');
 

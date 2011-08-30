@@ -16,7 +16,6 @@ perl_version '5.008007';
 requires 'Carp';
 requires 'Class::Load';
 requires 'DBI';
-requires 'DBIx::Connector' => '0.36';
 requires 'Scalar::Util';
 
 test_requires 'DBD::SQLite';

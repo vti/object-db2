@@ -22,7 +22,7 @@ ok($rel);
 is($rel->type, 'has_one');
 ok($rel->is_has_one);
 
-$rel->build(TestDB->conn);
+$rel->build(TestDB->dbh);
 
 is($rel->foreign_table, 'author_admins');
 

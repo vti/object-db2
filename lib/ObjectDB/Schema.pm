@@ -70,31 +70,26 @@ sub build {
 
 sub auto_discover {
     my $self = shift;
-    my $conn = shift;
+    my $dbh = shift;
 
-    Carp::croak qq/Connector is required for automatic column discovery/
-      unless $conn;
+    Carp::croak qq/dbh is required for automatic column discovery/
+      unless $dbh;
 
-    $conn->run(
-        sub {
-            my $dbh        = shift;
-            my $discoverer = ObjectDB::SchemaDiscoverer->build(
-                driver => $dbh->{'Driver'}->{'Name'},
-                table  => $self->table
-            );
-
-            $discoverer->discover($dbh);
-
-            $self->add_column($_) for @{$discoverer->columns};
-
-            $self->add_to_primary_key($_) for @{$discoverer->primary_key};
-
-            $self->unique_keys($_) for @{$discoverer->unique_keys};
-
-            $self->{auto_increment} = $discoverer->auto_increment
-              if $discoverer->auto_increment;
-        }
+    my $discoverer = ObjectDB::SchemaDiscoverer->build(
+        driver => $dbh->{'Driver'}->{'Name'},
+        table  => $self->table
     );
+
+    $discoverer->discover($dbh);
+
+    $self->add_column($_) for @{$discoverer->columns};
+
+    $self->add_to_primary_key($_) for @{$discoverer->primary_key};
+
+    $self->unique_keys($_) for @{$discoverer->unique_keys};
+
+    $self->{auto_increment} = $discoverer->auto_increment
+      if $discoverer->auto_increment;
 }
 
 sub build_relationships {

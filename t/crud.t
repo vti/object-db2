@@ -15,8 +15,6 @@ TestEnv->setup;
 
 use Author;
 
-my $conn = TestDB->conn;
-
 my $author = Author->new->find(id => 999);
 ok(!$author);
 
