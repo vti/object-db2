@@ -53,9 +53,8 @@ sub dbh {
 
 sub schema {
     my $class = shift;
-    my $table = shift;
 
-    $table ||= '';
+    my $table = @_ == 1 ? shift @_ : '';
 
     my $class_name = ref $class ? ref $class : $class;
 

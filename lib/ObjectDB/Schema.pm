@@ -11,12 +11,27 @@ use Class::Load ();
 use ObjectDB::SchemaDiscoverer;
 use ObjectDB::Utils qw/camelize decamelize class_to_table/;
 
+our $TYPES = {
+    'one to one'   => 'has_one',
+    'one to many'  => 'has_many',
+    'many to one'  => 'belongs_to',
+    'many to many' => 'has_and_belongs_to_many'
+};
+
 sub new {
     my $self = shift->SUPER::new(@_);
 
-    $self->{columns}     ||= [];
-    $self->{primary_key} ||= [];
-    $self->{unique_keys} ||= [];
+    $self->{columns} ||= [];
+
+    for (qw/primary_key unique_keys/) {
+        if (defined $self->{$_}) {
+            $self->{$_} = [$self->{$_}]
+              unless ref $self->{$_} eq 'ARRAY';
+        }
+        else {
+            $self->{$_} ||= [];
+        }
+    }
 
     unless ($self->table) {
         my $class = $self->class;
@@ -26,6 +41,16 @@ sub new {
         my $table = class_to_table($class, $class->plural_class_name);
 
         $self->{table} = $table;
+    }
+
+    if (my $relationships = delete $self->{relationships}) {
+        foreach my $name (keys %$relationships) {
+            my $rel = $relationships->{$name};
+            my $type = delete $rel->{type};
+            die "Unknown relationship type '$type'" unless exists $TYPES->{$type};
+            $type = $TYPES->{$type};
+            $self->_new_relationship($type, $name, %$rel);
+        }
     }
 
     return $self;
@@ -41,7 +66,6 @@ sub BUILD {
 
 sub table          { $_[0]->{table} }
 sub class          { $_[0]->{class} }
-sub auto_increment { $_[0]->{auto_increment} }
 sub relationships  { $_[0]->{relationships} }
 
 sub namespace { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
@@ -123,6 +147,16 @@ sub build_aliases {
     }
 }
 
+sub auto_increment {
+    my $self = shift;
+
+    return $self->{auto_increment} unless @_;
+
+    $self->{auto_increment} = $_[0];
+
+    return $self;
+}
+
 sub columns {
     my $self = shift;
 
@@ -175,8 +209,9 @@ sub unique_keys {
 
     return $self->{unique_keys} unless @_;
 
-    foreach my $unique_key (@_) {
-        die 'no array ref' unless ref $unique_key eq 'ARRAY';
+    my @keys = @_;
+    foreach my $unique_key (@keys) {
+        $unique_key = [$unique_key] unless ref $unique_key eq 'ARRAY';
         $self->add_unique_key($unique_key);
     }
 

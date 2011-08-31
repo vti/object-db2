@@ -52,8 +52,24 @@ __PACKAGE__->schema->columns(qw/id foo/)->primary_key('id');
 package BigMan;
 use base 'ObjectDB';
 __PACKAGE__->schema->columns(qw/id foo/)->primary_key('id');
-
 sub plural_class_name {'BigMen'}
+
+package OldFashion;
+use base 'ObjectDB';
+__PACKAGE__->schema(
+    table          => 'foo',
+    columns        => [qw/foo bar baz/],
+    primary_key    => 'foo',
+    auto_increment => 'foo',
+    unique_keys    => 'bar',
+    relationships  => {
+        child => {
+            type  => 'one to one',
+            class => 'DummyChild',
+            map   => {baz => 'id'}
+        }
+    }
+);
 
 
 package main;
@@ -61,7 +77,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 41;
+use Test::More tests => 46;
 
 use lib 't/lib';
 
@@ -144,6 +160,12 @@ is(Dummy::InNamespace::Item->schema->table, 'in_namespace-items');
 BigMan->schema->build(TestDB->dbh);
 is(BigMan->schema->class, 'BigMan');
 is(BigMan->schema->table, 'big_men');
+
+is(OldFashion->schema->class, 'OldFashion');
+is(OldFashion->schema->table, 'foo');
+is(OldFashion->schema->primary_key, 'foo');
+is_deeply(OldFashion->schema->unique_keys->[0], 'bar');
+is(OldFashion->schema->relationship('child')->table, 'foo');
 
 
 TestEnv->teardown;
