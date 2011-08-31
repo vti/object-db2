@@ -15,6 +15,8 @@ sub to_string {
     $query .= 'DELETE FROM ';
     $query .= escape($self->table);
     $query .= $self->where;
+
+    $self->{bind} = [];
     $self->bind($self->where->bind);
 
     return $query;
