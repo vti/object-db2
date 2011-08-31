@@ -17,6 +17,7 @@ requires 'Carp';
 requires 'Class::Load';
 requires 'DBI';
 requires 'Scalar::Util';
+requires 'Storable';
 
 test_requires 'DBD::SQLite';
 

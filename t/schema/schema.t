@@ -34,6 +34,9 @@ package DummyWithTable;
 use base 'ObjectDB';
 __PACKAGE__->schema('foo')->columns(qw/foo bar/)->primary_key(qw/foo bar/);
 
+package DummyWithTableInherited;
+use base 'DummyWithTable';
+
 package Dummy::InNamespace;
 use base 'ObjectDB';
 __PACKAGE__->namespace('Dummy');
@@ -71,13 +74,15 @@ __PACKAGE__->schema(
     }
 );
 
+package OldFashionInherited;
+use base 'OldFashion';
 
 package main;
 
 use strict;
 use warnings;
 
-use Test::More tests => 48;
+use Test::More tests => 52;
 
 use lib 't/lib';
 
@@ -149,6 +154,9 @@ is(DummyWithTable->schema->table, 'foo');
 is_deeply([DummyWithTable->schema->primary_key], [qw/foo bar/]);
 is_deeply([DummyWithTable->schema->columns],     [qw/foo bar/]);
 
+is(DummyWithTableInherited->schema->class, 'DummyWithTableInherited');
+is(DummyWithTableInherited->schema->table, 'foo');
+
 Dummy::InNamespace->schema->build(TestDB->dbh);
 is(Dummy::InNamespace->schema->class, 'Dummy::InNamespace');
 is(Dummy::InNamespace->schema->table, 'in_namespaces');
@@ -168,6 +176,9 @@ is_deeply(OldFashion->schema->unique_keys->[0], 'bar');
 is(OldFashion->schema->relationship('child')->table, 'foo');
 is(OldFashion->schema->relationship('child')->class, 'OldFashion');
 is(OldFashion->schema->relationship('child')->foreign_class, 'DummyChild');
+
+is(OldFashionInherited->schema->class, 'OldFashionInherited');
+is(OldFashionInherited->schema->table, 'foo');
 
 
 TestEnv->teardown;

@@ -7,19 +7,33 @@ use base 'ObjectDB::Base';
 
 require Carp;
 use Class::Load ();
+use Storable ();
 
 use ObjectDB::SchemaDiscoverer;
 use ObjectDB::Utils qw/camelize decamelize class_to_table/;
 
-our $TYPES = {
+my $TYPES = {
     'one to one'   => 'has_one',
     'one to many'  => 'has_many',
     'many to one'  => 'belongs_to',
     'many to many' => 'has_and_belongs_to_many'
 };
 
+our %objects;
+
 sub new {
     my $self = shift->SUPER::new(@_);
+
+    foreach my $parent (_get_parents($self->class)) {
+        if (exists $objects{$parent}) {
+            my $parent_schema = $objects{$parent};
+            my $schema = Storable::dclone($parent_schema);
+
+            $schema->class($self->class);
+
+            return $schema;
+        }
+    }
 
     $self->{columns} ||= [];
 
@@ -38,7 +52,9 @@ sub new {
 
         Class::Load::load_class($class);
 
-        my $table = class_to_table($class, $class->plural_class_name);
+        my $plural_class_name =
+          $class->can('plural_class_name') ? $class->plural_class_name : '';
+        my $table = class_to_table($class, $plural_class_name);
 
         $self->{table} = $table;
     }
@@ -65,7 +81,7 @@ sub BUILD {
 }
 
 sub table          { $_[0]->{table} }
-sub class          { $_[0]->{class} }
+sub class          { @_ > 1 ? $_[0]->{class} = $_[1] : $_[0]->{class} }
 sub relationships  { $_[0]->{relationships} }
 
 sub namespace { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
@@ -85,7 +101,9 @@ sub build {
     # Prevent recursive discovery
     $self->{is_built} = 1;
 
-    $self->build_relationships(@_) unless $self->class->objectdb_lazy;
+    $self->build_relationships(@_)
+      unless $self->class->can('objectdb_lazy')
+          && $self->class->objectdb_lazy;
 
     $self->build_aliases(@_);
 
@@ -389,6 +407,22 @@ sub _new_relationship {
     }
 
     return $self;
+}
+
+sub _get_parents {
+    my $class = shift;
+    my @parents;
+
+    no strict 'refs';
+
+    foreach my $sub_class (@{"${class}::ISA"}) {
+        last if $sub_class eq 'ObjectDB';
+
+        push @parents, $sub_class, _get_parents($sub_class)
+          if $sub_class->isa('ObjectDB');
+    }
+
+    return @parents;
 }
 
 1;
