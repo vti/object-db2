@@ -26,8 +26,16 @@ sub BUILD {
 
     $self->schema->build($self->dbh);
 
-    $self->{columns} ||= ObjectDB::Columns->new(schema => $self->schema);
+    my $columns = delete $self->{columns};
+
+    $self->{columns} ||= ObjectDB::Columns->new;
     $self->{related} ||= ObjectDB::Related->new;
+
+    if ($columns) {
+        $self->set_columns(%$columns);
+    }
+
+    return $self;
 }
 
 sub is_modified { $_[0]->{columns}->is_modified }
