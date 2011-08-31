@@ -585,7 +585,7 @@ sub _normalize_with {
 
     return [] unless $with;
 
-    $with = ref $with eq 'ARRAY' ? [@$with] : [$with];
+    $with = [$with] unless ref $with eq 'ARRAY';
 
     my %with;
     my $last_key;
