@@ -20,11 +20,11 @@ ok(!eval { $message->id('test') }, 'id() fails');
 like($@, qr/no primary key defined/i, 'error message is right');
 
 ok $message->set_columns(
-    sender   => 'sender1',
-    receiver => 'receiver1',
-    message  => 'message1'
+    sender_id    => 1,
+    recipient_id => 2,
+    message      => 'message1'
 )->create, 'created message';
 
-my @messages = $message->find(where => [sender => 'sender1']);
+my @messages = $message->find(where => [sender_id => 1]);
 
 is $messages[0]->column('message'), 'message1', 'message found';
