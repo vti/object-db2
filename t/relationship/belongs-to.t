@@ -30,11 +30,11 @@ is($rel->foreign_table, 'authors');
 is_deeply(
     $rel->to_source,
     {   name       => 'authors',
-        as         => 'authors',
+        as         => 'author',
         join       => 'left',
         constraint => [
-            'authors.id'    => \'`articles`.`author_id`',
-            'authors.title' => \'foo'
+            'author.id'    => \'`articles`.`author_id`',
+            'author.title' => \'foo'
         ]
     }
 );

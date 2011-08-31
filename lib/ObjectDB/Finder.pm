@@ -517,10 +517,13 @@ sub _resolve_with {
 
                 # Add source before resolving children to get correct order
                 # Add where constraint as join args
-                $source = $rel->to_source($args->{where}, $alias_prefix);
+                $source =
+                  $rel->to_source($args->{where}, $alias_prefix,
+                    $args->{parent_name});
                 $sql->add_source($source);
 
                 if (my $subwith = $args->{nested}) {
+                    $subwith->[1]->{parent_name} = $source->{as} if @$subwith;
                     _execute_code_ref($code_ref, $rel->foreign_class,
                         $subwith, $rel_chain, $table_chain, $args);
                 }
