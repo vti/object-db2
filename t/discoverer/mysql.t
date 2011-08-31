@@ -27,9 +27,9 @@ my $d =
 
 isa_ok($d, 'ObjectDB::SchemaDiscoverer::mysql');
 
-my $conn = TestDB->conn;
+my $dbh = TestDB->dbh;
 
-$conn->run(sub { $d->discover(shift); });
+$d->discover($dbh);
 
 is($d->table,          'authors');
 is($d->auto_increment, 'id');
@@ -40,7 +40,7 @@ is_deeply($d->unique_keys->[0], [qw/name/]);
 
 # Throw an exeption if table does not exist
 $d = ObjectDB::SchemaDiscoverer->build(driver => 'mysql', table => 'h');
-ok(!eval { $conn->run(sub { $d->discover(shift) }) });
+ok(!eval {$d->discover($dbh) });
 my $err_msg = 'SchemaDiscoverer::mysql: table h not found in DB';
 ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 
@@ -49,6 +49,6 @@ ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 $d = ObjectDB::SchemaDiscoverer->build(
     driver => 'mysql',
     table => 'hotels');
-$conn->run(sub { $d->discover(shift); });
+$d->discover($dbh);
 is_deeply($d->unique_keys->[0], [qw/city street/]);
 is_deeply($d->unique_keys->[1], [qw/name city/]);
