@@ -152,7 +152,11 @@ sub _detect_and_load_foreign_class {
         $self->foreign_class($foreign_class);
     }
 
-    Class::Load::load_class($self->foreign_class);
+    Class::Load::try_load_class($self->foreign_class)
+      or die "Can't load relationship class '"
+      . $self->foreign_class
+      . "' when building '"
+      . $self->class . "'";
 
 }
 
