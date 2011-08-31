@@ -32,18 +32,11 @@ sub to_source {
     my $self             = shift;
     my $passed_join_args = shift;
     my $alias_prefix     = shift || '';
+    my $table            = shift || $self->table;
 
-    my $table         = $self->table;
     my $foreign_table = $self->foreign_table;
 
-
-    my $as;
-    if ($foreign_table eq $table) {
-        $as = $alias_prefix . $self->name;
-    }
-    else {
-        $as = $alias_prefix . $foreign_table;
-    }
+    my $as = $alias_prefix . $self->name;
 
     my $constraint;
 
