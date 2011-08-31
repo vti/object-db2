@@ -23,7 +23,10 @@ my $message = Message->new(
     }
 )->create;
 
-my @messages = Message->new->find(with => [qw/sender recipient/]);
+my @messages = Message->new->find(
+    with  => [qw/sender recipient/],
+    where => ['sender.name' => 'Alice']
+);
 $message = $messages[0];
 is $message->sender->name,    'Alice';
 is $message->recipient->name, 'Bob';
