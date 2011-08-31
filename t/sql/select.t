@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 26;
 
 use_ok('ObjectDB::SQL::Select');
 
@@ -20,6 +20,12 @@ $sql->where([id => 2]);
 $sql->where([]);
 $sql->where(foo => 'bar');
 is("$sql", "SELECT `foo` AS bar FROM `foo` WHERE (`id` = ? AND `foo` = ?)");
+
+$sql = ObjectDB::SQL::Select->new;
+$sql->source('foo');
+$sql->columns([\'foo AS bar', 'baz']);
+$sql->where([id => 2]);
+is("$sql", "SELECT foo AS bar, `baz` FROM `foo` WHERE (`id` = ?)");
 
 $sql = ObjectDB::SQL::Select->new;
 $sql->source('foo');
