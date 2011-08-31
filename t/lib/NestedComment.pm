@@ -13,7 +13,7 @@ __PACKAGE__->schema('nested_comments')
   ->proxy(master => {column => 'master_type'});
 
 sub create {
-    my $self = shift;
+    my $self  = shift;
     my $class = ref($self);
 
     my $rgt           = 1;

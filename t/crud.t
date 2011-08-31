@@ -103,7 +103,7 @@ is($authors[1]->name, 'baz');
 is($authors[2]->name, 'bar');
 
 @authors = Author->new->find(limit => 1, order_by => 'name ASC');
-is(@authors,                    1);
+is(@authors,          1);
 is($authors[0]->name, 'bar');
 
 is(Author->new->delete(all => 1), 3);
@@ -116,7 +116,7 @@ is($author->name, 'foo');
 my $id = $author->id;
 $author = Author->new->find_or_create(name => 'foo');
 ok($author);
-is($author->id,             $id);
+is($author->id,   $id);
 is($author->name, 'foo');
 
 $author = Author->new->find_or_create(name => 'bar');

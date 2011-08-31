@@ -16,7 +16,9 @@ sub discover {
         last if $sql;
     }
 
-    die 'SchemaDiscoverer::SQLite: table \'' . $self->table . '\' not found in DB'
+    die 'SchemaDiscoverer::SQLite: table \''
+      . $self->table
+      . '\' not found in DB'
       unless $sql;
 
     ### TODO: Support for unique keys created by "create unique index"

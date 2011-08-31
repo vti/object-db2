@@ -78,14 +78,14 @@ Author->new->set_columns(name => 'bar', author_admin => {beard => 0})->create;
 Author->new->set_columns(name => 'baz', author_admin => {beard => 1})->create;
 
 my @authors = Author->new->find(where => ['author_admin.beard' => 1]);
-is(@authors, 2);
+is(@authors,                                   2);
 is($authors[0]->author_admin->column('beard'), 1);
 
 @authors = Author->new->find(
     where => ['author_admin.beard' => 0],
     with  => 'author_admin'
 );
-is(@authors, 1);
+is(@authors,                                   1);
 is($authors[0]->author_admin->column('beard'), 0);
 
 @authors = Author->new->find(

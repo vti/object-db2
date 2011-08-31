@@ -58,7 +58,8 @@ ok($@ =~ m/\Q$err_msg/, "throw exception: $err_msg");
 # UNIQUE(`col1`,`col2`)
 $d = ObjectDB::SchemaDiscoverer->build(
     driver => 'SQLite',
-    table => 'hotels');
+    table  => 'hotels'
+);
 $d->discover($dbh);
 is_deeply($d->unique_keys->[0], [qw/city street/]);
 is_deeply($d->unique_keys->[1], [qw/name city/]);

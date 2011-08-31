@@ -79,7 +79,7 @@ sub single_to_plural {
 }
 
 sub class_to_table {
-    my $class_name = shift;
+    my $class_name        = shift;
     my $plural_class_name = shift;
 
     unless ($plural_class_name) {

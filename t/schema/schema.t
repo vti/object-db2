@@ -67,9 +67,9 @@ __PACKAGE__->schema(
     unique_keys    => 'bar',
     relationships  => {
         child => {
-            type  => 'one to one',
+            type          => 'one to one',
             foreign_class => 'DummyChild',
-            map   => {baz => 'id'}
+            map           => {baz => 'id'}
         }
     }
 );
@@ -142,12 +142,16 @@ is(DummyParent->schema->relationship('dummy_childs')->table,
     'passed_a_table_name');
 
 DummyChild->schema->build(TestDB->dbh);
-is(DummyChild->schema->relationship('best_friend')->build(TestDB->dbh)->foreign_class,
-    'Best::Friend');
+is( DummyChild->schema->relationship('best_friend')->build(TestDB->dbh)
+      ->foreign_class,
+    'Best::Friend'
+);
 
 DummyChild2->schema->build(TestDB->dbh);
-is(DummyChild2->schema->relationship('best_friend')->build(TestDB->dbh)->foreign_class,
-    'Best::Friend');
+is( DummyChild2->schema->relationship('best_friend')->build(TestDB->dbh)
+      ->foreign_class,
+    'Best::Friend'
+);
 
 DummyWithTable->schema->build(TestDB->dbh);
 is(DummyWithTable->schema->table, 'foo');
@@ -169,12 +173,12 @@ BigMan->schema->build(TestDB->dbh);
 is(BigMan->schema->class, 'BigMan');
 is(BigMan->schema->table, 'big_men');
 
-is(OldFashion->schema->class, 'OldFashion');
-is(OldFashion->schema->table, 'foo');
+is(OldFashion->schema->class,       'OldFashion');
+is(OldFashion->schema->table,       'foo');
 is(OldFashion->schema->primary_key, 'foo');
 is_deeply(OldFashion->schema->unique_keys->[0], 'bar');
-is(OldFashion->schema->relationship('child')->table, 'foo');
-is(OldFashion->schema->relationship('child')->class, 'OldFashion');
+is(OldFashion->schema->relationship('child')->table,         'foo');
+is(OldFashion->schema->relationship('child')->class,         'OldFashion');
 is(OldFashion->schema->relationship('child')->foreign_class, 'DummyChild');
 
 is(OldFashionInherited->schema->class, 'OldFashionInherited');

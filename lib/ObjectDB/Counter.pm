@@ -10,7 +10,7 @@ use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 use ObjectDB::SQL::Select;
 
 sub schema { $_[0]->{schema} }
-sub dbh   { $_[0]->{dbh} }
+sub dbh    { $_[0]->{dbh} }
 
 sub count {
     my $self   = shift;

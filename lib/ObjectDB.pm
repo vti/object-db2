@@ -96,7 +96,7 @@ sub id {
     my $self = shift;
 
     Carp::croak 'No primary key defined in class ' . ref $self
-        unless $self->schema->primary_key;
+      unless $self->schema->primary_key;
 
     if (@_) {
         for my $column ($self->schema->primary_key) {

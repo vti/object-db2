@@ -73,7 +73,7 @@ is($articles[0]->author->column('name'), 'foo');
     where => ['author.name' => 'baz'],
     with  => 'author'
 );
-is(@articles, 1);
+is(@articles,                            1);
 is($articles[0]->author->column('name'), 'baz');
 
 @articles = Article->new->find(

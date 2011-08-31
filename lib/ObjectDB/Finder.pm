@@ -12,7 +12,7 @@ use ObjectDB::Iterator;
 use ObjectDB::SQL::Select;
 
 sub schema    { $_[0]->{schema} }
-sub dbh      { $_[0]->{dbh} }
+sub dbh       { $_[0]->{dbh} }
 sub namespace { $_[0]->{namespace} }
 
 sub sql {
@@ -40,9 +40,9 @@ sub find {
     my $with = $self->_normalize_with($params{with});
 
     my $subreqs = $self->_resolve_with(
-        main    => $main,
-        with    => $with,
-        sql     => $sql
+        main => $main,
+        with => $with,
+        sql  => $sql
     );
 
     # Resolve columns
@@ -102,8 +102,7 @@ sub find {
 
     # Prepare column inflation
     my $inflation_method =
-      $self->_inflate_columns($self->schema->class,
-        $params{inflate});
+      $self->_inflate_columns($self->schema->class, $params{inflate});
 
   OUTER_LOOP: foreach my $row (@$rows) {
         my $object = $self->_row_to_object(
@@ -248,8 +247,8 @@ sub find_related {
 
 sub _resolve_id {
     my $self = shift;
-    my $id    = shift;
-    my $sql   = shift;
+    my $id   = shift;
+    my $sql  = shift;
 
     if (ref $id ne 'ARRAY' && ref $id ne 'HASH') {
         my @primary_key = $self->schema->primary_key;
@@ -280,7 +279,7 @@ sub _resolve_id {
 }
 
 sub _merge_arrays {
-    my $self   = shift;
+    my $self = shift;
     my ($array1, $array2) = @_;
 
     my %array_values;
@@ -451,9 +450,9 @@ sub _resolve_with {
 
     my $dbh = $self->dbh;
 
-    my $main    = $params{main};
-    my $with    = $params{with};
-    my $sql     = $params{sql};
+    my $main = $params{main};
+    my $with = $params{with};
+    my $sql  = $params{sql};
 
     my $subreqs = [];
 

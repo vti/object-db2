@@ -9,7 +9,7 @@ use constant DEBUG => $ENV{OBJECTDB_DEBUG} || 0;
 
 use ObjectDB::SQL::Update;
 
-sub dbh   { $_[0]->{dbh} }
+sub dbh    { $_[0]->{dbh} }
 sub schema { $_[0]->{schema} }
 
 sub update {
@@ -48,7 +48,8 @@ sub _update_instance {
     $sql->table($self->schema->table);
     $sql->columns(\@columns);
     $sql->values(\@values);
-    $sql->where(map { $_ => $self->{columns}->get($_) } @primary_or_unique_key);
+    $sql->where(map { $_ => $self->{columns}->get($_) }
+          @primary_or_unique_key);
 
     warn "$sql" if DEBUG;
 

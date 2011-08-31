@@ -61,7 +61,7 @@ sub AUTOLOAD {
     $method = (split '::' => $method)[-1];
 
     my $class = $self->name_to_class($name);
-    return $class->new(dbh => $self->{dbh})->$method( @_);
+    return $class->new(dbh => $self->{dbh})->$method(@_);
 }
 
 1;

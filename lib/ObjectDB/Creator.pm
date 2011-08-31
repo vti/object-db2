@@ -13,7 +13,7 @@ use ObjectDB::Columns;
 use ObjectDB::SQL::Insert;
 
 sub schema  { $_[0]->{schema} }
-sub dbh    { $_[0]->{dbh} }
+sub dbh     { $_[0]->{dbh} }
 sub columns { $_[0]->{columns} }
 
 sub sql {
@@ -58,8 +58,7 @@ sub create {
         my $value = $self->{related}->get($name);
         next if blessed($value);
 
-        my $rel_object =
-          $self->create_related($name => $value);
+        my $rel_object = $self->create_related($name => $value);
 
         $self->{related}->set($name => $rel_object);
     }
@@ -97,8 +96,8 @@ sub create_related {
         $data = [$data] unless ref $data eq 'ARRAY';
         foreach my $d (@$data) {
             push @$result,
-              $rel->foreign_class->new(dbh => $dbh)
-              ->set_columns(%$d, @params)->create;
+              $rel->foreign_class->new(dbh => $dbh)->set_columns(%$d, @params)
+              ->create;
         }
 
         return $wantarray ? @$result : $result;
@@ -117,8 +116,7 @@ sub create_related {
 
         foreach my $d (@$data) {
             my $object =
-              $rel->foreign_class->new(dbh => $dbh)
-              ->find_or_create(%$d);
+              $rel->foreign_class->new(dbh => $dbh)->find_or_create(%$d);
             my $rel = $rel->map_class->new(dbh => $dbh)->set_columns(
                 $from_foreign_pk => $self->{columns}->get($from_pk),
                 $to_foreign_pk   => $object->column($to_pk)
@@ -129,8 +127,8 @@ sub create_related {
     }
     else {
         my $rel_object =
-          $rel->foreign_class->new(dbh => $dbh)
-          ->set_columns(%$data, @params)->create;
+          $rel->foreign_class->new(dbh => $dbh)->set_columns(%$data, @params)
+          ->create;
 
         $self->{related}->set($name => $rel_object);
 

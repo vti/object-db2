@@ -25,7 +25,8 @@ sub setup {
     }
 
     my $fullpath = "$FindBin::Bin/sample_schema/$filename.sql";
-    $fullpath = "$FindBin::Bin/../sample_schema/$filename.sql" unless -e $fullpath;
+    $fullpath = "$FindBin::Bin/../sample_schema/$filename.sql"
+      unless -e $fullpath;
 
     open(my $file, "<$fullpath") or die "Can't open $fullpath: $!";
 

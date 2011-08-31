@@ -24,7 +24,7 @@ ok($columns->have_pk_or_ai_columns);
 ok(!$columns->is_modified);
 
 $columns->set(id => 1);
-ok!$columns->is_empty;
+ok !$columns->is_empty;
 ok($columns->is_modified);
 
 is_deeply [$columns->names],  [qw/id/];

@@ -7,7 +7,7 @@ use base 'ObjectDB::Base';
 
 require Carp;
 use Class::Load ();
-use Storable ();
+use Storable    ();
 
 use ObjectDB::SchemaDiscoverer;
 use ObjectDB::Utils qw/camelize decamelize class_to_table/;
@@ -27,7 +27,7 @@ sub new {
     foreach my $parent (_get_parents($self->class)) {
         if (exists $objects{$parent}) {
             my $parent_schema = $objects{$parent};
-            my $schema = Storable::dclone($parent_schema);
+            my $schema        = Storable::dclone($parent_schema);
 
             $schema->class($self->class);
 
@@ -61,9 +61,10 @@ sub new {
 
     if (my $relationships = delete $self->{relationships}) {
         foreach my $name (keys %$relationships) {
-            my $rel = $relationships->{$name};
+            my $rel  = $relationships->{$name};
             my $type = delete $rel->{type};
-            die "Unknown relationship type '$type'" unless exists $TYPES->{$type};
+            die "Unknown relationship type '$type'"
+              unless exists $TYPES->{$type};
             $type = $TYPES->{$type};
             $self->_new_relationship($type, $name, %$rel);
         }
@@ -80,9 +81,9 @@ sub BUILD {
     return $self;
 }
 
-sub table          { $_[0]->{table} }
-sub class          { @_ > 1 ? $_[0]->{class} = $_[1] : $_[0]->{class} }
-sub relationships  { $_[0]->{relationships} }
+sub table         { $_[0]->{table} }
+sub class         { @_ > 1 ? $_[0]->{class} = $_[1] : $_[0]->{class} }
+sub relationships { $_[0]->{relationships} }
 
 sub namespace { @_ > 1 ? $_[0]->{namespace} = $_[1] : $_[0]->{namespace} }
 
@@ -112,7 +113,7 @@ sub build {
 
 sub auto_discover {
     my $self = shift;
-    my $dbh = shift;
+    my $dbh  = shift;
 
     Carp::croak qq/dbh is required for automatic column discovery/
       unless $dbh;
@@ -149,7 +150,8 @@ sub build_aliases {
     for my $column ($self->columns) {
         unless ($self->class->can($column)) {
             no strict;
-            my $code  = "sub {my \$self = shift; \$self->column('$column', \@_)}";
+            my $code =
+              "sub {my \$self = shift; \$self->column('$column', \@_)}";
             *{"${class}::$column"} = eval $code;
         }
     }

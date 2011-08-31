@@ -25,7 +25,7 @@ my $message = Message->new(
 
 my @messages = Message->new->find(with => [qw/sender recipient/]);
 $message = $messages[0];
-is $message->sender->name, 'Alice';
+is $message->sender->name,    'Alice';
 is $message->recipient->name, 'Bob';
 
 TestEnv->teardown;

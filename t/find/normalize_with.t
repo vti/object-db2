@@ -23,8 +23,8 @@ is_deeply(
 is_deeply(
     ObjectDB::Finder->_normalize_with([hello => {a => 'b'}, qw/foo.bar.baz/]),
     [   foo => {
-            columns   => [],
-            nested => [bar => {columns => [], nested => [baz => {}]}]
+            columns => [],
+            nested  => [bar => {columns => [], nested => [baz => {}]}]
         },
         hello => {a => 'b'}
     ]
@@ -35,11 +35,11 @@ is_deeply(
         [qw/articles.comments.sub_comments articles.main_category/]
     ),
     [   'articles',
-        {   'columns'   => [],
-            'nested' => [
+        {   'columns' => [],
+            'nested'  => [
                 'comments',
-                {   'columns'   => [],
-                    'nested' => ['sub_comments', {}]
+                {   'columns' => [],
+                    'nested'  => ['sub_comments', {}]
                 },
                 'main_category',
                 {}

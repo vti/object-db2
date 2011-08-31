@@ -62,15 +62,14 @@ my @tags = $article->find_related('tags', where => [name => 'foo']);
 is(@tags, 0);
 
 @tags = $article->find_related('tags', where => [name => 'bar']);
-is(@tags, 1);
-is($tags[0]->column('name'), 'bar' );
+is(@tags,                    1);
+is($tags[0]->column('name'), 'bar');
 
 @tags = $article->find_related('tags', where => [name => 'bar2']);
 is(@tags, 0);
 
 @tags = $article2->find_related('tags', where => [name => 'bar2']);
 is(@tags, 1);
-
 
 
 @tags = $article->find_related('tags');
