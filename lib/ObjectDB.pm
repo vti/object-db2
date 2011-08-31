@@ -28,7 +28,7 @@ sub BUILD {
 
     my $columns = delete $self->{columns};
 
-    $self->{columns} ||= ObjectDB::Columns->new;
+    $self->{columns} ||= ObjectDB::Columns->new(schema => $self->schema);
     $self->{related} ||= ObjectDB::Related->new;
 
     if ($columns) {
