@@ -65,7 +65,7 @@ __PACKAGE__->schema(
     relationships  => {
         child => {
             type  => 'one to one',
-            class => 'DummyChild',
+            foreign_class => 'DummyChild',
             map   => {baz => 'id'}
         }
     }
@@ -77,7 +77,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More tests => 46;
+use Test::More tests => 48;
 
 use lib 't/lib';
 
@@ -166,6 +166,8 @@ is(OldFashion->schema->table, 'foo');
 is(OldFashion->schema->primary_key, 'foo');
 is_deeply(OldFashion->schema->unique_keys->[0], 'bar');
 is(OldFashion->schema->relationship('child')->table, 'foo');
+is(OldFashion->schema->relationship('child')->class, 'OldFashion');
+is(OldFashion->schema->relationship('child')->foreign_class, 'DummyChild');
 
 
 TestEnv->teardown;
