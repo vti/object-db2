@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 57;
+use Test::More tests => 58;
 
 use lib 't/lib';
 
@@ -105,6 +105,9 @@ is($authors[2]->name, 'bar');
 @authors = Author->new->find(limit => 1, order_by => 'name ASC');
 is(@authors,          1);
 is($authors[0]->name, 'bar');
+
+@authors = Author->new->find(limit => 3, offset => 2);
+is(@authors, 1);
 
 is(Author->new->delete(all => 1), 3);
 

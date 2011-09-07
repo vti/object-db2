@@ -68,6 +68,8 @@ sub find {
     $sql->limit($params{limit}) if $params{limit};
     $sql->limit(1) if $single;
 
+    $sql->offset($params{offset}) if $params{offset} && $sql->limit;
+
     $sql->order_by($params{order_by}) if $params{order_by};
 
     my $wantarray = wantarray;
