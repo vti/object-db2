@@ -304,7 +304,7 @@ sub to_hash {
     foreach my $name ($self->{related}->names) {
         my $rel = $self->{related}->get($name);
 
-        Carp::croak qw/Unknown '$name' relationship/ unless $rel;
+        Carp::croak qq/Unknown '$name' relationship/ unless $rel;
 
         if (ref $rel eq 'ARRAY') {
             $hash->{$name} = [];
