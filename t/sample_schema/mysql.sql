@@ -184,3 +184,13 @@ CREATE TABLE `telefon_numbers` (
  `tel_num_c` INTEGER,
  `telefon_number` varchar(40) default ''
 );
+CREATE TABLE `messages` (
+ `sender_id` INTEGER NOT NULL,
+ `recipient_id` INTEGER NOT NULL,
+ `message` VARCHAR(255) NOT NULL,
+ `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE `identificators` (
+ `id` INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
+ `name` VARCHAR(255) NOT NULL
+);
