@@ -284,12 +284,23 @@ sub _merge_arrays {
     my $self = shift;
     my ($array1, $array2) = @_;
 
-    my %array_values;
-    foreach my $value (@$array1, @$array2) {
-        $array_values{$value} = undef;
+    my @columns1;
+    foreach my $value (@$array1) {
+        push @columns1, ref $value eq 'HASH' ? $value : {name => $value};
     }
 
-    return [keys %array_values];
+    my @columns2;
+    foreach my $value (@$array2) {
+        push @columns2, ref $value eq 'HASH' ? $value : {name => $value};
+    }
+
+    foreach my $column (@columns2) {
+        if (!grep {$column->{name} eq $_->{name}} @columns1) {
+            push @columns1, $column;
+        }
+    }
+
+    return [@columns1];
 }
 
 sub _fetch_subrequests {

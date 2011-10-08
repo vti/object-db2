@@ -124,7 +124,7 @@ sub columns {
             $col = $$column;
         }
         elsif (ref $column eq 'HASH') {
-            $col = $column->{as};
+            $col = $column->{as} || $column->{name};
         }
         else {
             $col = $column;
