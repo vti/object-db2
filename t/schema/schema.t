@@ -76,13 +76,14 @@ __PACKAGE__->schema(
 
 package OldFashionInherited;
 use base 'OldFashion';
+__PACKAGE__->schema->add_column('boo');
 
 package main;
 
 use strict;
 use warnings;
 
-use Test::More tests => 52;
+use Test::More tests => 54;
 
 use lib 't/lib';
 
@@ -160,6 +161,7 @@ is_deeply([DummyWithTable->schema->columns],     [qw/foo bar/]);
 
 is(DummyWithTableInherited->schema->class, 'DummyWithTableInherited');
 is(DummyWithTableInherited->schema->table, 'foo');
+is_deeply([DummyWithTableInherited->schema->columns], [qw/foo bar/]);
 
 Dummy::InNamespace->schema->build(TestDB->dbh);
 is(Dummy::InNamespace->schema->class, 'Dummy::InNamespace');
@@ -183,6 +185,7 @@ is(OldFashion->schema->relationship('child')->foreign_class, 'DummyChild');
 
 is(OldFashionInherited->schema->class, 'OldFashionInherited');
 is(OldFashionInherited->schema->table, 'foo');
+is_deeply([OldFashionInherited->schema->columns], [qw/foo bar baz boo/]);
 
 
 TestEnv->teardown;
