@@ -27,7 +27,8 @@ sub new {
     foreach my $parent (_get_parents($self->class)) {
         if (exists $objects{$parent}) {
             my $parent_schema = $objects{$parent};
-            my $schema        = Storable::dclone($parent_schema);
+
+            my $schema = Storable::dclone($parent_schema);
 
             $schema->class($self->class);
 
@@ -94,6 +95,27 @@ sub build {
     return if $self->{is_built};
 
     $ENV{OBJECTDB_BUILT_SCHEMAS}++;
+
+    foreach my $parent (_get_parents($self->class)) {
+        if (exists $objects{$parent}) {
+            my $parent_schema = $objects{$parent};
+
+            $parent_schema->build(@_);
+
+            $self->add_column($_) for $parent_schema->columns;
+
+            $self->primary_key($parent_schema->primary_key);
+
+            if ($parent_schema->unique_keys) {
+                $self->unique_keys(@{$parent_schema->unique_keys});
+            }
+
+            if ($parent_schema->auto_increment) {
+                $self->auto_increment($parent_schema->auto_increment);
+            }
+
+        }
+    }
 
     $self->auto_discover(@_) unless $self->columns;
 
@@ -371,7 +393,36 @@ sub add_column {
     my $self = shift;
     my $name = shift;
 
-    push @{$self->{columns}}, $name;
+    if (!grep {$_ eq $name} $self->columns) {
+        push @{$self->{columns}}, $name;
+    }
+
+    return $self;
+}
+
+sub add_columns {
+    my $self = shift;
+    my (@names) = @_;
+
+    $self->add_column($_) for @names;
+
+    return $self;
+}
+
+sub add_relationships {
+    my $self = shift;
+    my (%relationships) = @_;
+
+    foreach my $name (keys %relationships) {
+        my $rel  = $relationships{$name};
+        my $type = delete $rel->{type};
+        die "Unknown relationship type '$type'"
+          unless exists $TYPES->{$type};
+        $type = $TYPES->{$type};
+        $self->_new_relationship($type, $name, %$rel);
+    }
+
+    return $self;
 }
 
 sub proxy          { shift->_new_relationship('proxy'          => @_) }

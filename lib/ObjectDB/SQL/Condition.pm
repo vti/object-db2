@@ -28,6 +28,8 @@ sub cond {
         return $self->{cond};
     }
 
+    return unless defined $_[0] && $_[0] ne '';
+
     if (ref $_[0] eq 'ARRAY') {
         push @{$self->{cond}}, @{$_[0]};
     }
@@ -116,8 +118,8 @@ sub _build {
             }
 
             # -and -or
-            if ($self->logic_switched($key)) {
-                $string .= $self->_build($self->logic, $value, $prefix);
+            if (my $new_logic = $self->logic_switched($key)) {
+                $string .= $self->_build($new_logic, $value, $prefix);
                 $count += 2;
                 next;
             }
@@ -255,8 +257,9 @@ sub logic_switched {
 
     if ($key =~ s/^-//) {
         if ($key eq 'or' || $key eq 'and') {
-            $self->{logic} = uc $key;
-            return 1;
+            return uc $key;
+            #$self->{logic} = uc $key;
+            #return 1;
         }
     }
 

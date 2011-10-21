@@ -86,8 +86,8 @@ $author = Author->new->set_columns(name => 'bar')->create;
 ok($author);
 
 is(Author->new->count, 1);
-is(Author->new->count(name => 'foo'), 0);
-is(Author->new->count(name => 'bar'), 1);
+is(Author->new->count(where => [name => 'foo']), 0);
+is(Author->new->count(where => [name => 'bar']), 1);
 
 is(Author->new->delete(all => 1), 1);
 ok(!Author->new->find(id => $author->id));

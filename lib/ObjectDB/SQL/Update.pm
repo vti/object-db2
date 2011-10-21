@@ -26,14 +26,15 @@ sub build {
         $count++;
     }
 
-
     return $self;
 }
 
 sub to_string {
     my $self = shift;
 
-    $self->build unless $self->is_built;
+    return $self->{to_string} if $self->{to_string};
+
+    $self->build;
 
     my $query = "";
 
@@ -59,10 +60,11 @@ sub to_string {
     }
 
     $query .= $self->where;
-    $self->bind($self->where->bind) unless $self->is_built;
-    $self->is_built(1);
+    $self->bind($self->where->bind);
 
-    return $query;
+    #$self->is_built(1);
+
+    return $self->{to_string} = $query;
 }
 
 1;

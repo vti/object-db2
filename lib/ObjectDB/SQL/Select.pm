@@ -139,6 +139,8 @@ sub columns {
 sub to_string {
     my $self = shift;
 
+    return $self->{string} if $self->{string};
+
     my $query = "";
     $self->{bind} = [];
 
@@ -200,7 +202,12 @@ sub to_string {
     $self->bind($self->where->bind);
 
     if (my $group_by = $self->{group_by}) {
-        $group_by = prepare_column($group_by, $default_prefix);
+        if (ref $group_by) {
+            $group_by = $$group_by;
+        }
+        else {
+            $group_by = prepare_column($group_by, $default_prefix);
+        }
         $query .= ' GROUP BY ' . $group_by;
     }
 
@@ -239,7 +246,7 @@ sub to_string {
 
     $query .= ' OFFSET ' . $self->offset if $self->offset;
 
-    return $query;
+    return $self->{string} = $query;
 }
 
 sub sources_to_string {
