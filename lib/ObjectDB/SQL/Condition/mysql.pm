@@ -3,7 +3,7 @@ package ObjectDB::SQL::Condition::mysql;
 use strict;
 use warnings;
 
-use base 'ObjectDB::Base';
+use base 'ObjectDB::SQL::Condition::Base';
 
 sub _concat {
     my $self = shift;
