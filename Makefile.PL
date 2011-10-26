@@ -22,6 +22,7 @@ requires 'Storable';
 test_requires 'DBD::SQLite';
 test_requires 'Test::Class';
 test_requires 'Test::Fatal';
+test_requires 'Sub::Override';
 
 tests 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t';
 
