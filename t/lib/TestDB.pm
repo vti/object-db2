@@ -16,9 +16,9 @@ sub dbh {
 
     my @args = ();
 
-    if ($ENV{TEST_MYSQL}) {
-        my @options = split(',', $ENV{TEST_MYSQL});
-        push @args, 'dbi:mysql:' . shift @options, @options;
+    if ($ENV{TEST_DSN}) {
+        my @options = split(',', $ENV{TEST_DSN});
+        push @args, 'dbi:' . (shift @options) . ':', @options;
     }
     else {
         push @args, 'dbi:SQLite:' . ':memory:';
@@ -27,7 +27,7 @@ sub dbh {
     my $dbh = DBI->connect(@args);
     die $DBI::errorstr unless $dbh;
 
-    unless ($ENV{TEST_MYSQL}) {
+    unless ($ENV{TEST_DSN}) {
         $dbh->do("PRAGMA default_synchronous = OFF");
         $dbh->do("PRAGMA temp_store = MEMORY");
     }
