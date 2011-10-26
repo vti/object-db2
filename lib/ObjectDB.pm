@@ -16,6 +16,7 @@ use ObjectDB::Table;
 use ObjectDB::Columns;
 use ObjectDB::Related;
 use ObjectDB::Schema;
+use ObjectDB::SQL::Factory;
 use ObjectDB::Utils 'single_to_plural';
 
 sub BUILD {
@@ -837,11 +838,7 @@ sub _build_sql {
     my $self = shift;
     my $name = shift;
 
-    $name = "ObjectDB::SQL::$name";
-
-    Class::Load::load_class($name);
-
-    return $name->new(dbh => $self->dbh, @_);
+    return ObjectDB::SQL::Factory->new($name, dbh => $self->dbh, @_);
 }
 
 1;
