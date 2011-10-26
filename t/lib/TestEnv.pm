@@ -14,7 +14,7 @@ sub setup {
     my $driver = $dbh->{'Driver'}->{'Name'};
     return unless $driver eq 'SQLite';
 
-    my $fullpath = "$FindBin::Bin/schema/$driver.sql";
+    my $fullpath = "$FindBin::Bin/../t/schema/$driver.sql";
 
     open(my $file, "<$fullpath") or die "Can't open $fullpath: $!";
 
