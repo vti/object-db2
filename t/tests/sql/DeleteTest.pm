@@ -16,7 +16,7 @@ sub table : Test {
 
     $sql->table('foo');
 
-    is("$sql", "DELETE FROM `foo`");
+    is("$sql", 'DELETE FROM "foo"');
 }
 
 sub with : Test(2) {
@@ -27,14 +27,14 @@ sub with : Test(2) {
     $sql->table('foo');
     $sql->where(id => 2);
 
-    is("$sql", "DELETE FROM `foo` WHERE (`id` = ?)");
+    is("$sql", 'DELETE FROM "foo" WHERE ("id" = ?)');
     is_deeply($sql->bind, [2]);
 }
 
 sub _build_sql {
     my $self = shift;
 
-    return ObjectDB::SQL::Delete->new(@_);
+    return ObjectDB::SQL::Delete->new(dbh => TestDB->dbh, @_);
 }
 
 1;

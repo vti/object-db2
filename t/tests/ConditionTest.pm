@@ -166,7 +166,7 @@ sub not_create_side_effects : Test(4) {
 sub _build_cond {
     my $self = shift;
 
-    return ObjectDB::SQL::Condition->new(@_);
+    return ObjectDB::SQL::Condition->new(dbh => TestDB->dbh, @_);
 }
 
 1;

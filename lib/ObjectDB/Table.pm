@@ -40,7 +40,7 @@ sub find {
 
     my $main = {};
 
-    my $sql = ObjectDB::SQL::Select->new(driver => $self->dbh->{'Driver'}->{'Name'});
+    my $sql = $self->_build_sql('Select');
     $sql->source($self->schema->table);
 
     my $with = $self->_normalize_with($params{with});
@@ -337,7 +337,8 @@ sub _update_objects {
     my @columns = keys %set;
     my @values  = values %set;
 
-    my $sql = ObjectDB::SQL::Update->new;
+    my $sql = $self->_build_sql('Update');
+
     $sql->table($self->schema->table);
     $sql->columns(\@columns);
     $sql->values(\@values);
@@ -367,7 +368,7 @@ sub count {
 
     $self->schema->build($dbh);
 
-    my $sql = ObjectDB::SQL::Select->new;
+    my $sql = $self->_build_sql('Select');
 
     my $table = $self->schema->table;
 
@@ -752,6 +753,17 @@ sub _merge_arrays {
     }
 
     return [@columns1];
+}
+
+sub _build_sql {
+    my $self = shift;
+    my $name = shift;
+
+    $name = "ObjectDB::SQL::$name";
+
+    Class::Load::load_class($name);
+
+    return $name->new(dbh => $self->dbh, @_);
 }
 
 1;

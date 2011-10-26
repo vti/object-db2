@@ -17,7 +17,7 @@ sub source : Test {
     $sql->source('foo');
     $sql->columns('foo');
 
-    is("$sql", "SELECT `foo` FROM `foo`");
+    is("$sql", 'SELECT "foo" FROM "foo"');
 }
 
 sub source_as_hashref : Test {
@@ -28,7 +28,7 @@ sub source_as_hashref : Test {
     $sql->source({name => 'foo', as => 'bar'});
     $sql->columns('foo');
 
-    is("$sql", "SELECT `foo` FROM `foo` AS `bar`");
+    is("$sql", 'SELECT "foo" FROM "foo" AS "bar"');
 }
 
 sub next_source_adds_table_prefix : Test {
@@ -41,7 +41,7 @@ sub next_source_adds_table_prefix : Test {
     $sql->source('bar');
     $sql->columns('bar');
 
-    is("$sql", "SELECT `foo`.`foo`, `bar`.`bar` FROM `foo`, `bar`");
+    is("$sql", 'SELECT "foo"."foo", "bar"."bar" FROM "foo", "bar"');
 }
 
 sub columns : Test {
@@ -52,7 +52,7 @@ sub columns : Test {
     $sql->source('foo');
     $sql->columns('foo');
 
-    is("$sql", "SELECT `foo` FROM `foo`");
+    is("$sql", 'SELECT "foo" FROM "foo"');
 }
 
 sub columns_with_dots : Test {
@@ -63,7 +63,7 @@ sub columns_with_dots : Test {
     $sql->source('foo');
     $sql->columns('foo.bar');
 
-    is("$sql", "SELECT `foo`.`bar` FROM `foo`");
+    is("$sql", 'SELECT "foo"."bar" FROM "foo"');
 }
 
 sub columns_as_scalarref : Test {
@@ -74,7 +74,7 @@ sub columns_as_scalarref : Test {
     $sql->source('foo');
     $sql->columns(\'foo AS bar', 'baz');
 
-    is("$sql", "SELECT foo AS bar, `baz` FROM `foo`");
+    is("$sql", 'SELECT foo AS bar, "baz" FROM "foo"');
 }
 
 sub columns_as_hashref : Test {
@@ -85,7 +85,7 @@ sub columns_as_hashref : Test {
     $sql->source('foo');
     $sql->columns({name => \'foo', as => 'bar'});
 
-    is("$sql", "SELECT foo AS bar FROM `foo`");
+    is("$sql", 'SELECT foo AS bar FROM "foo"');
 }
 
 sub where : Test(2) {
@@ -97,7 +97,7 @@ sub where : Test(2) {
     $sql->columns('foo');
     $sql->where(foo => 1);
 
-    is("$sql", "SELECT `foo` FROM `foo` WHERE (`foo` = ?)");
+    is("$sql", 'SELECT "foo" FROM "foo" WHERE ("foo" = ?)');
     is_deeply($sql->bind, [1]);
 }
 
@@ -110,7 +110,7 @@ sub where_as_scalarref : Test {
     $sql->columns('foo');
     $sql->where(\"1 > 2");
 
-    is("$sql", "SELECT `foo` FROM `foo` WHERE (1 > 2)");
+    is("$sql", 'SELECT "foo" FROM "foo" WHERE (1 > 2)');
 }
 
 sub multiple_where : Test(2) {
@@ -124,7 +124,7 @@ sub multiple_where : Test(2) {
     $sql->where(bar => 2);
 
     is("$sql",
-        "SELECT `foo`, `bar` FROM `foo` WHERE (`foo` = ? AND `bar` = ?)");
+        'SELECT "foo", "bar" FROM "foo" WHERE ("foo" = ? AND "bar" = ?)');
     is_deeply($sql->bind, [1, 2]);
 }
 
@@ -137,7 +137,7 @@ sub order_by : Test {
     $sql->columns(qw/foo bar/);
     $sql->order_by('foo   ,    bar   DESC');
 
-    is("$sql", "SELECT `foo`, `bar` FROM `foo` ORDER BY `foo`, `bar` DESC");
+    is("$sql", 'SELECT "foo", "bar" FROM "foo" ORDER BY "foo", "bar" DESC');
 }
 
 sub limit : Test {
@@ -149,7 +149,7 @@ sub limit : Test {
     $sql->columns(qw/foo bar/);
     $sql->limit(1);
 
-    is("$sql", "SELECT `foo`, `bar` FROM `foo` LIMIT 1");
+    is("$sql", 'SELECT "foo", "bar" FROM "foo" LIMIT 1');
 }
 
 sub offset : Test {
@@ -161,7 +161,7 @@ sub offset : Test {
     $sql->columns(qw/foo bar/);
     $sql->offset(1);
 
-    is("$sql", "SELECT `foo`, `bar` FROM `foo` OFFSET 1");
+    is("$sql", 'SELECT "foo", "bar" FROM "foo" OFFSET 1');
 }
 
 sub join : Test {
@@ -174,13 +174,13 @@ sub join : Test {
     $sql->source(
         {   join => 'inner',
             name => 'table2',
-            constraint => ['table1.foo' => \'`table2`.`bar`']
+            constraint => ['table1.foo' => \'"table2"."bar"']
         }
     );
     $sql->columns(qw/bar baz/);
 
     is("$sql",
-        "SELECT `table1`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar`)"
+        'SELECT "table1"."foo", "table2"."bar", "table2"."baz" FROM "table1" INNER JOIN "table2" ON ("table1"."foo" = "table2"."bar")'
     );
 }
 
@@ -195,13 +195,13 @@ sub join_with_multi_constraint : Test(2) {
         {   join => 'inner',
             name => 'table2',
             constraint =>
-              ['table1.foo' => \'`table2`.`bar`', 'table1.bar' => 'hello']
+              ['table1.foo' => \'"table2"."bar"', 'table1.bar' => 'hello']
         }
     );
     $sql->columns(qw/bar baz/);
 
     is("$sql",
-        "SELECT `table1`.`foo`, `table2`.`bar`, `table2`.`baz` FROM `table1` INNER JOIN `table2` ON (`table1`.`foo` = `table2`.`bar` AND `table1`.`bar` = ?)"
+        'SELECT "table1"."foo", "table2"."bar", "table2"."baz" FROM "table1" INNER JOIN "table2" ON ("table1"."foo" = "table2"."bar" AND "table1"."bar" = ?)'
     );
     is_deeply($sql->bind, ['hello']);
 }
@@ -209,7 +209,7 @@ sub join_with_multi_constraint : Test(2) {
 sub _build_sql {
     my $self = shift;
 
-    return ObjectDB::SQL::Select->new(@_);
+    return ObjectDB::SQL::Select->new(dbh => TestDB->dbh, @_);
 }
 
 1;

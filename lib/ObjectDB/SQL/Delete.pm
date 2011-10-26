@@ -3,23 +3,12 @@ package ObjectDB::SQL::Delete;
 use strict;
 use warnings;
 
-use base 'ObjectDB::SQL::Base';
+use ObjectDB::SQL::Factory;
 
-use ObjectDB::SQL::Utils 'escape';
+sub new {
+    my $class = shift;
 
-sub to_string {
-    my $self = shift;
-
-    my $query = "";
-
-    $query .= 'DELETE FROM ';
-    $query .= escape($self->table);
-    $query .= $self->where;
-
-    $self->{bind} = [];
-    $self->bind($self->where->bind);
-
-    return $query;
+    return ObjectDB::SQL::Factory->new('Delete', @_);
 }
 
 1;

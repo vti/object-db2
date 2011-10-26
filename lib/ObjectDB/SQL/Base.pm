@@ -5,63 +5,57 @@ use warnings;
 
 use base 'ObjectDB::Base';
 
+use overload '""' => sub { shift->to_string }, fallback => 1;
+use overload 'bool' => sub { shift; }, fallback => 1;
+
+require Carp;
+
 use ObjectDB::SQL::Where;
 
 sub BUILD {
     my $self = shift;
+
+    Carp::croak('dbh is required') unless $self->{dbh};
+
     $self->{is_built} = 0  if not exists $self->{is_build};
-    $self->{columns}  = [] if not exists $self->{columns};
+    #$self->{columns}  = [] if not exists $self->{columns};
 }
+
+sub quote_value { shift->{dbh}->quote(@_) }
+sub quote {
+    my $self = shift;
+    my ($name) = @_;
+
+    return $self->{dbh}->quote_identifier($name);
+}
+
+sub quote_column {
+    my $self = shift;
+    my ($column, $prefix) = @_;
+
+    # Prefixed
+    if ($column =~ s/^(\w+)\.//) {
+        $column = $self->quote($1) . '.' . $self->quote($column);
+    }
+
+    # Default prefix
+    elsif ($prefix) {
+        $column = $self->quote($prefix) . '.' . $self->quote($column);
+    }
+
+    # No Prefix
+    else {
+        $column = $self->quote($column);
+    }
+
+    return $column;
+}
+
+sub driver { shift->{dbh}->{'Driver'}->{'Name'} }
+
+sub table    { @_ > 1 ? $_[0]->{table}    = $_[1] : $_[0]->{table} }
 
 sub is_built { @_ > 1 ? $_[0]->{is_built} = $_[1] : $_[0]->{is_built} }
-sub driver   { @_ > 1 ? $_[0]->{driver}   = $_[1] : $_[0]->{driver} }
-sub table    { @_ > 1 ? $_[0]->{table}    = $_[1] : $_[0]->{table} }
-sub order_by { @_ > 1 ? $_[0]->{order_by} = $_[1] : $_[0]->{order_by} }
-sub limit    { @_ > 1 ? $_[0]->{limit}    = $_[1] : $_[0]->{limit} }
-sub offset   { @_ > 1 ? $_[0]->{offset}   = $_[1] : $_[0]->{offset} }
-sub columns  { @_ > 1 ? $_[0]->{columns}  = $_[1] : $_[0]->{columns} }
-
-use overload '""' => sub { shift->to_string }, fallback => 1;
-use overload 'bool' => sub { shift; }, fallback => 1;
-
-sub where {
-    my $self = shift;
-
-    # Lazy initialization
-    $self->{where} ||= ObjectDB::SQL::Where->new({driver => $self->driver});
-
-    # Get
-    return $self->{where} unless @_;
-
-    # Set
-    $self->{where}->cond(@_);
-
-    # Rebuild
-    $self->is_built(0);
-
-    return $self;
-}
-
-sub bind {
-    my $self = shift;
-
-    # Initialize
-    $self->{bind} ||= [];
-
-    # Get
-    return $self->{bind} unless @_;
-
-    # Set
-    if (ref $_[0] eq 'ARRAY') {
-        push @{$self->{bind}}, @{$_[0]};
-    }
-    else {
-        push @{$self->{bind}}, $_[0];
-    }
-
-    return $self;
-}
-
 sub to_string {
     my $self = shift;
 

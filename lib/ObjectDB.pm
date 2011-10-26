@@ -16,10 +16,6 @@ use ObjectDB::Table;
 use ObjectDB::Columns;
 use ObjectDB::Related;
 use ObjectDB::Schema;
-use ObjectDB::SQL::Insert;
-use ObjectDB::SQL::Select;
-use ObjectDB::SQL::Delete;
-use ObjectDB::SQL::Update;
 use ObjectDB::Utils 'single_to_plural';
 
 sub BUILD {
@@ -192,7 +188,7 @@ sub load {
     my $id = delete $params{id};
     die 'You must specify id' unless defined $id;
 
-    my $sql = ObjectDB::SQL::Select->new(driver => $self->dbh->{'Driver'}->{'Name'});
+    my $sql = $self->_build_sql('Select');
 
     $sql->source($self->schema->table);
 
@@ -548,7 +544,7 @@ sub update {
     my @columns = $self->{columns}->regular_columns;
     my @values = map { $self->{columns}->get($_) } @columns;
 
-    my $sql = ObjectDB::SQL::Update->new;;
+    my $sql = $self->_build_sql('Update');
     $sql->table($self->schema->table);
     $sql->columns(\@columns);
     $sql->values(\@values);
@@ -615,7 +611,7 @@ sub delete {
 
     my %where = map { $_ => $self->{columns}->get($_) } @primary_or_unique_key;
 
-    my $sql = ObjectDB::SQL::Delete->new;
+    my $sql = $self->_build_sql('Delete');
     $sql->table($self->schema->table);
     $sql->where(%where);
 
@@ -678,7 +674,7 @@ sub delete_related {
 sub create {
     my $self = shift;
 
-    my $sql = ObjectDB::SQL::Insert->new;
+    my $sql = $self->_build_sql('Insert');
 
     $sql->table($self->schema->table);
     $sql->columns([$self->{columns}->names]);
@@ -835,6 +831,17 @@ sub _set_auto_increment_column {
             $auto_increment);
         $self->{columns}->set($auto_increment => $id);
     }
+}
+
+sub _build_sql {
+    my $self = shift;
+    my $name = shift;
+
+    $name = "ObjectDB::SQL::$name";
+
+    Class::Load::load_class($name);
+
+    return $name->new(dbh => $self->dbh, @_);
 }
 
 1;
