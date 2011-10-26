@@ -220,6 +220,12 @@ sub load {
     return $self;
 }
 
+sub find {
+    my $self = shift;
+
+    return $self->table->find(@_);
+}
+
 sub related {
     my $self = shift;
     my ($name) = @_;
