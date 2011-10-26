@@ -12,6 +12,11 @@ our $DBH;
 sub dbh {
     my $class = shift;
 
+    if (@_) {
+        $DBH = $_[0];
+        return;
+    }
+
     return $DBH if $DBH;
 
     my @args = ();
