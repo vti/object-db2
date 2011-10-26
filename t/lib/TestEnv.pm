@@ -12,6 +12,7 @@ sub setup {
     my $dbh = TestDB->dbh;
 
     my $driver = $dbh->{'Driver'}->{'Name'};
+    return unless $driver eq 'SQLite';
 
     my $filename;
     if ($driver =~ m/SQLite/) {
@@ -24,8 +25,8 @@ sub setup {
         die "Unknown driver $driver";
     }
 
-    my $fullpath = "$FindBin::Bin/sample_schema/$filename.sql";
-    $fullpath = "$FindBin::Bin/../sample_schema/$filename.sql"
+    my $fullpath = "$FindBin::Bin/schema/$filename.sql";
+    $fullpath = "$FindBin::Bin/../schema/$filename.sql"
       unless -e $fullpath;
 
     open(my $file, "<$fullpath") or die "Can't open $fullpath: $!";
@@ -44,6 +45,16 @@ sub setup {
 }
 
 sub teardown {
+}
+
+sub clear_table {
+    my $self = shift;
+
+    my $dbh = TestDB->dbh;
+
+    foreach my $table (@_) {
+        $dbh->do('DELETE FROM ' . $table);
+    }
 }
 
 1;

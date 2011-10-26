@@ -24,6 +24,10 @@ our %objects;
 sub new {
     my $self = shift->SUPER::new(@_);
 
+    Carp::croak('class is required when building schema') unless $self->{class};
+
+    $self->{relationships} ||= {};
+
     foreach my $parent (_get_parents($self->class)) {
         if (exists $objects{$parent}) {
             my $parent_schema = $objects{$parent};
@@ -31,6 +35,7 @@ sub new {
             my $schema = Storable::dclone($parent_schema);
 
             $schema->class($self->class);
+            $schema->table($self->table) if $self->table;
 
             return $schema;
         }
@@ -70,14 +75,6 @@ sub new {
             $self->_new_relationship($type, $name, %$rel);
         }
     }
-
-    return $self;
-}
-
-sub BUILD {
-    my $self = shift;
-
-    $self->{relationships} ||= {};
 
     return $self;
 }
@@ -194,7 +191,11 @@ sub auto_increment {
 
     return $self->{auto_increment} unless @_;
 
-    $self->{auto_increment} = $_[0];
+    my $name = $_[0];
+
+    $self->_check_column($name);
+
+    $self->{auto_increment} = $name;
 
     return $self;
 }

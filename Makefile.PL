@@ -20,6 +20,8 @@ requires 'Scalar::Util';
 requires 'Storable';
 
 test_requires 'DBD::SQLite';
+test_requires 'Test::Class';
+test_requires 'Test::Fatal';
 
 tests 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t';
 

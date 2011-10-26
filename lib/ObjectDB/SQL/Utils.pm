@@ -17,33 +17,34 @@ sub import {
 }
 
 sub prepare_column {
-    my $column  = shift;
-    my $default = shift;
+    my ($column, $prefix, $quote) = @_;
 
     # Prefixed
     if ($column =~ s/^(\w+)\.//) {
-        $column = escape($1) . '.' . escape($column);
+        $column = escape($1, $quote) . '.' . escape($column, $quote);
     }
 
     # Default prefix
-    elsif ($default) {
-        $column = escape($default) . '.' . escape($column);
+    elsif ($prefix) {
+        $column = escape($prefix, $quote) . '.' . escape($column, $quote);
     }
 
     # No Prefix
     else {
-        $column = escape($column);
+        $column = escape($column, $quote);
     }
 
     return $column;
 }
 
 sub escape {
-    my $value = shift;
+    my ($value, $quote) = @_;
 
-    $value =~ s/`/\\`/g;
+    $quote ||= '`';
 
-    return "`$value`";
+    $value =~ s/$quote/\\$quote/g;
+
+    return "$quote$value$quote";
 }
 
 1;
