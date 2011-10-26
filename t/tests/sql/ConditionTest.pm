@@ -24,7 +24,7 @@ sub multi_condition : Test(2) {
 
     $cond->cond(id => 2, title => 'hello');
 
-    is($cond->to_string, "(`id` = ? AND `title` = ?)");
+    is($cond->to_string, '("id" = ? AND "title" = ?)');
     is_deeply($cond->bind, [qw/ 2 hello /]);
 }
 
@@ -36,7 +36,7 @@ sub multi_condition_call : Test {
     $cond->cond([id => 2]);
     $cond->cond(di => 3);
 
-    is($cond->to_string, "(`id` = ? AND `di` = ?)");
+    is($cond->to_string, '("id" = ? AND "di" = ?)');
 }
 
 sub in : Test(2) {
@@ -46,7 +46,7 @@ sub in : Test(2) {
 
     $cond->cond([id => [1, 2, 3]]);
 
-    is($cond->to_string, "(`id` IN (?, ?, ?))");
+    is($cond->to_string, '("id" IN (?, ?, ?))');
     is_deeply($cond->bind, [qw/ 1 2 3 /]);
 }
 
@@ -57,7 +57,7 @@ sub with_prefix : Test(2) {
 
     $cond->cond(id => 2, title => 'hello');
 
-    is($cond->to_string, "(`foo`.`id` = ? AND `foo`.`title` = ?)");
+    is($cond->to_string, '("foo"."id" = ? AND "foo"."title" = ?)');
     is_deeply($cond->bind, [qw/ 2 hello /]);
 }
 
@@ -69,7 +69,7 @@ sub scalarref : Test(2) {
     $cond->cond([\'foo.id = ?']);
     $cond->bind(2);
 
-    is($cond->to_string, "(foo.id = ?)");
+    is($cond->to_string, '(foo.id = ?)');
     is_deeply($cond->bind, [2]);
 }
 
@@ -80,7 +80,7 @@ sub value_as_scalarref : Test {
 
     $cond->cond([password => \"PASSWORD('foo')"]);
 
-    is($cond->to_string, "(`password` = PASSWORD('foo'))");
+    is($cond->to_string, q{("password" = PASSWORD('foo'))});
 }
 
 sub null_value : Test {
@@ -90,7 +90,7 @@ sub null_value : Test {
 
     $cond->cond(foo => undef);
 
-    is($cond->to_string, "(`foo` IS NULL)");
+    is($cond->to_string, '("foo" IS NULL)');
 }
 
 sub change_logic : Test {
@@ -105,7 +105,7 @@ sub change_logic : Test {
         ]
     );
 
-    is($cond->to_string, "((`foo`.`id` IS NULL OR (`foo`.`title` = ? AND `foo`.`content` = ?)))");
+    is($cond->to_string, '(("foo"."id" IS NULL OR ("foo"."title" = ? AND "foo"."content" = ?)))');
 }
 
 sub multi_change_logic : Test {
@@ -125,7 +125,7 @@ sub multi_change_logic : Test {
         ]
     );
 
-    is($cond->to_string, "((`a` = ? OR `b` = ?) AND (`c` = ? OR `d` = ?))");
+    is($cond->to_string, '(("a" = ? OR "b" = ?) AND ("c" = ? OR "d" = ?))');
 }
 
 sub change_default_logic : Test {
@@ -136,7 +136,7 @@ sub change_default_logic : Test {
     $cond->logic('OR');
     $cond->cond('foo.id' => 2);
 
-    is($cond->to_string, "(`foo`.`id` = ?)");
+    is($cond->to_string, '("foo"."id" = ?)');
 }
 
 sub change_operator : Test {
@@ -146,7 +146,7 @@ sub change_operator : Test {
 
     $cond->cond(['foo.id' => {'>' => 2}]);
 
-    is($cond->to_string, "(`foo`.`id` > ?)");
+    is($cond->to_string, '("foo"."id" > ?)');
 }
 
 sub not_create_side_effects : Test(4) {
@@ -156,10 +156,10 @@ sub not_create_side_effects : Test(4) {
 
     $cond->cond(foo => 'bar');
 
-    is($cond->to_string, "(`foo` = ?)");
+    is($cond->to_string, '("foo" = ?)');
     is_deeply($cond->bind, ['bar']);
 
-    is($cond->to_string, "(`foo` = ?)");
+    is($cond->to_string, '("foo" = ?)');
     is_deeply($cond->bind, ['bar']);
 }
 

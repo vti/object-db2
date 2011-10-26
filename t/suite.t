@@ -2,6 +2,6 @@
 
 use lib 't/lib';
 
-use TestLoader qw(t/tests/sql);
+use TestLoader qw(t/tests);
 
 Test::Class->runtests;
