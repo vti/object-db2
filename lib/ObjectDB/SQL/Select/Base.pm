@@ -65,7 +65,6 @@ sub bind {
     return $self;
 }
 
-
 sub first_source {
     my $self = shift;
 
@@ -255,7 +254,8 @@ sub to_string {
         $query .= ' HAVING ' . ${$self->{having}} if $self->{having};
     }
     else {
-        $query .= ' HAVING ' . $self->quote($self->{having}) if $self->{having};
+        $query .= ' HAVING ' . $self->quote($self->{having})
+          if $self->{having};
     }
 
     if (my $order_by = $self->order_by) {
