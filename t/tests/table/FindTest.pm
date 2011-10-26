@@ -102,6 +102,15 @@ sub find_objects_with_order_by : Test(2) {
     is($articles[1]->title, 'foo');
 }
 
+sub find_objects_with_group_by : Test {
+    Article->new(columns => {title => 'foo'})->create;
+    Article->new(columns => {title => 'foo'})->create;
+
+    my @articles = Article->table->find(group_by => 'title');
+
+    is(@articles, 1);
+}
+
 sub find_objects_without_primary_key : Test(2) {
     Message->new(
         columns => {sender_id => 1, recipient_id => 1, message => 'bar'})
