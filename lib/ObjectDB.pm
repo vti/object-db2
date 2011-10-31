@@ -679,8 +679,6 @@ sub create {
 
     $sql->table($self->schema->table);
     $sql->columns([$self->{columns}->names]);
-    my $driver = $self->dbh->{'Driver'}->{'Name'};
-    $sql->driver($driver);
 
     my $dbh = $self->dbh;
 
