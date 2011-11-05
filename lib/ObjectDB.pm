@@ -308,7 +308,8 @@ sub find_related {
         $find_class = $rel->map_class;
     }
     else {
-        @with  = @$passed_with  if $passed_with;
+        @with = ref $passed_with eq 'ARRAY' ? @$passed_with : $passed_with
+          if $passed_with;
         @where = @$passed_where if $passed_where;
         $find_class = $rel->foreign_class;
     }
